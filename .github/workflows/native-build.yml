@@ -1,0 +1,266 @@
+name: Native Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag, or commit to build
+        required: true
+        default: main
+        type: string
+      platform:
+        description: Native host platform
+        required: true
+        default: both
+        type: choice
+        options:
+          - android
+          - ios-simulator
+          - both
+
+concurrency:
+  group: native-build-${{ inputs.ref }}-${{ inputs.platform }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.19.0
+  PNPM_VERSION: 11.25.0
+  JAVA_VERSION: '17'
+  ANDROID_NDK_VERSION: 27.2.12479018
+  COCOAPODS_VERSION: 1.17.0
+
+jobs:
+  resolve:
+    name: Resolve requested source
+    runs-on: ubuntu-24.04
+    outputs:
+      commit: ${{ steps.source.outputs.commit }}
+    steps:
+      - name: Check out requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Capture immutable source revision
+        id: source
+        run: echo "commit=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
+
+  android:
+    name: Android Debug
+    needs: resolve
+    if: inputs.platform == 'android' || inputs.platform == 'both'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.commit }}
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle the embedded runtime
+        run: pnpm runtime:bundle
+
+      - name: Generate the Android project
+        run: pnpm --filter @runwhale/mobile exec expo prebuild --no-install --platform android
+
+      - name: Install pinned Android NDK
+        run: sdkmanager "ndk;$ANDROID_NDK_VERSION"
+
+      - name: Build Android Debug APK
+        working-directory: apps/mobile/android
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/native-build-logs"
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee "$GITHUB_WORKSPACE/native-build-logs/android-debug-build.log"
+
+      - name: Verify Android Debug APK
+        run: |
+          set -euo pipefail
+          apk='apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk'
+          test -f "$apk"
+          apksigner_path="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -n 1)"
+          test -x "$apksigner_path"
+          "$apksigner_path" verify "$apk"
+          unzip -Z1 "$apk" >"$RUNNER_TEMP/android-debug-apk-entries.txt"
+          grep -q '^lib/arm64-v8a/' "$RUNNER_TEMP/android-debug-apk-entries.txt"
+
+      - name: Upload Android Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: runwhale-android-debug-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload Android build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: native-build-logs
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Write Android build summary
+        if: always()
+        env:
+          REQUESTED_REF: ${{ inputs.ref }}
+        run: |
+          {
+            echo '## Android Debug Native Build'
+            echo
+            echo "- Requested ref: \`${REQUESTED_REF}\`"
+            echo "- Commit: \`${{ needs.resolve.outputs.commit }}\`"
+            echo "- Node.js: \`${NODE_VERSION}\`"
+            echo "- Android NDK: \`${ANDROID_NDK_VERSION}\`"
+            echo "- Result: \`${{ job.status }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  ios-simulator:
+    name: iOS Simulator Debug
+    needs: resolve
+    if: inputs.platform == 'ios-simulator' || inputs.platform == 'both'
+    runs-on: macos-26
+    steps:
+      - name: Check out requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.commit }}
+          persist-credentials: false
+
+      - name: Select pinned Xcode
+        run: |
+          set -euo pipefail
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          xcodebuild -version | grep -Fx 'Xcode 26.6'
+          xcodebuild -version | grep -Fx 'Build version 17F113'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install pinned CocoaPods
+        run: |
+          if ! gem list cocoapods --installed --version "$COCOAPODS_VERSION" >/dev/null; then
+            sudo gem install cocoapods --version "$COCOAPODS_VERSION" --no-document
+          fi
+          test "$(pod _${COCOAPODS_VERSION}_ --version)" = "$COCOAPODS_VERSION"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle the embedded runtime
+        run: pnpm runtime:bundle
+
+      - name: Generate the iOS project
+        run: pnpm --filter @runwhale/mobile exec expo prebuild --no-install --platform ios
+
+      - name: Install iOS pods
+        working-directory: apps/mobile/ios
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/native-build-logs"
+          pod _${COCOAPODS_VERSION}_ install 2>&1 | tee "$GITHUB_WORKSPACE/native-build-logs/pod-install.log"
+
+      - name: Build iOS Simulator app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace apps/mobile/ios/RunWhale.xcworkspace \
+            -scheme RunWhale \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath apps/mobile/ios/build/manual-derived \
+            ARCHS='arm64 x86_64' \
+            ONLY_ACTIVE_ARCH=NO \
+            build 2>&1 | tee native-build-logs/ios-simulator-build.log
+
+      - name: Verify and package iOS Simulator app
+        run: |
+          set -euo pipefail
+          app='apps/mobile/ios/build/manual-derived/Build/Products/Debug-iphonesimulator/RunWhale.app'
+          entitlements='apps/mobile/ios/build/manual-derived/Build/Intermediates.noindex/RunWhale.build/Debug-iphonesimulator/RunWhale.build/RunWhale.app-Simulated.xcent'
+          test -d "$app/_CodeSignature"
+          codesign --verify --deep --strict --test-requirement='=identifier "app.runwhale.mobile"' "$app"
+
+          application_identifier="$(plutil -extract application-identifier raw -o - "$entitlements")"
+          case "$application_identifier" in
+            app.runwhale.mobile|*.app.runwhale.mobile) ;;
+            *) echo "Invalid simulator application identifier: $application_identifier" >&2; exit 1 ;;
+          esac
+
+          architectures="$(lipo -archs "$app/RunWhale")"
+          [[ " $architectures " == *' arm64 '* ]]
+          [[ " $architectures " == *' x86_64 '* ]]
+
+          mkdir -p native-build-output
+          ditto -c -k --sequesterRsrc --keepParent "$app" native-build-output/RunWhale-ios-simulator.zip
+
+      - name: Upload iOS Simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: runwhale-ios-simulator-${{ github.run_id }}-${{ github.run_attempt }}
+          path: native-build-output/RunWhale-ios-simulator.zip
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload iOS build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: native-build-logs
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Write iOS build summary
+        if: always()
+        env:
+          REQUESTED_REF: ${{ inputs.ref }}
+        run: |
+          {
+            echo '## iOS Simulator Debug Native Build'
+            echo
+            echo "- Requested ref: \`${REQUESTED_REF}\`"
+            echo "- Commit: \`${{ needs.resolve.outputs.commit }}\`"
+            echo '- Xcode: `26.6 (17F113)`'
+            echo "- CocoaPods: \`${COCOAPODS_VERSION}\`"
+            echo '- Simulator architectures: `arm64 x86_64`'
+            echo "- Result: \`${{ job.status }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,423 @@
+name: Android Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing immutable release tag (vX.Y.Z)
+        required: true
+        type: string
+
+concurrency:
+  group: android-release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.19.0
+  PNPM_VERSION: 11.25.0
+  JAVA_VERSION: '17'
+  ANDROID_NDK_VERSION: 27.2.12479018
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+jobs:
+  validate:
+    name: Validate immutable release tag
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+      commit: ${{ steps.release.outputs.commit }}
+    steps:
+      - name: Check out the tagged source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Validate tag, app version, and main ancestry
+        id: release
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_CREATED: ${{ github.event.created }}
+          EVENT_SHA: ${{ github.sha }}
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Release tag must match vX.Y.Z without a prerelease suffix: $RELEASE_TAG" >&2
+            exit 1
+          fi
+
+          if [[ "$EVENT_NAME" == 'push' && "$EVENT_CREATED" != true ]]; then
+            echo 'Only a newly created immutable tag may trigger an automatic release.' >&2
+            exit 1
+          fi
+          if [[ "$EVENT_NAME" == 'workflow_dispatch' && "$WORKFLOW_REF" != refs/heads/main ]]; then
+            echo 'Manual release recovery must be dispatched from the main branch.' >&2
+            exit 1
+          fi
+
+          git show-ref --verify --quiet "refs/tags/$RELEASE_TAG" || {
+            echo "The release tag does not exist: $RELEASE_TAG" >&2
+            exit 1
+          }
+          git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
+
+          tag_commit="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          if [[ "$EVENT_NAME" == 'push' ]]; then
+            event_commit="$(git rev-parse "$EVENT_SHA^{commit}")"
+            if [[ "$event_commit" != "$tag_commit" ]]; then
+              echo "The pushed tag and checked-out tag resolve to different commits" >&2
+              exit 1
+            fi
+          fi
+
+          if ! git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main; then
+            echo "Tag commit $tag_commit is not reachable from main" >&2
+            exit 1
+          fi
+
+          version="${RELEASE_TAG#v}"
+          app_version="$(node --input-type=module -e "import config from './apps/mobile/app.json' with { type: 'json' }; process.stdout.write(config.expo.version)")"
+          if [[ "$app_version" != "$version" ]]; then
+            echo "apps/mobile/app.json version $app_version does not match tag $RELEASE_TAG" >&2
+            exit 1
+          fi
+
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "commit=$tag_commit" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate release source
+        run: |
+          pnpm release:validate "${{ steps.release.outputs.version }}"
+          pnpm check
+          pnpm test:node-runtime
+          pnpm upstreams:verify
+          pnpm native-modules:verify
+          pnpm secrets:check
+
+      - name: Reject a moved previously published tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.release.outputs.tag }}
+          TAG_COMMIT: ${{ steps.release.outputs.commit }}
+        run: |
+          set -euo pipefail
+          metadata_dir="$RUNNER_TEMP/published-release"
+          release_json="$RUNNER_TEMP/existing-release.json"
+          release_error="$RUNNER_TEMP/release-lookup-error.txt"
+          mkdir -p "$metadata_dir"
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" >"$release_json" 2>"$release_error"; then
+            metadata_asset_id=$(jq -r '[.assets[] | select(.name == "RELEASE_METADATA.txt")][0].id // empty' "$release_json")
+            if [[ -z "$metadata_asset_id" ]]; then
+              echo "::warning title=Release repair required::Existing release $TAG has no RELEASE_METADATA.txt yet; the publish job will repair this partial release."
+              exit 0
+            fi
+            gh api \
+              -H 'Accept: application/octet-stream' \
+              "repos/$GITHUB_REPOSITORY/releases/assets/$metadata_asset_id" \
+              >"$metadata_dir/RELEASE_METADATA.txt"
+            published_commit="$(sed -n 's/^commit=//p' "$metadata_dir/RELEASE_METADATA.txt")"
+            if [[ -z "$published_commit" || "$published_commit" != "$TAG_COMMIT" ]]; then
+              echo "Tag $TAG moved after its GitHub Release was published" >&2
+              exit 1
+            fi
+          elif ! grep -q 'HTTP 404' "$release_error"; then
+            cat "$release_error" >&2
+            exit 1
+          fi
+
+      - name: Write validation summary
+        run: |
+          {
+            echo '## Android release validation'
+            echo
+            echo "- Tag: \`${{ steps.release.outputs.tag }}\`"
+            echo "- App version: \`${{ steps.release.outputs.version }}\`"
+            echo "- Commit: \`${{ steps.release.outputs.commit }}\`"
+            echo '- Commit is reachable from `main`: yes'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build signed Android APK
+    needs: validate
+    runs-on: ubuntu-24.04
+    environment: production
+    outputs:
+      artifact_name: ${{ steps.artifact.outputs.artifact_name }}
+      sha256: ${{ steps.artifact.outputs.sha256 }}
+      signing_cert_sha256: ${{ steps.artifact.outputs.signing_cert_sha256 }}
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the tagged source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle the embedded runtime
+        run: pnpm runtime:bundle
+
+      - name: Generate the Android project
+        run: pnpm --filter @runwhale/mobile exec expo prebuild --no-install --platform android
+
+      - name: Validate generated Android version
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs'
+
+          const expected = process.env.VERSION
+          const gradle = readFileSync('apps/mobile/android/app/build.gradle', 'utf8')
+          const generated = gradle.match(/versionName\s+["']([^"']+)["']/u)?.[1]
+          if (generated !== expected) throw new Error(`Generated Android version ${generated ?? '<missing>'} does not match ${expected}`)
+          NODE
+
+      - name: Install pinned Android NDK
+        run: sdkmanager "ndk;$ANDROID_NDK_VERSION"
+
+      - name: Validate expected Android signing identity
+        env:
+          EXPECTED_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          normalized_fingerprint="$(printf '%s' "$EXPECTED_SIGNING_CERT_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          if [[ ! "$normalized_fingerprint" =~ ^[0-9A-F]{64}$ ]]; then
+            echo 'production variable ANDROID_SIGNING_CERT_SHA256 must be a SHA-256 certificate fingerprint' >&2
+            exit 1
+          fi
+          echo "EXPECTED_SIGNING_CERT_SHA256_NORMALIZED=$normalized_fingerprint" >> "$GITHUB_ENV"
+
+      - name: Import Android signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/runwhale-release.keystore"
+          chmod 600 "$RUNNER_TEMP/runwhale-release.keystore"
+
+      - name: Build signed Android release
+        working-directory: apps/mobile/android
+        env:
+          RUNWHALE_ANDROID_STORE_FILE: ${{ runner.temp }}/runwhale-release.keystore
+          RUNWHALE_ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          RUNWHALE_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RUNWHALE_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Verify and stage the signed APK
+        id: artifact
+        env:
+          TAG: ${{ needs.validate.outputs.tag }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          TAG_COMMIT: ${{ needs.validate.outputs.commit }}
+        run: |
+          set -euo pipefail
+          source_apk='apps/mobile/android/app/build/outputs/apk/release/app-release.apk'
+          test -f "$source_apk"
+
+          apksigner_path="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -n 1)"
+          aapt_path="$(find "$ANDROID_HOME/build-tools" -type f -name aapt -print | sort -V | tail -n 1)"
+          test -x "$apksigner_path" && test -x "$aapt_path"
+          signer_report="$RUNNER_TEMP/android-release-signers.txt"
+          "$apksigner_path" verify --print-certs "$source_apk" > "$signer_report"
+          mapfile -t signing_digests < <(sed -n 's/^Signer #[0-9][0-9]* certificate SHA-256 digest: //p' "$signer_report")
+          if [[ "${#signing_digests[@]}" -ne 1 ]]; then
+            echo "Expected exactly one APK signer, found ${#signing_digests[@]}" >&2
+            exit 1
+          fi
+          actual_signing_fingerprint="$(printf '%s' "${signing_digests[0]}" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          if [[ "$actual_signing_fingerprint" != "$EXPECTED_SIGNING_CERT_SHA256_NORMALIZED" ]]; then
+            echo "APK signing certificate mismatch: expected $EXPECTED_SIGNING_CERT_SHA256_NORMALIZED, got $actual_signing_fingerprint" >&2
+            exit 1
+          fi
+
+          badging="$($aapt_path dump badging "$source_apk" | sed -n '1p')"
+          [[ "$badging" == *"name='app.runwhale.mobile'"* ]]
+          [[ "$badging" == *"versionName='$VERSION'"* ]]
+          unzip -Z1 "$source_apk" >"$RUNNER_TEMP/android-release-apk-entries.txt"
+          grep -q '^lib/arm64-v8a/' "$RUNNER_TEMP/android-release-apk-entries.txt"
+
+          mkdir -p release/android
+          apk="release/android/RunWhale-$VERSION-android.apk"
+          cp "$source_apk" "$apk"
+          (
+            cd release/android
+            sha256sum "$(basename "$apk")" > SHA256SUMS
+          )
+          {
+            echo "tag=$TAG"
+            echo "version=$VERSION"
+            echo "commit=$TAG_COMMIT"
+            echo 'source=apps/mobile/app.json'
+            echo "signing_certificate_sha256=$actual_signing_fingerprint"
+          } > release/android/RELEASE_METADATA.txt
+          echo "apk=$apk" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=runwhale-$VERSION-android-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(cut -d ' ' -f 1 release/android/SHA256SUMS)" >> "$GITHUB_OUTPUT"
+          echo "signing_cert_sha256=$actual_signing_fingerprint" >> "$GITHUB_OUTPUT"
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/runwhale-release.keystore"
+
+      - name: Upload short-lived Android release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact.outputs.artifact_name }}
+          path: release/android
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Write Android build summary
+        if: always()
+        run: |
+          {
+            echo '## Android release build'
+            echo
+            echo "- Tag: \`${{ needs.validate.outputs.tag }}\`"
+            echo "- Version source: \`apps/mobile/app.json\`"
+            echo "- Commit: \`${{ needs.validate.outputs.commit }}\`"
+            echo "- Node.js: \`${NODE_VERSION}\`"
+            echo "- Android NDK: \`${ANDROID_NDK_VERSION}\`"
+            echo "- Signing certificate SHA-256: \`${{ steps.artifact.outputs.signing_cert_sha256 || 'unavailable' }}\`"
+            echo "- APK SHA-256: \`${{ steps.artifact.outputs.sha256 || 'unavailable' }}\`"
+            echo "- Result: \`${{ job.status }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish Android GitHub Release
+    needs: [validate, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified Android release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: release/android
+
+      - name: Validate release provenance and files
+        env:
+          TAG: ${{ needs.validate.outputs.tag }}
+          TAG_COMMIT: ${{ needs.validate.outputs.commit }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          EXPECTED_SHA256: ${{ needs.build.outputs.sha256 }}
+          EXPECTED_SIGNING_CERT_SHA256: ${{ needs.build.outputs.signing_cert_sha256 }}
+        run: |
+          set -euo pipefail
+          apk="release/android/RunWhale-$VERSION-android.apk"
+          test -f "$apk"
+          test -f release/android/SHA256SUMS
+          test -f release/android/RELEASE_METADATA.txt
+          (
+            cd release/android
+            sha256sum --check SHA256SUMS
+          )
+          test "$(sha256sum "$apk" | cut -d ' ' -f 1)" = "$EXPECTED_SHA256"
+          test "$(sed -n 's/^tag=//p' release/android/RELEASE_METADATA.txt)" = "$TAG"
+          test "$(sed -n 's/^version=//p' release/android/RELEASE_METADATA.txt)" = "$VERSION"
+          test "$(sed -n 's/^commit=//p' release/android/RELEASE_METADATA.txt)" = "$TAG_COMMIT"
+          test "$(sed -n 's/^signing_certificate_sha256=//p' release/android/RELEASE_METADATA.txt)" = "$EXPECTED_SIGNING_CERT_SHA256"
+
+      - name: Create or repair the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.validate.outputs.tag }}
+          TAG_COMMIT: ${{ needs.validate.outputs.commit }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          object_type=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.type')
+          object_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')
+          while [[ "$object_type" == tag ]]; do
+            tag_object=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha")
+            object_type=$(jq -r '.object.type' <<<"$tag_object")
+            object_sha=$(jq -r '.object.sha' <<<"$tag_object")
+          done
+          if [[ "$object_type" != commit || "$object_sha" != "$TAG_COMMIT" ]]; then
+            echo "Tag $TAG no longer resolves to validated commit $TAG_COMMIT" >&2
+            exit 1
+          fi
+
+          release_error="$RUNNER_TEMP/release-lookup-error.txt"
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" >/dev/null 2>"$release_error"; then
+            :
+          elif grep -q 'HTTP 404' "$release_error"; then
+            gh release create "$TAG" --verify-tag --title "RunWhale $VERSION" --generate-notes
+          else
+            cat "$release_error" >&2
+            exit 1
+          fi
+          gh release upload "$TAG" \
+            "release/android/RunWhale-$VERSION-android.apk" \
+            release/android/SHA256SUMS \
+            release/android/RELEASE_METADATA.txt \
+            --clobber
+
+      - name: Write Android publish summary
+        if: always()
+        run: |
+          {
+            echo '## Android GitHub Release'
+            echo
+            echo "- Tag: \`${{ needs.validate.outputs.tag }}\`"
+            echo "- Commit: \`${{ needs.validate.outputs.commit }}\`"
+            echo "- APK SHA-256: \`${{ needs.build.outputs.sha256 || 'unavailable' }}\`"
+            echo "- Result: \`${{ job.status }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

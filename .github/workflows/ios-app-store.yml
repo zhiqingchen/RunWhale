@@ -1,0 +1,600 @@
+name: iOS App Store
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing vX.Y.Z release tag to rebuild and upload
+        required: true
+        type: string
+
+concurrency:
+  group: ios-app-store
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.19.0
+  PNPM_VERSION: 11.25.0
+  COCOAPODS_VERSION: 1.17.0
+  XCODE_PATH: /Applications/Xcode_26.6.app/Contents/Developer
+  XCODE_VERSION: '26.6'
+  XCODE_BUILD: 17F113
+  IOS_SDK_VERSION: '26.5'
+  IOS_SDK_NAME: iphoneos26.5
+  BUNDLE_ID: app.runwhale.mobile
+  MINIMUM_IOS_VERSION: '16.4'
+  BUILD_TIME_ZONE: Asia/Shanghai
+
+jobs:
+  preflight:
+    name: Validate release source
+    runs-on: macos-26
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+      commit: ${{ steps.source.outputs.commit }}
+    steps:
+      - name: Resolve immutable release tag
+        id: release
+        env:
+          DISPATCH_TAG: ${{ inputs.tag }}
+          PUSH_TAG: ${{ github.ref_name }}
+          TAG_CREATED: ${{ github.event.created }}
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            tag="$PUSH_TAG"
+            if [[ "$TAG_CREATED" != true ]]; then
+              echo "Only newly created tags may trigger an automatic release; moved tags are rejected." >&2
+              exit 1
+            fi
+          else
+            tag="$DISPATCH_TAG"
+            if [[ "$WORKFLOW_REF" != refs/heads/main ]]; then
+              echo 'Manual release recovery must be dispatched from the main branch.' >&2
+              exit 1
+            fi
+          fi
+
+          if [[ ! "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Release tag must be a stable semantic version in the form vX.Y.Z: $tag" >&2
+            exit 1
+          fi
+
+          version=${tag#v}
+          echo "tag=$tag" >>"$GITHUB_OUTPUT"
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Verify tag target and main ancestry
+        id: source
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          git show-ref --verify --quiet "refs/tags/$RELEASE_TAG" || {
+            echo "Tag does not exist: $RELEASE_TAG" >&2
+            exit 1
+          }
+
+          tag_commit=$(git rev-list -n 1 "refs/tags/$RELEASE_TAG")
+          checkout_commit=$(git rev-parse HEAD)
+          if [[ "$tag_commit" != "$checkout_commit" ]]; then
+            echo "Checked-out commit $checkout_commit does not match $RELEASE_TAG at $tag_commit" >&2
+            exit 1
+          fi
+          if [[ "$EVENT_NAME" == push ]]; then
+            event_commit=$(git rev-parse "$EVENT_SHA^{commit}")
+            if [[ "$event_commit" != "$tag_commit" ]]; then
+              echo "The pushed tag originally targeted $event_commit but now resolves to $tag_commit" >&2
+              exit 1
+            fi
+          fi
+
+          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+          if ! git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main; then
+            echo "$RELEASE_TAG must point to a commit reachable from origin/main" >&2
+            exit 1
+          fi
+
+          echo "commit=$tag_commit" >>"$GITHUB_OUTPUT"
+
+      - name: Verify existing GitHub Release provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_COMMIT: ${{ steps.source.outputs.commit }}
+        run: |
+          set -euo pipefail
+          provenance_dir="$RUNNER_TEMP/release-provenance"
+          release_json="$RUNNER_TEMP/existing-release.json"
+          release_error="$RUNNER_TEMP/release-lookup-error.txt"
+          mkdir -p "$provenance_dir"
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" >"$release_json" 2>"$release_error"; then
+            metadata_asset_id=$(jq -r '[.assets[] | select(.name == "RELEASE_METADATA.txt")][0].id // empty' "$release_json")
+            if [[ -z "$metadata_asset_id" ]]; then
+              if [[ "$EVENT_NAME" == push ]]; then
+                echo "::warning title=Release provenance pending::Existing release $RELEASE_TAG has no RELEASE_METADATA.txt yet; Android may still be publishing it."
+                exit 0
+              fi
+              echo "Existing release $RELEASE_TAG has no RELEASE_METADATA.txt provenance. Repair the Android release before manually recovering iOS." >&2
+              exit 1
+            fi
+            gh api \
+              -H 'Accept: application/octet-stream' \
+              "repos/$GITHUB_REPOSITORY/releases/assets/$metadata_asset_id" \
+              >"$provenance_dir/RELEASE_METADATA.txt"
+            published_commit=$(sed -n 's/^commit=//p' "$provenance_dir/RELEASE_METADATA.txt")
+            if [[ -z "$published_commit" || "$published_commit" != "$RELEASE_COMMIT" ]]; then
+              echo "Existing release $RELEASE_TAG records $published_commit, not $RELEASE_COMMIT" >&2
+              exit 1
+            fi
+          elif ! grep -q 'HTTP 404' "$release_error"; then
+            cat "$release_error" >&2
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate app version and export-compliance declaration
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          pnpm release:validate "$RELEASE_VERSION"
+          expo_config="$RUNNER_TEMP/resolved-expo-config.json"
+          pnpm --filter @runwhale/mobile exec expo config --json >"$expo_config"
+          EXPO_CONFIG_PATH="$expo_config" node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs'
+
+          const config = JSON.parse(readFileSync(process.env.EXPO_CONFIG_PATH, 'utf8'))
+          const expected = {
+            version: process.env.RELEASE_VERSION,
+            bundleIdentifier: process.env.BUNDLE_ID,
+            deploymentTarget: process.env.MINIMUM_IOS_VERSION,
+          }
+          if (config.version !== expected.version) throw new Error(`Resolved Expo version is '${config.version ?? '<missing>'}'; expected '${expected.version}'`)
+          if (config.ios?.bundleIdentifier !== expected.bundleIdentifier) throw new Error(`Resolved Expo bundle identifier is '${config.ios?.bundleIdentifier ?? '<missing>'}'; expected '${expected.bundleIdentifier}'`)
+          if (config.ios?.deploymentTarget !== expected.deploymentTarget) throw new Error(`Resolved Expo deployment target is '${config.ios?.deploymentTarget ?? '<missing>'}'; expected '${expected.deploymentTarget}'`)
+          const encryption = config.ios?.infoPlist?.ITSAppUsesNonExemptEncryption
+          if (typeof encryption !== 'boolean' || encryption !== false) {
+            throw new Error('Resolved Expo config must set ITSAppUsesNonExemptEncryption to the Boolean value false')
+          }
+          NODE
+
+      - name: Run source checks
+        run: |
+          pnpm check
+          pnpm test:node-runtime
+          pnpm upstreams:verify
+          pnpm native-modules:verify
+          pnpm secrets:check
+
+      - name: Bundle embedded Node runtime
+        run: pnpm runtime:bundle
+
+      - name: Summarize preflight
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_COMMIT: ${{ steps.source.outputs.commit }}
+        run: |
+          node_mobile_version=$(node -p "require('./upstreams.lock.json').packages.nodeMobileRuntime.package.version")
+          node_mobile_commit=$(node -p "require('./upstreams.lock.json').packages.nodeMobileRuntime.source.commit")
+          {
+            echo '## iOS App Store preflight'
+            echo
+            echo "- Tag: \`$RELEASE_TAG\`"
+            echo "- Version: \`$RELEASE_VERSION\`"
+            echo "- Commit: \`$RELEASE_COMMIT\`"
+            echo "- Node Mobile: \`$node_mobile_version\` from \`$node_mobile_commit\`"
+            echo '- `ITSAppUsesNonExemptEncryption`: Boolean `false`'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+  build-and-upload:
+    name: Sign and upload IPA
+    needs: preflight
+    runs-on: macos-26
+    environment:
+      name: app-store
+    env:
+      RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+      RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
+      ARCHIVE_PATH: ${{ github.workspace }}/build/ios-release/RunWhale.xcarchive
+      EXPORT_PATH: ${{ github.workspace }}/release/ios
+      DIAGNOSTICS_PATH: ${{ github.workspace }}/release/diagnostics
+      APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      APPSTORE_PROVISIONING_PROFILE_NAME: ${{ vars.APPSTORE_PROVISIONING_PROFILE_NAME }}
+    steps:
+      - name: Generate timestamp build number
+        id: build-number
+        run: |
+          build_number=$(TZ="$BUILD_TIME_ZONE" date '+%Y%m%d.%H%M')
+          if [[ ! "$build_number" =~ ^[0-9]{8}\.[0-9]{4}$ ]]; then
+            echo "Generated CFBundleVersion is invalid: $build_number" >&2
+            exit 1
+          fi
+          ipa_path="$GITHUB_WORKSPACE/release/ios/RunWhale-$RELEASE_VERSION-$build_number.ipa"
+          echo "BUILD_NUMBER=$build_number" >>"$GITHUB_ENV"
+          echo "IPA_PATH=$ipa_path" >>"$GITHUB_ENV"
+          echo "value=$build_number" >>"$GITHUB_OUTPUT"
+          echo "ipa-path=$ipa_path" >>"$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preflight.outputs.commit }}
+          persist-credentials: false
+
+      - name: Validate non-secret App Store configuration
+        env:
+          APPSTORE_ISSUER_ID: ${{ vars.APPSTORE_ISSUER_ID }}
+          APPSTORE_API_KEY_ID: ${{ vars.APPSTORE_API_KEY_ID }}
+          HAS_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY != '' }}
+          HAS_CERTIFICATE: ${{ secrets.APPSTORE_CERTIFICATES_FILE_BASE64 != '' }}
+          HAS_CERTIFICATE_PASSWORD: ${{ secrets.APPSTORE_CERTIFICATES_PASSWORD != '' }}
+        run: |
+          if [[ ! "$BUILD_NUMBER" =~ ^[0-9]{8}\.[0-9]{4}$ ]]; then
+            echo "Generated CFBundleVersion is invalid: $BUILD_NUMBER" >&2
+            exit 1
+          fi
+          test -n "$APPLE_TEAM_ID" || { echo 'APPLE_TEAM_ID is not configured in the app-store environment.' >&2; exit 1; }
+          test -n "$APPSTORE_PROVISIONING_PROFILE_NAME" || { echo 'APPSTORE_PROVISIONING_PROFILE_NAME is not configured in the app-store environment.' >&2; exit 1; }
+          test -n "$APPSTORE_ISSUER_ID" || { echo 'APPSTORE_ISSUER_ID is not configured in the app-store environment.' >&2; exit 1; }
+          test -n "$APPSTORE_API_KEY_ID" || { echo 'APPSTORE_API_KEY_ID is not configured in the app-store environment.' >&2; exit 1; }
+          test "$HAS_API_PRIVATE_KEY" = true || { echo 'APPSTORE_API_PRIVATE_KEY is not configured in the app-store environment.' >&2; exit 1; }
+          test "$HAS_CERTIFICATE" = true || { echo 'APPSTORE_CERTIFICATES_FILE_BASE64 is not configured in the app-store environment.' >&2; exit 1; }
+          test "$HAS_CERTIFICATE_PASSWORD" = true || { echo 'APPSTORE_CERTIFICATES_PASSWORD is not configured in the app-store environment.' >&2; exit 1; }
+          mkdir -p "$(dirname "$ARCHIVE_PATH")" "$EXPORT_PATH" "$DIAGNOSTICS_PATH"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Select pinned Xcode and CocoaPods
+        run: |
+          sudo xcode-select --switch "$XCODE_PATH"
+          xcode_version=$(xcodebuild -version | sed -n '1s/^Xcode //p')
+          xcode_build=$(xcodebuild -version | sed -n '2s/^Build version //p')
+          [[ "$xcode_version" == "$XCODE_VERSION" ]] || { echo "Expected Xcode $XCODE_VERSION, found $xcode_version" >&2; exit 1; }
+          [[ "$xcode_build" == "$XCODE_BUILD" ]] || { echo "Expected Xcode build $XCODE_BUILD, found $xcode_build" >&2; exit 1; }
+          [[ "$(xcrun --sdk iphoneos --show-sdk-version)" == "$IOS_SDK_VERSION" ]] || { echo "Expected iPhoneOS SDK $IOS_SDK_VERSION" >&2; exit 1; }
+          if ! gem list cocoapods --installed --version "$COCOAPODS_VERSION" >/dev/null; then
+            sudo gem install cocoapods --version "$COCOAPODS_VERSION" --no-document
+          fi
+          [[ "$(pod _${COCOAPODS_VERSION}_ --version)" == "$COCOAPODS_VERSION" ]]
+
+      - name: Install dependencies and bundle runtime
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm release:validate "$RELEASE_VERSION"
+          pnpm runtime:bundle
+
+      - name: Generate iOS project
+        run: pnpm --filter @runwhale/mobile exec expo prebuild --platform ios --no-install --clean
+
+      - name: Set and validate generated versions
+        working-directory: apps/mobile/ios
+        run: |
+          xcrun agvtool new-version -all "$BUILD_NUMBER"
+
+          info_plist=RunWhale/Info.plist
+          encryption=$(plutil -extract ITSAppUsesNonExemptEncryption raw -expect bool -o - -- "$info_plist")
+          marketing_version=$(plutil -extract CFBundleShortVersionString raw -expect string -o - -- "$info_plist")
+          bundle_version=$(plutil -extract CFBundleVersion raw -expect string -o - -- "$info_plist")
+          [[ "$encryption" == false ]] || { echo 'Generated Info.plist must set ITSAppUsesNonExemptEncryption to Boolean false.' >&2; exit 1; }
+          [[ "$marketing_version" == "$RELEASE_VERSION" ]] || { echo "Generated marketing version is $marketing_version, expected $RELEASE_VERSION" >&2; exit 1; }
+          [[ "$bundle_version" == "$BUILD_NUMBER" ]] || { echo "Generated build number is $bundle_version, expected $BUILD_NUMBER" >&2; exit 1; }
+
+          build_settings_path="$RUNNER_TEMP/generated-build-settings.json"
+          xcodebuild -project RunWhale.xcodeproj -target RunWhale -configuration Release -sdk iphoneos -showBuildSettings -json >"$build_settings_path"
+          BUILD_SETTINGS_PATH="$build_settings_path" node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs'
+
+          const entries = JSON.parse(readFileSync(process.env.BUILD_SETTINGS_PATH, 'utf8'))
+          const settings = entries.find((entry) => entry.target === 'RunWhale')?.buildSettings
+          if (!settings) throw new Error('RunWhale Release build settings are missing')
+
+          const expected = {
+            PRODUCT_BUNDLE_IDENTIFIER: process.env.BUNDLE_ID,
+            MARKETING_VERSION: process.env.RELEASE_VERSION,
+            CURRENT_PROJECT_VERSION: process.env.BUILD_NUMBER,
+            IPHONEOS_DEPLOYMENT_TARGET: process.env.MINIMUM_IOS_VERSION,
+            INFOPLIST_FILE: 'RunWhale/Info.plist',
+            CODE_SIGN_ENTITLEMENTS: 'RunWhale/RunWhale.entitlements',
+          }
+          for (const [key, value] of Object.entries(expected)) {
+            if (settings[key] !== value) throw new Error(`${key} is '${settings[key] ?? '<missing>'}'; expected '${value}'`)
+          }
+          if (settings.ARCHS !== 'arm64') throw new Error(`Release ARCHS is '${settings.ARCHS}'; expected 'arm64'`)
+          NODE
+
+      - name: Install iOS pods
+        working-directory: apps/mobile/ios
+        run: pod _${COCOAPODS_VERSION}_ install
+
+      - name: Import Apple Distribution certificate
+        uses: apple-actions/import-codesign-certs@5142e029c445c10ffc7149d172e540235a065466 # v7.0.0
+        with:
+          p12-file-base64: ${{ secrets.APPSTORE_CERTIFICATES_FILE_BASE64 }}
+          p12-password: ${{ secrets.APPSTORE_CERTIFICATES_PASSWORD }}
+
+      - name: Download App Store provisioning profile
+        id: profiles
+        uses: apple-actions/download-provisioning-profiles@7fa56f793274ba880be33b875dae5fe62519bc11 # v4.0.1
+        with:
+          bundle-id: ${{ env.BUNDLE_ID }}
+          profile-type: IOS_APP_STORE
+          issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+
+      - name: Select configured provisioning profile
+        env:
+          DOWNLOADED_PROFILES: ${{ steps.profiles.outputs.profiles }}
+        run: |
+          node --input-type=module <<'NODE'
+          const profiles = JSON.parse(process.env.DOWNLOADED_PROFILES || '[]')
+          const expectedName = process.env.APPSTORE_PROVISIONING_PROFILE_NAME
+          if (!profiles.some((profile) => profile.name === expectedName && profile.type === 'IOS_APP_STORE')) {
+            const available = profiles.map((profile) => `${profile.name} (${profile.type})`).join(', ') || 'none'
+            throw new Error(`Configured IOS_APP_STORE profile '${expectedName}' was not downloaded. Available: ${available}`)
+          }
+          NODE
+
+      - name: Archive signed iOS app
+        run: |
+          set -o pipefail
+          xcodebuild clean archive \
+            -workspace apps/mobile/ios/RunWhale.xcworkspace \
+            -scheme RunWhale \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$ARCHIVE_PATH" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="$APPSTORE_PROVISIONING_PROFILE_NAME" \
+            CODE_SIGN_IDENTITY='Apple Distribution'
+
+      - name: Validate signed archive
+        run: |
+          bash scripts/validate-ios-app-store-artifact.sh \
+            Archive \
+            "$ARCHIVE_PATH/Products/Applications/RunWhale.app" \
+            "$BUNDLE_ID" \
+            "$RELEASE_VERSION" \
+            "$BUILD_NUMBER" \
+            "$MINIMUM_IOS_VERSION" \
+            "$APPLE_TEAM_ID" \
+            "$APPSTORE_PROVISIONING_PROFILE_NAME" \
+            "$DIAGNOSTICS_PATH/archive-validation.md" \
+            "$XCODE_BUILD" \
+            "$IOS_SDK_NAME"
+
+      - name: Create ExportOptions.plist
+        env:
+          EXPORT_OPTIONS_PATH: ${{ runner.temp }}/ExportOptions.plist
+        run: |
+          python3 - "$EXPORT_OPTIONS_PATH" "$APPLE_TEAM_ID" "$BUNDLE_ID" "$APPSTORE_PROVISIONING_PROFILE_NAME" <<'PY'
+          import plistlib
+          import sys
+
+          path, team_id, bundle_id, profile_name = sys.argv[1:]
+          options = {
+              'destination': 'export',
+              'manageAppVersionAndBuildNumber': False,
+              'method': 'app-store-connect',
+              'provisioningProfiles': {bundle_id: profile_name},
+              'signingCertificate': 'Apple Distribution',
+              'signingStyle': 'manual',
+              'stripSwiftSymbols': True,
+              'teamID': team_id,
+          }
+          with open(path, 'wb') as output:
+              plistlib.dump(options, output, fmt=plistlib.FMT_XML, sort_keys=True)
+          PY
+          plutil -lint "$EXPORT_OPTIONS_PATH"
+
+      - name: Export signed IPA
+        env:
+          EXPORT_OPTIONS_PATH: ${{ runner.temp }}/ExportOptions.plist
+        run: |
+          set -o pipefail
+          export_output="$RUNNER_TEMP/exported-ipa"
+          mkdir -p "$export_output"
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$export_output" \
+            -exportOptionsPlist "$EXPORT_OPTIONS_PATH"
+
+          shopt -s nullglob
+          exported_ipas=("$export_output"/*.ipa)
+          if [[ ${#exported_ipas[@]} -ne 1 ]]; then
+            echo "Expected exactly one exported IPA, found ${#exported_ipas[@]}" >&2
+            exit 1
+          fi
+          mv "${exported_ipas[0]}" "$IPA_PATH"
+
+      - name: Validate exported IPA
+        run: |
+          ipa_contents="$RUNNER_TEMP/validated-ipa"
+          mkdir -p "$ipa_contents"
+          ditto -x -k "$IPA_PATH" "$ipa_contents"
+          shopt -s nullglob
+          exported_apps=("$ipa_contents/Payload"/*.app)
+          if [[ ${#exported_apps[@]} -ne 1 ]]; then
+            echo "Expected exactly one app in the IPA, found ${#exported_apps[@]}" >&2
+            exit 1
+          fi
+
+          bash scripts/validate-ios-app-store-artifact.sh \
+            IPA \
+            "${exported_apps[0]}" \
+            "$BUNDLE_ID" \
+            "$RELEASE_VERSION" \
+            "$BUILD_NUMBER" \
+            "$MINIMUM_IOS_VERSION" \
+            "$APPLE_TEAM_ID" \
+            "$APPSTORE_PROVISIONING_PROFILE_NAME" \
+            "$DIAGNOSTICS_PATH/ipa-validation.md" \
+            "$XCODE_BUILD" \
+            "$IOS_SDK_NAME"
+
+          (
+            cd "$EXPORT_PATH"
+            shasum -a 256 "$(basename "$IPA_PATH")" >SHA256SUMS
+          )
+          cat "$DIAGNOSTICS_PATH/archive-validation.md" "$DIAGNOSTICS_PATH/ipa-validation.md" >>"$GITHUB_STEP_SUMMARY"
+          ipa_sha256=$(awk '{print $1}' "$EXPORT_PATH/SHA256SUMS")
+          {
+            echo
+            echo "- IPA SHA-256: \`$ipa_sha256\`"
+            echo "- Xcode: \`$XCODE_VERSION ($XCODE_BUILD)\`"
+            echo "- Source commit: \`$RELEASE_COMMIT\`"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Upload signed IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: runwhale-${{ env.RELEASE_VERSION }}-${{ steps.build-number.outputs.value }}-ios
+          path: |
+            ${{ steps.build-number.outputs.ipa-path }}
+            ${{ env.EXPORT_PATH }}/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Package dSYMs
+        if: always()
+        run: |
+          if [[ -d "$ARCHIVE_PATH/dSYMs" ]]; then
+            ditto -c -k --sequesterRsrc --keepParent "$ARCHIVE_PATH/dSYMs" "$DIAGNOSTICS_PATH/RunWhale-$RELEASE_VERSION-$BUILD_NUMBER-dSYMs.zip"
+          fi
+
+      - name: Write sanitized build diagnostics
+        if: always()
+        env:
+          PRE_UPLOAD_STATUS: ${{ job.status }}
+        run: |
+          mkdir -p "$DIAGNOSTICS_PATH"
+          archive_state=absent
+          ipa_state=absent
+          [[ -d "$ARCHIVE_PATH" ]] && archive_state=present
+          [[ -f "$IPA_PATH" ]] && ipa_state=present
+          {
+            echo "tag=$RELEASE_TAG"
+            echo "version=$RELEASE_VERSION"
+            echo "build=$BUILD_NUMBER"
+            echo "commit=$RELEASE_COMMIT"
+            echo "xcode=$XCODE_VERSION"
+            echo "xcode_build=$XCODE_BUILD"
+            echo "sdk=$IOS_SDK_NAME"
+            echo "cocoapods=$COCOAPODS_VERSION"
+            echo "archive=$archive_state"
+            echo "ipa=$ipa_state"
+            echo "pre_upload_status=$PRE_UPLOAD_STATUS"
+            echo 'ITSAppUsesNonExemptEncryption=false (Boolean)'
+          } >"$DIAGNOSTICS_PATH/sanitized-build.log"
+
+      - name: Upload iOS diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runwhale-${{ env.RELEASE_VERSION }}-${{ steps.build-number.outputs.value }}-ios-diagnostics
+          path: ${{ env.DIAGNOSTICS_PATH }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Revalidate immutable tag before upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          object_type=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.type')
+          object_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')
+          while [[ "$object_type" == tag ]]; do
+            tag_object=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha")
+            object_type=$(jq -r '.object.type' <<<"$tag_object")
+            object_sha=$(jq -r '.object.sha' <<<"$tag_object")
+          done
+          if [[ "$object_type" != commit || "$object_sha" != "$RELEASE_COMMIT" ]]; then
+            echo "Tag $RELEASE_TAG no longer resolves to validated commit $RELEASE_COMMIT" >&2
+            exit 1
+          fi
+
+      - name: Upload IPA to App Store Connect
+        id: app-store-upload
+        uses: apple-actions/upload-testflight-build@b5270248e0ee7f200475125bddf7c0e5616386b5 # v4.1.0
+        with:
+          app-path: ${{ steps.build-number.outputs.ipa-path }}
+          app-type: ios
+          issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          backend: appstore-api
+          # Processing is not awaited, so the verified Boolean in the IPA is authoritative.
+          uses-non-exempt-encryption: 'false'
+          wait-for-processing: 'false'
+
+      - name: Remove App Store API key material
+        if: always()
+        continue-on-error: true
+        env:
+          API_KEY_ID: ${{ vars.APPSTORE_API_KEY_ID }}
+        run: |
+          api_key_path="$HOME/private_keys/AuthKey_${API_KEY_ID}.p8"
+          if [[ -f "$api_key_path" ]]; then
+            chmod u+w "$api_key_path"
+            rm -f -- "$api_key_path"
+          fi
+
+      - name: Record App Store Connect acceptance
+        continue-on-error: true
+        run: |
+          {
+            echo
+            echo '## App Store Connect upload'
+            echo
+            echo "Apple accepted \`RunWhale $RELEASE_VERSION ($BUILD_NUMBER)\` using the \`${{ steps.app-store-upload.outputs.upload-backend }}\` backend. Processing was not awaited."
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Write final iOS release status
+        if: always()
+        continue-on-error: true
+        run: |
+          {
+            echo
+            echo '## iOS release result'
+            echo
+            echo "- Tag: \`$RELEASE_TAG\`"
+            echo "- Version / build: \`$RELEASE_VERSION ($BUILD_NUMBER)\`"
+            echo "- Source commit: \`$RELEASE_COMMIT\`"
+            echo "- App Store upload step: \`${{ steps.app-store-upload.outcome || 'not-run' }}\`"
+            echo "- Result: \`${{ job.status }}\`"
+            echo '- App Store processing, testing, review, and release were not automated.'
+          } >>"$GITHUB_STEP_SUMMARY"
