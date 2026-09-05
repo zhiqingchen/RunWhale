@@ -285,9 +285,9 @@ export class NativeProjectStore {
   async flush(projectId: string): Promise<void> {
     if (this.timer) clearTimeout(this.timer)
     this.timer = undefined
-    await this.flushPending(projectId)
-    const unresolved = this.drafts.find((draft) => draft.projectId === projectId)
-    if (unresolved) throw new Error(`Resolve the saved draft for ${unresolved.path} in Files before continuing. ${unresolved.error ?? ''}`.trim())
+    // Runs use runtime files. Keep unsaved edits available in Files without
+    // requiring draft recovery before Agent or Preview can continue.
+    await this.flushPending(projectId).catch(() => undefined)
   }
 
   async apply(projectId: string, path: string): Promise<void> {

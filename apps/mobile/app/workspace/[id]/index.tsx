@@ -28,7 +28,7 @@ type ProjectSessionSummaryStatus = 'loading' | 'failed' | 'ready'
 
 export default function WorkspaceScreen() {
   const { id, sessionId: requestedSessionId, preview, repairPrompt } = useLocalSearchParams<{ id: string; sessionId?: string; preview?: string; repairPrompt?: string }>()
-  const { projects, loadStatus: projectLoadStatus, retryLoad: retryProjectLoad, updateFile, loadFile, refreshFiles, drafts, touchRecentFile } = useProjects()
+  const { projects, loadStatus: projectLoadStatus, retryLoad: retryProjectLoad, updateFile, loadFile, refreshFiles, touchRecentFile } = useProjects()
   const runtime = useRuntime()
   const { t } = useI18n()
   const colors = useAppColors()
@@ -225,9 +225,7 @@ export default function WorkspaceScreen() {
     </View>
   )
 
-  const unresolvedDraft = drafts.find((draft) => draft.projectId === project.id && draft.status !== 'pending')
   const agentPanel = <View style={{ flex: 1 }}>
-    {unresolvedDraft ? <Button size="sm" variant="secondary" onPress={() => { selectFile(unresolvedDraft.path); setFilesMounted(true); setSurface('files') }}><Button.Label numberOfLines={1}>{t('resolveFileDraft', { path: unresolvedDraft.path })}</Button.Label></Button> : null}
     <AgentPanel key={sessionId} projectId={project.id} initialSessionId={sessionId} sessionSummaries={sessions} sessionSummariesRefreshing={sessionSummariesRefreshing} sessionSummaryStatus={sessionSummaryStatus} events={runtime.events} liveEvents={runtime.liveTranscriptEvents} promptInsertion={promptInsertion?.sessionId === sessionId ? promptInsertion : undefined} onPromptInserted={() => setPromptInsertion(undefined)} onRun={async (options) => {
       const { prompt, sessionId, signal } = options
       if (signal?.aborted) throw signal.reason
