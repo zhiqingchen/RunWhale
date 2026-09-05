@@ -1,0 +1,16 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.INTERNET" />
+  <application android:networkSecurityConfig="@xml/runwhale_network_security_config">
+    <activity
+      android:name="com.runwhale.nodehost.NativePreviewActivity"
+      android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode|smallestScreenSize|density|fontScale|layoutDirection|locale"
+      android:enableOnBackInvokedCallback="false"
+      android:excludeFromRecents="true"
+      android:exported="false"
+      android:launchMode="singleTask"
+      android:screenOrientation="unspecified"
+      android:taskAffinity="${applicationId}.nativePreview"
+      android:theme="@style/RunWhaleNativePreviewTheme"
+      android:windowSoftInputMode="adjustResize" />
+  </application>
+</manifest>

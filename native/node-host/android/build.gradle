@@ -1,0 +1,53 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.runwhale.nodehost'
+version = '1.0.0'
+
+def runtimePackageJson = providers.exec {
+  workingDir projectDir.parentFile
+  commandLine 'node', '--print',
+    "require.resolve('@runwhale/node-mobile-runtime/package.json', { paths: [process.cwd()] })"
+}.standardOutput.asText.get().trim()
+def runtimeRoot = file(runtimePackageJson).parentFile
+
+android {
+  namespace 'com.runwhale.nodehost'
+  ndkVersion rootProject.ext.ndkVersion
+
+  defaultConfig {
+    minSdkVersion 24
+    versionName '1.0.0'
+    externalNativeBuild {
+      cmake {
+        cppFlags '-std=c++20 -fexceptions -frtti'
+        arguments '-DANDROID_STL=c++_shared',
+          "-DNODE_MOBILE_RUNTIME_ROOT=${runtimeRoot.absolutePath}"
+      }
+    }
+    ndk {
+      abiFilters 'arm64-v8a'
+    }
+  }
+
+  externalNativeBuild {
+    cmake {
+      path 'src/main/cpp/CMakeLists.txt'
+      version '3.22.1'
+    }
+  }
+
+  sourceSets {
+    main.jniLibs.srcDirs = ["${runtimeRoot}/android/jni"]
+    main.assets.srcDirs = ['../runtime', "${runtimeRoot}/runtime"]
+  }
+}
+
+dependencies {
+  implementation 'androidx.appcompat:appcompat:1.7.1'
+  compileOnly 'com.facebook.react:react-android'
+  testImplementation 'junit:junit:4.13.2'
+  testImplementation 'org.json:json:20180813'
+}
