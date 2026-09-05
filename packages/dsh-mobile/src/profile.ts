@@ -11,7 +11,7 @@ import * as GoalRoundDriver from '@deepseek-ai/dsh-goal-round-driver'
 import LlmRuntime, { createUserMessage, LlmAdapter, MessageId, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
 import * as LlmPiAi from '@deepseek-ai/dsh-llm-pi-ai'
 import PlanModeController from '@deepseek-ai/dsh-plan-mode'
-import SessionStore, { SessionId, SessionLogOffset, type SessionEvent } from '@deepseek-ai/dsh-session'
+import SessionStore, { interruptedTurnClosers, SessionId, SessionLogOffset, type SessionEvent } from '@deepseek-ai/dsh-session'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import SkillRegistry from '@deepseek-ai/dsh-skill'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -169,9 +169,13 @@ export class MobileHarness {
     const id = SessionId(sessionId)
     const agent = this.context.agents.get(id)
     if (!agent && seed.length > 0) {
+      // Mobile restores through agents.create rather than DSH's persistence
+      // loader, so apply the same crash-tail closure before the next request.
+      // Missing tool outcomes stay explicitly unknown; recorded work is kept.
+      const events = seed as readonly SessionEvent[]
       return this.context.agents.create({
         sessionId: id,
-        seed: seed as readonly SessionEvent[],
+        seed: [...events, ...interruptedTurnClosers(events)],
         agentOptions: { provider: this.provider, model: this.model },
       }).then(({ agent: restored }) => this.initializeSession(sessionId, restored, true, seed.length))
     }

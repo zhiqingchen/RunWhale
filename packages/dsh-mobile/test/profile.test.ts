@@ -152,6 +152,56 @@ describe('DSH mobile profile', () => {
     await restarted.dispose()
   })
 
+  it('retries a session whose first turn was interrupted before completion', async () => {
+    const options = { mode: 'deterministic' as const, secrets: new MemorySecrets(), deterministicReply: 'Recovered.' }
+    const first = await createMobileHarness(options)
+    class PreviewAdapter extends LlmAdapter {
+      constructor(private requested = false) { super() }
+      async *stream(input: GenerateOptions): AsyncIterable<StreamChunk> {
+        const pending = new Set<string>()
+        for (const message of input.messages) for (const block of message.content) {
+          if (block.type === 'tool-call') pending.add(block.id)
+          if (block.type === 'tool-result') pending.delete(block.toolCallId)
+        }
+        if (pending.size) throw new Error('Provider rejected an unmatched tool call')
+        if (!this.requested) {
+          this.requested = true
+          const id = ToolCallId('interrupted-preview')
+          yield { type: 'block-start', index: 0, blockType: 'tool-call' }
+          yield { type: 'tool-call-delta', index: 0, id, name: 'preview_run', argumentsDelta: '{}' }
+          yield { type: 'block-end', index: 0, block: { type: 'tool-call', id, name: 'preview_run', arguments: '{}' } }
+          yield { type: 'finish', reason: { kind: 'tool-calls' } }
+        } else {
+          yield { type: 'block-start', index: 0, blockType: 'text' }
+          yield { type: 'block-end', index: 0, block: { type: 'text', text: 'Recovered.' } }
+          yield { type: 'finish', reason: { kind: 'stop' } }
+        }
+      }
+    }
+    first.context.llm.registerAdapter(['preview-test'], new PreviewAdapter())
+    const preview = new MobileHarness(first.context, 'preview-test', 'test', new Map(), () => 'review')
+    const initial = await preview.run({ sessionId: 'interrupted-first-turn', prompt: 'Create the game' })
+    await first.dispose()
+    const seed = initial.events.slice(0, initial.events.findIndex((event) => event.type === 'tool/result'))
+    expect(seed.at(-1)?.type).toBe('tool/call')
+    const restarted = await createMobileHarness(options)
+    restarted.context.llm.registerAdapter(['preview-test'], new PreviewAdapter(true))
+    const retry = new MobileHarness(restarted.context, 'preview-test', 'test', new Map(), () => 'review')
+    const streamed: typeof initial.events[number][] = []
+    try {
+      const result = await retry.run({ sessionId: 'interrupted-first-turn', prompt: 'Create the game', seed: JSON.parse(JSON.stringify(seed)), onEvent: (event) => streamed.push(event) })
+      expect(result.failure).toBeUndefined()
+      expect(result.text).toBe('Recovered.')
+      expect(result.events.find((event) => event.type === 'tool/result')).toMatchObject({
+        data: { error: { code: 'TOOL_OUTCOME_UNKNOWN' }, message: { source: { callId: 'interrupted-preview' } } },
+      })
+      expect(result.events.slice(0, seed.length)).toEqual(seed)
+      expect(streamed).toEqual(result.events.slice(seed.length))
+      expect(result.events.map((event) => event.seq)).toEqual(result.events.map((_, index) => index))
+      expect(result.events.filter((event) => event.type === 'turn/end')).toHaveLength(2)
+    } finally { await restarted.dispose() }
+  })
+
   it('does not start a DSH turn when the run signal is already cancelled', async () => {
     const harness = await createMobileHarness({ mode: 'deterministic', secrets: new MemorySecrets(), deterministicReply: 'Should not finish.' })
     const controller = new AbortController()
