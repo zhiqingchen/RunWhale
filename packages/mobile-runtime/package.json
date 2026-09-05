@@ -1,0 +1,65 @@
+{
+  "name": "@runwhale/mobile-runtime",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./git": {
+      "types": "./src/git.ts",
+      "default": "./src/git.ts"
+    },
+    "./github-ssh": {
+      "types": "./src/github-ssh.ts",
+      "default": "./src/github-ssh.ts"
+    },
+    "./host-server": {
+      "types": "./src/host-server.ts",
+      "default": "./src/host-server.ts"
+    },
+    "./manifest": {
+      "types": "./src/manifest.ts",
+      "default": "./src/manifest.ts"
+    },
+    "./native-preview-modules": {
+      "types": "./src/native-preview-modules.ts",
+      "default": "./src/native-preview-modules.ts"
+    },
+    "./package-installer": {
+      "types": "./src/package-installer.ts",
+      "default": "./src/package-installer.ts"
+    },
+    "./sandbox": {
+      "types": "./src/sandbox.ts",
+      "default": "./src/sandbox.ts"
+    },
+    "./task-runner": {
+      "types": "./src/task-runner.ts",
+      "default": "./src/task-runner.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@runwhale/mobile-protocol": "workspace:*",
+    "isomorphic-git": "1.41.9",
+    "ssh2": "1.17.0",
+    "typescript": "6.0.3",
+    "ws": "8.21.3",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@types/ssh2": "1.15.5",
+    "@types/ws": "8.18.1",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  }
+}
