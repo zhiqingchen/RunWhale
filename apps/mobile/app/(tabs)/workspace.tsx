@@ -504,7 +504,8 @@ export default function WorkspaceScreen() {
         autoFocus
         selectTextOnFocus
         accessibilityLabel={t('projectNameInput')}
-        value={projectRenameState.draft}
+        // Keep native composition intact across the dialog Portal's delayed updates.
+        defaultValue={projectRenameState.draft}
         onChangeText={(draft) => dispatchProjectRename({ type: 'change', draft })}
         onSubmitEditing={() => { void submitProjectRename() }}
         returnKeyType="done"

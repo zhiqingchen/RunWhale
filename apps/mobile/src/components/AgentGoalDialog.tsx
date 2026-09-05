@@ -72,7 +72,9 @@ export function AgentGoalDialog({
     <View style={styles.field}>
       <Text style={styles.label}>{t('goalObjectiveLabel')}</Text>
       <TextInput
-        value={objective}
+        // Portal updates arrive after native input events; a controlled value
+        // can replay stale text and cancel iOS Pinyin composition.
+        defaultValue={objective}
         onChangeText={setObjective}
         multiline
         editable={!busy}
