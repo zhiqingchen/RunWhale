@@ -1,0 +1,22 @@
+{
+  "name": "@runwhale/native-preview-shims",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./async-storage": {
+      "types": "./src/async-storage.ts",
+      "default": "./src/async-storage.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "expo-modules-core": "57.0.15"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}
