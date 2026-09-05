@@ -13,7 +13,7 @@ describe('project templates', () => {
     expect(files.find((file) => file.path === 'index.html')?.content).toContain('src="/src/main.tsx"')
     const entry = files.find((file) => file.path === 'src/main.tsx')?.content
     expect(entry).toContain('Hello RunWhale')
-    expect(entry).toContain("color: '#ffffff'")
+    expect(files.find((file) => file.path === 'src/styles.css')?.content).toContain('color: #ffffff')
     expect(entry).not.toContain('Start building')
     expect(files.find((file) => file.path === 'README.md')?.content).toContain('npm install\nnpm start')
     expect(projectPreviewConfiguration({ id: 'web-project', name: 'Web Project', description: '', updatedAt: 1, files }, 'android')).toEqual({ target: 'web', platform: 'web' })

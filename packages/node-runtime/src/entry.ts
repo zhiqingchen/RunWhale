@@ -7,6 +7,7 @@ import { RunWhaleRuntimeHost } from './runtime-host.js'
 import { createSessionAgentDriver } from './session-agent-driver.js'
 import { installJitlessFetch } from './mobile-fetch.js'
 import { EMBEDDED_NPM_VERSION, prepareEmbeddedNpm, prepareModuleStore } from './runtime-assets.js'
+import { watchTransportRecovery } from './transport-recovery.js'
 
 const runtimeRoot = resolve(process.argv[2] ?? process.cwd())
 const agentRuntimeUrl = new URL('./runwhale-agent-runtime.mjs', import.meta.url).href
@@ -41,6 +42,7 @@ const harnessOptions = (mode: 'deepseek' | 'deterministic', provider: MobileMode
   requestUserQuestions: (request, signal) => requireHost().requestAgentQuestions(request, signal),
   requestPackageInstall: (sessionId, projectRoot, dependencies, offline, signal) => requireHost().requestAgentPackageInstall(sessionId, projectRoot, dependencies, offline, signal),
   workspaceServices: {
+    moduleStore,
     runNodeTask: (projectRoot, entry, args, timeoutMs, signal) => requireHost().runAgentNodeTask(projectRoot, entry, args, timeoutMs, signal),
     runPreview: (projectRoot, sessionId, signal) => requireHost().runAgentPreview(projectRoot, sessionId, signal),
     reloadPreview: (projectRoot, sessionId, signal) => requireHost().reloadAgentPreview(projectRoot, sessionId, signal),
@@ -77,11 +79,23 @@ host = new RunWhaleRuntimeHost({
 })
 const info = await host.start()
 const output = join(runtimeRoot, '.runwhale', 'host.json')
-const temporary = `${output}.tmp`
-await writeFile(temporary, `${JSON.stringify({ ...info, nodeVersion: process.versions.node, npmVersion: EMBEDDED_NPM_VERSION, pid: process.pid })}\n`, { mode: 0o600 })
-await rename(temporary, output)
+await publishHostInfo(info)
 
-for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => { void host.stop() })
+const stopRecovery = platform === 'ios' ? watchTransportRecovery(join(runtimeRoot, '.runwhale'), async (request) => {
+  const refreshed = await requireHost().reconnectTransport()
+  await publishHostInfo(refreshed, request.id)
+  // A slow checkpoint must not block another transport repair. foreground()
+  // claims its revision synchronously before waiting for Agent suspension.
+  void requireHost().foreground(request.revision).catch(() => { console.error('Embedded host foreground recovery failed') })
+}, () => { console.error('Embedded host transport recovery failed') }) : undefined
+
+for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => { stopRecovery?.(); void host.stop() })
+
+async function publishHostInfo(info: Awaited<ReturnType<RunWhaleRuntimeHost['start']>>, recoveryId?: string): Promise<void> {
+  const temporary = `${output}.tmp`
+  await writeFile(temporary, `${JSON.stringify({ ...info, nodeVersion: process.versions.node, npmVersion: EMBEDDED_NPM_VERSION, pid: process.pid, ...(recoveryId ? { recoveryId } : {}) })}\n`, { mode: 0o600 })
+  await rename(temporary, output)
+}
 
 function deterministicReply(): string {
   return 'The deterministic runtime request completed.'

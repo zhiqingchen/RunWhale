@@ -24,6 +24,7 @@ export interface MobilePackageInstallOutcome {
 }
 
 export interface MobileWorkspaceServices {
+  moduleStore?: string
   requestPackageInstall?: (sessionId: string, projectRoot: string, dependencies: Record<string, string>, offline: boolean | undefined, signal: AbortSignal) => Promise<MobilePackageInstallOutcome>
   runNodeTask?: (projectRoot: string, entry: string, args: string[] | undefined, timeoutMs: number | undefined, signal: AbortSignal) => Promise<{ id: string; exitCode: number; output: string; durationMs: number; error?: string }>
   runPreview?: (projectRoot: string, sessionId: string, signal: AbortSignal) => Promise<PreviewEndpoint>
@@ -185,7 +186,7 @@ export function registerMobileWorkspaceTools(
               const { path } = codeArgs(args)
               const filePath = requiredString(path, 'path')
               const source = await fileSystem.readText(filePath)
-              const service = new MobileTypeScriptService([{ path: filePath, content: source.content }])
+              const service = new MobileTypeScriptService([{ path: filePath, content: source.content }], { root, moduleStore: services.moduleStore })
               try { return service.diagnostics(filePath).map((diagnostic) => ({ ...diagnostic })) as CodeJsonValue } finally { service.dispose() }
             },
             async gitDiff(args): Promise<CodeJsonValue> {
@@ -322,7 +323,7 @@ export function registerMobileWorkspaceTools(
     isConcurrencySafe: () => true,
     async execute({ path }, exec) {
       const source = await fileSystemFor(exec.agent).readText(path)
-      const service = new MobileTypeScriptService([{ path, content: source.content }])
+      const service = new MobileTypeScriptService([{ path, content: source.content }], { root: executionRoot(exec.agent), moduleStore: services.moduleStore })
       try { return { path, diagnostics: service.diagnostics(path).map((diagnostic) => ({ ...diagnostic })) } } finally { service.dispose() }
     },
   }))

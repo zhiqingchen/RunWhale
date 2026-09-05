@@ -4,7 +4,8 @@ import { PendingButton } from '@/components/PendingButton'
 import { ProviderLogo } from '@/components/ProviderLogo'
 import { ChevronDown, CircleCheck, Plus } from '@/components/icons'
 import { useI18n } from '@/i18n'
-import { MOBILE_MODEL_OPTIONS, usePreferences } from '@/state/preferences'
+import { usePreferences } from '@/state/preferences'
+import { MOBILE_DEFAULT_MODEL_PROFILES } from '@/utils/model-catalog'
 import { useRuntime } from '@/state/runtime'
 import { settingsControlColorsFor } from '@/theme/settings-control-colors'
 import { useAppColors } from '@/theme/tokens'
@@ -331,7 +332,7 @@ export function ModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input
           accessibilityRole={settingsAccessibilityContract.buttonRole}
           onPress={() => {
             setBaseURLDraft('')
-            setModelDrafts(MOBILE_MODEL_OPTIONS[modelProvider].map((id) => modelDraft({ id })))
+            setModelDrafts(MOBILE_DEFAULT_MODEL_PROFILES[modelProvider].models.map(modelDraft))
             setModelSettingsSaved(false)
           }}
           style={styles.compactButton}

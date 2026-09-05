@@ -200,9 +200,19 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
         if (native.state === 'failed' || native.state === 'stopping') {
           throw new Error(native.lastError ?? NODE_RELAUNCH_REQUIRED)
         }
+        // A suspended iOS listener may be defunct even while Node is alive.
+        // Repair it through the native mailbox, then wait for that publication.
+        const previousHost = parseRuntimeHostInfo(NodeHost.readHostInfo())
+        const recoveryId = retry && native.state === 'running' && Platform.OS === 'ios'
+          ? await withinRuntimeBootDeadline(bootDeadlineAt, () => NodeHost.recoverTransport(), RUNTIME_BOOT_PROBE_TIMEOUT_MS, signal)
+          : undefined
+        // Foreground and Retry can coalesce into a newer mailbox request. Any
+        // replacement endpoint is acceptable once activation authenticates it.
+        const isRequestedHost = (host: HostInfo) => !recoveryId || host.recoveryId === recoveryId || Boolean(previousHost && !sameHost(previousHost, host))
+        if (!isBootActive()) return
         if (native.state === 'running') {
           const published = parseRuntimeHostInfo(NodeHost.readHostInfo())
-          if (published) {
+          if (published && isRequestedHost(published)) {
             try { if (await activateHost(published, bootDeadlineAt, isBootActive, signal)) return } catch { /* native state can briefly outlive its localhost server */ }
           }
         }
@@ -210,8 +220,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
         publishHost(undefined)
         closeEventSocket()
         let lastBootError: unknown
-        // A running Node instance is process-owned and cannot be restarted.
-        // Recovery only probes its published endpoint.
+        // Only a cold boot starts Node; recovery replaces its transport.
         if (native.state === 'stopped') await withinRuntimeBootDeadline(bootDeadlineAt, () => NodeHost.startBundled(), bootTimeoutMs, signal)
         if (!isBootActive()) return
         const startedNative = NodeHost.snapshot()
@@ -221,7 +230,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
         }
         while (isBootActive() && pollingAction === 'continue' && Date.now() < bootDeadlineAt) {
           const hostInfo = parseRuntimeHostInfo(NodeHost.readHostInfo())
-          if (hostInfo) {
+          if (hostInfo && isRequestedHost(hostInfo)) {
             try {
               if (await activateHost(hostInfo, bootDeadlineAt, isBootActive, signal)) return
             } catch (error) {
@@ -285,6 +294,14 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
           }
           let retryHost = staleHost
           let recoveryError = error
+          if (Platform.OS === 'ios' && reconnectAttempts === 3) {
+            try {
+              await withinRuntimeBootDeadline(recoveryDeadlineAt, () => NodeHost.recoverTransport(), RUNTIME_BOOT_PROBE_TIMEOUT_MS, signal)
+            } catch (repairError) {
+              recoveryError = repairError
+            }
+            if (!isRecoveryActive() || recoveryActivationRevision !== activationRevision || bootPromise) return
+          }
           const published = parseRuntimeHostInfo(NodeHost.readHostInfo())
           if (published && !sameHost(published, staleHost)) {
             retryHost = published

@@ -4,11 +4,16 @@ import UIKit
 /// Process-owned: survives React bridge reloads and never relies on JS timers.
 final class NodeBackgroundLifecycle {
   private let hostInfo: () -> String?
+  private let requestTransportRecovery: (Int) throws -> String?
   private var observers: [NSObjectProtocol] = []
   private var task: UIBackgroundTaskIdentifier = .invalid
   private var revision = 0
+  private var wasBackgrounded = false
 
-  init(hostInfo: @escaping () -> String?) { self.hostInfo = hostInfo }
+  init(hostInfo: @escaping () -> String?, requestTransportRecovery: @escaping (Int) throws -> String?) {
+    self.hostInfo = hostInfo
+    self.requestTransportRecovery = requestTransportRecovery
+  }
 
   func start() {
     dispatchPrecondition(condition: .onQueue(.main))
@@ -33,6 +38,7 @@ final class NodeBackgroundLifecycle {
   }
 
   private func background() {
+    wasBackgrounded = true
     begin()
     let remaining = UIApplication.shared.backgroundTimeRemaining
     let seconds = task == .invalid ? 0 : min(20, max(0, remaining - 8))
@@ -50,8 +56,22 @@ final class NodeBackgroundLifecycle {
 
   private func foreground() {
     revision += 1
-    request("host.foreground", params: ["revision": revision]) {}
+    if wasBackgrounded {
+      wasBackgrounded = false
+      // iOS can reclaim a suspended app's listening socket. Recovery must reach
+      // Node without depending on the HTTP listener that needs to be replaced.
+      _ = try? requestTransportRecovery(revision)
+    } else {
+      request("host.foreground", params: ["revision": revision]) {}
+    }
     end()
+  }
+
+  func recoverTransport() throws -> String? {
+    dispatchPrecondition(condition: .onQueue(.main))
+    guard UIApplication.shared.applicationState == .active else { return nil }
+    revision += 1
+    return try requestTransportRecovery(revision)
   }
 
   private func end() {

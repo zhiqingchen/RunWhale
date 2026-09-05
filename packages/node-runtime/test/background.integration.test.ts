@@ -61,8 +61,30 @@ async function setup(platform: 'ios' | 'android' = 'ios', initialization?: Promi
     host = new RunWhaleRuntimeHost({ root, moduleStore: join(root, 'modules'), platform, agent: createDriver() })
     info = await host.start()
   }
-  return { host, driver, rpc, session, start, record, root, restart, requests: () => requests, release: () => releases.splice(0).forEach((release) => release()) }
+  const reconnect = async (revision: number) => {
+    info = await host.reconnectTransport()
+    await host.foreground(revision)
+  }
+  return { host, driver, rpc, session, start, record, root, restart, reconnect, requests: () => requests, release: () => releases.splice(0).forEach((release) => release()) }
 }
+
+it('continues a paused session exactly once after replacing the localhost listener', async () => {
+  const test = await setup()
+  const running = test.start()
+  await vi.waitFor(() => expect(test.requests()).toBe(1))
+  await test.rpc('host.background', { revision: 1, graceMs: 0 })
+  await running
+  expect((await test.record()).state).toBe('paused')
+  await test.reconnect(2)
+  await vi.waitFor(() => expect(test.requests()).toBe(2))
+  await test.reconnect(3)
+  expect(test.requests()).toBe(2)
+  test.release()
+  await vi.waitFor(async () => expect((await test.record()).state).toBe('completed'))
+  const events = (await test.record()).events
+  expect(events.filter((event: any) => event.type === 'user/message' && event.data.source?.kind === 'user')).toHaveLength(1)
+  expect(events.filter((event: any) => event.type === 'user/message' && event.data.source?.plugin === 'runwhale-background')).toHaveLength(1)
+})
 
 it('finishes a short background switch without cancelling or starting another request', async () => {
   const test = await setup()

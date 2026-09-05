@@ -3,7 +3,7 @@ import { lstat, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import type { MetroBundle, MetroPlatform } from './metro-runtime.js'
 
-const PREVIEW_ARTIFACT_SCHEMA_VERSION = 2
+const PREVIEW_ARTIFACT_SCHEMA_VERSION = 3
 const MAX_PREVIEW_BUNDLE_BYTES = 64 * 1024 * 1024
 const MAX_PREVIEW_ARTIFACT_BYTES = 128 * 1024 * 1024
 
@@ -29,6 +29,8 @@ interface SerializedPreviewArtifact {
   builtAt: number
   durationMs: number
   requestPath: string
+  webDocument?: MetroBundle['webDocument']
+  webDocumentSha256?: string
   code: string
   codeBytes: number
   codeSha256: string
@@ -61,6 +63,7 @@ export async function writePreviewArtifact(
     builtAt: Date.now(),
     durationMs: bundle.durationMs,
     requestPath: bundle.requestPath,
+    ...(bundle.webDocument ? { webDocument: bundle.webDocument, webDocumentSha256: sha256(Buffer.from(JSON.stringify(bundle.webDocument))) } : {}),
     code: code.toString('utf8'),
     codeBytes: code.byteLength,
     codeSha256: sha256(code),
@@ -94,6 +97,7 @@ export async function readPreviewArtifact(
     if (!info.isFile() || info.size > MAX_PREVIEW_ARTIFACT_BYTES) return undefined
     const parsed = JSON.parse(await readFile(path, 'utf8')) as unknown
     if (!isSerializedPreviewArtifact(parsed, key)) return undefined
+    if (parsed.webDocument && sha256(Buffer.from(JSON.stringify(parsed.webDocument))) !== parsed.webDocumentSha256) return undefined
     const codeBytes = Buffer.from(parsed.code)
     const mapBytes = Buffer.from(parsed.map)
     if (
@@ -106,6 +110,7 @@ export async function readPreviewArtifact(
     ) return undefined
     return {
       platform: parsed.platform,
+      ...(parsed.webDocument ? { webDocument: parsed.webDocument } : {}),
       code: parsed.code,
       map: parsed.map,
       codeBytes,
@@ -138,6 +143,7 @@ function isSerializedPreviewArtifact(value: unknown, key: PreviewArtifactKey): v
     && value.requestPath === expectedRequestPath(key.platform)
     && isNonNegativeInteger(value.builtAt)
     && isNonNegativeInteger(value.durationMs)
+    && (value.webDocument === undefined || (isWebDocument(value.webDocument) && isSha256(value.webDocumentSha256)))
     && typeof value.code === 'string'
     && isNonNegativeInteger(value.codeBytes)
     && isSha256(value.codeSha256)
@@ -174,4 +180,13 @@ function isSha256(value: unknown): value is string {
 
 function sha256(value: Uint8Array): string {
   return createHash('sha256').update(value).digest('hex')
+}
+
+function isWebDocument(value: unknown): value is NonNullable<MetroBundle['webDocument']> {
+  return isRecord(value)
+    && typeof value.html === 'string'
+    && isRecord(value.assets)
+    && Object.values(value.assets).every((asset) => isRecord(asset)
+      && typeof asset.content === 'string'
+      && typeof asset.contentType === 'string')
 }

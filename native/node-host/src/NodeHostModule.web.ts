@@ -10,6 +10,7 @@ const snapshot: NativeNodeSnapshot = { state: 'stopped' }
 const NodeHost = {
   async start(): Promise<NativeNodeSnapshot> { return snapshot },
   async startBundled(): Promise<NativeNodeSnapshot> { return snapshot },
+  async recoverTransport(): Promise<string | null> { return null },
   async stop(): Promise<NativeNodeSnapshot> { return snapshot },
   snapshot(): NativeNodeSnapshot { return snapshot },
   runtimeRoot(): string { return '' },

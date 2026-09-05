@@ -297,21 +297,61 @@ export function createProjectPersistenceCoordinator(
 }
 
 export function projectTemplateFiles(id: string, name: string, template: ProjectTemplate): ProjectFile[] {
+  const compilerOptions = {
+    target: 'ES2022',
+    lib: template === 'web' ? ['ES2022', 'DOM', 'DOM.Iterable'] : ['ES2022'],
+    module: 'ESNext',
+    moduleResolution: 'Bundler',
+    jsx: 'react-jsx',
+    strict: true,
+    noEmit: true,
+    skipLibCheck: true,
+    allowSyntheticDefaultImports: true,
+    types: template === 'web' ? ['react', 'react-dom'] : ['react'],
+    noUncheckedSideEffectImports: true,
+  }
+  const typeDependencies = { typescript: '6.0.3', '@types/react': '19.2.18' }
   const shared = [
+    {
+      path: 'tsconfig.json',
+      content: `${JSON.stringify({
+        compilerOptions,
+        include: ['**/*.ts', '**/*.tsx'],
+        exclude: ['node_modules', '.runwhale'],
+      }, null, 2)}\n`,
+    },
     { path: '.gitignore', content: '.runwhale/sessions/\n.runwhale/cache/\n.runwhale/package-staging/\n.runwhale/git-audit.jsonl\nnode_modules/\n.expo/\ndist/\n' },
   ]
   if (template === 'web') return [
     ...shared,
     { path: 'runwhale.json', content: manifestContent(id, name, 'web') },
-    { path: 'package.json', content: `${JSON.stringify({ name: id, private: true, version: '1.0.0', scripts: { start: 'vite', build: 'vite build' }, dependencies: { react: '19.2.3', 'react-dom': '19.2.3' }, devDependencies: { vite: '8.2.2' } }, null, 2)}\n` },
+    {
+      path: 'package.json',
+      content: `${JSON.stringify({
+        name: id, private: true, version: '1.0.0',
+        scripts: { start: 'vite', build: 'vite build', typecheck: 'tsc --noEmit' },
+        dependencies: { react: '19.2.3', 'react-dom': '19.2.3' },
+        devDependencies: { ...typeDependencies, '@types/react-dom': '19.2.7', vite: '8.2.2' },
+      }, null, 2)}\n`,
+    },
     { path: 'index.html', content: WEB_TEMPLATE_HTML },
     { path: 'src/main.tsx', content: WEB_TEMPLATE_ENTRY },
+    { path: 'src/styles.css', content: WEB_TEMPLATE_STYLES },
+    { path: 'src/web.d.ts', content: "declare module '*.css' {}\n" },
     { path: 'README.md', content: projectReadme(name) },
   ]
   return [
     ...shared,
     { path: 'runwhale.json', content: manifestContent(id, name, 'expo') },
-    { path: 'package.json', content: `${JSON.stringify({ name: id, private: true, version: '1.0.0', main: 'index.tsx', scripts: { start: 'expo start', android: 'expo start --android', ios: 'expo start --ios' }, dependencies: NATIVE_PREVIEW_TEMPLATE_DEPENDENCIES }, null, 2)}\n` },
+    {
+      path: 'package.json',
+      content: `${JSON.stringify({
+        name: id, private: true, version: '1.0.0', main: 'index.tsx',
+        scripts: { start: 'expo start', android: 'expo start --android', ios: 'expo start --ios', typecheck: 'tsc --noEmit' },
+        dependencies: NATIVE_PREVIEW_TEMPLATE_DEPENDENCIES,
+        devDependencies: typeDependencies,
+      }, null, 2)}\n`,
+    },
     { path: 'app.json', content: `${JSON.stringify({ expo: { name, slug: id, platforms: ['ios', 'android'], plugins: [['expo-sensors', { motionPermission: 'Allow this RunWhale preview to use motion sensors.' }]], android: { blockedPermissions: ['android.permission.ACTIVITY_RECOGNITION'] } } }, null, 2)}\n` },
     { path: 'index.tsx', content: EXPO_TEMPLATE_ENTRY },
     { path: 'README.md', content: projectReadme(name) },
@@ -376,13 +416,20 @@ const WEB_TEMPLATE_HTML = `<!doctype html>
 </html>
 `
 
-const WEB_TEMPLATE_ENTRY = `import React from 'react'
+const WEB_TEMPLATE_STYLES = `* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: #07182a; color: #f7fbff; }
+.app { min-height: 100%; display: grid; place-items: center; padding: 24px; }
+.app h1 { color: #ffffff; font-size: 42px; }
+`
+
+const WEB_TEMPLATE_ENTRY = `import './styles.css'
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 
 function App() {
   return (
-    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#07182a', color: '#f7fbff', fontFamily: 'system-ui, sans-serif' }}>
-      <h1 style={{ color: '#ffffff', fontSize: 42 }}>Hello RunWhale</h1>
+    <main className="app">
+      <h1>Hello RunWhale</h1>
     </main>
   )
 }

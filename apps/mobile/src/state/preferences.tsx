@@ -5,6 +5,9 @@ import type { MobileAgentPreset, MobileModelProvider, MobileModelProviderProfile
 import { isMobilePermissionMode } from '@/utils/permission-mode'
 import { createPreferenceStorageCoordinator } from '@/utils/preference-storage'
 import { normalizedModelProfile } from '@/utils/model-settings'
+import { cloneDefaultModelProfiles, MOBILE_DEFAULT_MODELS, modelProfileOverrides, restoreModelProfiles } from '@/utils/model-catalog'
+
+export { MOBILE_DEFAULT_MODELS } from '@/utils/model-catalog'
 
 export type BusyMessageMode = 'followup' | 'steer'
 export type AppAppearance = 'system' | 'light' | 'dark'
@@ -39,24 +42,6 @@ interface StoredPreferences {
 }
 
 const STORAGE_KEY = 'runwhale.preferences.v1'
-export const MOBILE_DEFAULT_MODELS: Readonly<Record<MobileModelProvider, string>> = {
-  deepseek: 'deepseek-v4-flash',
-  openai: 'gpt-5.4-mini',
-  anthropic: 'claude-sonnet-4-6',
-  google: 'gemini-3.5-flash',
-}
-export const MOBILE_MODEL_OPTIONS: Readonly<Record<MobileModelProvider, readonly string[]>> = {
-  deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro'],
-  openai: ['gpt-5.4-mini', 'gpt-5.4', 'gpt-5.5', 'gpt-5.6-sol'],
-  anthropic: ['claude-sonnet-4-6', 'claude-opus-4-6', 'claude-haiku-4-5'],
-  google: ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.1-pro-preview'],
-}
-export const MOBILE_DEFAULT_MODEL_PROFILES: Readonly<Record<MobileModelProvider, MobileModelProviderProfile>> = {
-  deepseek: { models: MOBILE_MODEL_OPTIONS.deepseek.map((id) => ({ id })) },
-  openai: { models: MOBILE_MODEL_OPTIONS.openai.map((id) => ({ id })) },
-  anthropic: { models: MOBILE_MODEL_OPTIONS.anthropic.map((id) => ({ id })) },
-  google: { models: MOBILE_MODEL_OPTIONS.google.map((id) => ({ id })) },
-}
 const PreferencesContext = createContext<PreferencesContextValue | undefined>(undefined)
 
 export function PreferencesProvider({ children }: PropsWithChildren) {
@@ -71,10 +56,10 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
     void persistence.hydrate(() => AsyncStorage.getItem(STORAGE_KEY), (value) => {
       if (!active) return
       try {
-        const saved = JSON.parse(value ?? '{}') as Partial<Record<keyof StoredPreferences, unknown>>
+        const saved = JSON.parse(value ?? '{}') as Partial<Record<keyof StoredPreferences | 'modelProfilesVersion', unknown>>
         const current = preferencesRef.current
         const provider = isProvider(saved.modelProvider) ? saved.modelProvider : current.modelProvider
-        const modelProfiles = storedModelProfiles(saved.modelProfiles) ?? current.modelProfiles
+        const modelProfiles = restoreModelProfiles(saved.modelProfiles, saved.modelProfilesVersion)
         const availableModels = modelProfiles[provider].models.map((entry) => entry.id)
         const savedModel = typeof saved.model === 'string' ? saved.model.trim() : ''
         const next: StoredPreferences = {
@@ -99,7 +84,8 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
     const next = change(preferencesRef.current)
     preferencesRef.current = next
     setPreferences(next)
-    void persistence.persist(JSON.stringify(next), (value) => AsyncStorage.setItem(STORAGE_KEY, value)).catch(() => undefined)
+    const stored = { ...next, modelProfilesVersion: 2, modelProfiles: modelProfileOverrides(next.modelProfiles) }
+    void persistence.persist(JSON.stringify(stored), (value) => AsyncStorage.setItem(STORAGE_KEY, value)).catch(() => undefined)
   }, [persistence])
   const setBusyMessageMode = useCallback((mode: BusyMessageMode) => {
     update((current) => ({ ...current, busyMessageMode: mode }))
@@ -133,29 +119,4 @@ export function usePreferences(): PreferencesContextValue {
 
 function isProvider(value: unknown): value is MobileModelProvider {
   return value === 'deepseek' || value === 'openai' || value === 'anthropic' || value === 'google'
-}
-
-function cloneDefaultModelProfiles(): Record<MobileModelProvider, MobileModelProviderProfile> {
-  return {
-    deepseek: cloneModelProfile(MOBILE_DEFAULT_MODEL_PROFILES.deepseek),
-    openai: cloneModelProfile(MOBILE_DEFAULT_MODEL_PROFILES.openai),
-    anthropic: cloneModelProfile(MOBILE_DEFAULT_MODEL_PROFILES.anthropic),
-    google: cloneModelProfile(MOBILE_DEFAULT_MODEL_PROFILES.google),
-  }
-}
-
-function storedModelProfiles(value: unknown): Record<MobileModelProvider, MobileModelProviderProfile> | undefined {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
-  try {
-    return Object.fromEntries((Object.keys(MOBILE_DEFAULT_MODELS) as MobileModelProvider[]).map((provider) => {
-      const candidate = (value as Record<string, unknown>)[provider]
-      return [provider, candidate === undefined ? cloneDefaultModelProfiles()[provider] : normalizedModelProfile(candidate)]
-    })) as unknown as Record<MobileModelProvider, MobileModelProviderProfile>
-  } catch {
-    return undefined
-  }
-}
-
-function cloneModelProfile(profile: MobileModelProviderProfile): MobileModelProviderProfile {
-  return { ...(profile.baseURL ? { baseURL: profile.baseURL } : {}), models: profile.models.map((entry) => ({ ...entry })) }
 }

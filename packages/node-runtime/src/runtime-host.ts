@@ -374,6 +374,11 @@ export class RunWhaleRuntimeHost {
     return info
   }
 
+  reconnectTransport() {
+    if (this.state.state !== 'running') throw new Error('Cannot reconnect a stopped runtime')
+    return this.server.reconnect()
+  }
+
   private clearBackgroundWait(suspended: boolean): void {
     if (this.backgroundTimer) clearTimeout(this.backgroundTimer)
     this.backgroundTimer = undefined
@@ -407,7 +412,7 @@ export class RunWhaleRuntimeHost {
     return { suspended: await finished }
   }
 
-  private async foreground(revision: number): Promise<{ resumed: boolean }> {
+  async foreground(revision: number): Promise<{ resumed: boolean }> {
     if (!Number.isSafeInteger(revision) || revision < 0) throw new Error('Invalid foreground revision')
     if (this.options.platform !== 'ios' || revision <= this.backgroundRevision) return { resumed: false }
     this.backgroundRevision = revision

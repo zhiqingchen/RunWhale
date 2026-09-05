@@ -1,5 +1,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
+import type { Socket } from 'node:net'
 import {
   DEFAULT_PROTOCOL_LIMITS,
   EventJournal,
@@ -30,8 +31,12 @@ class RequestTimeoutError extends Error {}
 export class MobileHostServer {
   private server: Server | undefined
   private readonly sockets = new Set<WebSocket>()
+  private readonly connections = new Set<Socket>()
   private readonly active = new Map<string, AbortController>()
   private readonly journal = new EventJournal()
+  private stopped = true
+  private generation = 0
+  private reconnecting: Promise<RpcServerInfo> | undefined
   constructor(private readonly handlers: RpcHandlers) {}
 
   get lastEventSequence(): number { return this.journal.lastSequence }
@@ -39,10 +44,40 @@ export class MobileHostServer {
   eventsAfter(sequence = 0): HostEvent[] { return this.journal.after(sequence) }
 
   async start(): Promise<RpcServerInfo> {
-    if (this.server) throw new Error('mobile host server is already running')
+    if (!this.stopped || this.reconnecting) throw new Error('mobile host server is already running')
+    this.stopped = false
+    const generation = ++this.generation
+    try {
+      return await this.listen(generation)
+    } catch (error) {
+      if (generation === this.generation) this.stopped = true
+      throw error
+    }
+  }
+
+  reconnect(): Promise<RpcServerInfo> {
+    if (this.stopped) return Promise.reject(new Error('mobile host server is stopped'))
+    if (this.reconnecting) return this.reconnecting
+    const generation = this.generation
+    this.reconnecting = (async () => {
+      const server = this.server
+      this.server = undefined
+      await this.closeTransport(server)
+      if (this.stopped || generation !== this.generation) throw new Error('mobile host server is stopped')
+      return this.listen(generation)
+    })().finally(() => { this.reconnecting = undefined })
+    return this.reconnecting
+  }
+
+  private async listen(generation: number): Promise<RpcServerInfo> {
     const token = randomBytes(32).toString('base64url')
     const ws = new WebSocketServer({ noServer: true, maxPayload: DEFAULT_PROTOCOL_LIMITS.maxPayloadBytes })
     const server = createServer((request, response) => { void this.route(request, response, token) })
+    this.server = server
+    server.on('connection', (socket) => {
+      this.connections.add(socket)
+      socket.once('close', () => this.connections.delete(socket))
+    })
     server.on('upgrade', (request, socket, head) => {
       if (!this.authorized(request, token) || new URL(request.url ?? '/', 'http://localhost').pathname !== '/events') {
         socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n')
@@ -57,9 +92,15 @@ export class MobileHostServer {
       })
     })
     await new Promise<void>((resolve, reject) => {
+      const closed = () => reject(new Error('mobile host server stopped before listening'))
+      server.once('close', closed)
       server.once('error', reject)
-      server.listen(0, '127.0.0.1', resolve)
+      server.listen(0, '127.0.0.1', () => {
+        server.removeListener('close', closed)
+        resolve()
+      })
     })
+    if (this.stopped || generation !== this.generation) throw new Error('mobile host server is stopped')
     const address = server.address()
     if (!address || typeof address === 'string') throw new Error('host server did not bind a TCP port')
     this.server = server
@@ -80,13 +121,27 @@ export class MobileHostServer {
   }
 
   async stop(): Promise<void> {
+    this.stopped = true
+    this.generation += 1
     for (const controller of this.active.values()) controller.abort(new RequestAbortedError('runtime stopped'))
     this.active.clear()
-    for (const socket of this.sockets) socket.close(1001, 'runtime stopped')
-    this.sockets.clear()
     const server = this.server
     this.server = undefined
-    if (server) await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
+    await this.closeTransport(server)
+    await this.reconnecting?.catch(() => undefined)
+  }
+
+  private async closeTransport(server: Server | undefined): Promise<void> {
+    const closed = server ? new Promise<void>((resolve, reject) => {
+      server.close((error) => error && (error as NodeJS.ErrnoException).code !== 'ERR_SERVER_NOT_RUNNING' ? reject(error) : resolve())
+    }) : Promise.resolve()
+    // A suspended peer cannot complete a close handshake. Replacing only the
+    // transport must neither wait for it nor cancel the underlying Agent work.
+    for (const socket of this.sockets) socket.terminate()
+    this.sockets.clear()
+    for (const connection of this.connections) connection.destroy()
+    this.connections.clear()
+    await closed
   }
 
   private async route(request: IncomingMessage, response: ServerResponse, token: string): Promise<void> {

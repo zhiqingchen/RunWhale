@@ -8,6 +8,8 @@ const native = vi.hoisted(() => ({
   onAppState: undefined as ((state: string) => void) | undefined,
   onNodeState: undefined as ((snapshot: { state: string }) => void) | undefined,
   startBundled: vi.fn(async () => ({ state: 'running' })),
+  recoverTransport: vi.fn<() => Promise<string | null>>(async () => null),
+  hostInfo: { port: 4100, origin: 'http://127.0.0.1:4100', websocketUrl: 'ws://127.0.0.1:4100/events', token: 'fixture', nodeVersion: '24.19.0', recoveryId: undefined as string | undefined },
 }))
 
 vi.mock('react-native', () => ({
@@ -25,7 +27,8 @@ vi.mock('@runwhale/node-host', () => ({
   NodeHost: {
     snapshot: () => ({ state: native.state }),
     startBundled: native.startBundled,
-    readHostInfo: () => JSON.stringify({ port: 4100, origin: 'http://127.0.0.1:4100', websocketUrl: 'ws://127.0.0.1:4100/events', token: 'fixture', nodeVersion: '24.19.0' }),
+    recoverTransport: native.recoverTransport,
+    readHostInfo: () => JSON.stringify(native.hostInfo),
     takeNativePreviewDiagnostic: () => null,
     addListener: (_event: string, listener: typeof native.onNodeState) => {
       native.onNodeState = listener
@@ -73,6 +76,8 @@ beforeEach(async () => {
   native.state = 'running'
   native.appState = 'active'
   native.startBundled.mockClear()
+  native.recoverTransport.mockReset().mockResolvedValue(null)
+  native.hostInfo = { port: 4100, origin: 'http://127.0.0.1:4100', websocketUrl: 'ws://127.0.0.1:4100/events', token: 'fixture', nodeVersion: '24.19.0', recoveryId: undefined }
   reachable = true
   hang = false
   hostState = 'running'
@@ -130,6 +135,38 @@ describe('iOS runtime connection recovery', () => {
     reachable = true
     await act(async () => { await runtime.retryRuntime() })
     expect(runtime.info).toBeDefined()
+    expect(runtime.lastError).toBeUndefined()
+    expect(native.startBundled).not.toHaveBeenCalled()
+  })
+
+  it('repairs a dead listener out of band and automatically activates its replacement', async () => {
+    native.recoverTransport.mockImplementation(async () => {
+      native.hostInfo = { ...native.hostInfo, port: 4200, origin: 'http://127.0.0.1:4200', websocketUrl: 'ws://127.0.0.1:4200/events', token: 'replacement', recoveryId: 'automatic-repair' }
+      reachable = true
+      return 'automatic-repair'
+    })
+    reachable = false
+    await act(async () => { EventSocket.latest.close() })
+    await advance(8_000)
+    expect(native.recoverTransport).toHaveBeenCalledOnce()
+    expect(runtime.info?.port).toBe(4200)
+    expect(runtime.lastError).toBeUndefined()
+    expect(native.startBundled).not.toHaveBeenCalled()
+  })
+
+  it('keeps Retry pending until its repaired endpoint is published and verified', async () => {
+    await loseConnection()
+    native.recoverTransport.mockResolvedValue('manual-repair')
+    reachable = true // Even a responding old endpoint must not satisfy this repair.
+    let settled = false
+    await act(async () => { void runtime.retryRuntime().then(() => { settled = true }) })
+    await advance(500)
+    expect(settled).toBe(false)
+    expect(runtime.info).toBeUndefined()
+    native.hostInfo = { ...native.hostInfo, port: 4200, origin: 'http://127.0.0.1:4200', websocketUrl: 'ws://127.0.0.1:4200/events', token: 'replacement', recoveryId: 'newer-foreground-repair' }
+    await advance(100)
+    expect(settled).toBe(true)
+    expect(runtime.info?.port).toBe(4200)
     expect(runtime.lastError).toBeUndefined()
     expect(native.startBundled).not.toHaveBeenCalled()
   })

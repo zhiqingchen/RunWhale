@@ -5,6 +5,7 @@ export interface RuntimeHostInfo {
   websocketUrl: string
   nodeVersion: string
   npmVersion?: string
+  recoveryId?: string
 }
 
 export function parseRuntimeHostInfo(value: string | null | undefined): RuntimeHostInfo | undefined {

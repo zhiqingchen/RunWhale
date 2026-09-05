@@ -12,10 +12,17 @@ import {
   NATIVE_PREVIEW_MODULES,
 } from '@runwhale/mobile-runtime/native-preview-modules'
 
+import { webTransformerPath } from './web-transformer.js'
+import {
+  isWebAssetPath, readLiveWebAsset, readWebDocument, renderWebCss, renderWebDocument,
+  webAsset, type WebPreviewDocument,
+} from './web-document.js'
+
 export type MetroPlatform = 'android' | 'ios' | 'web'
 
 export interface MetroBundle {
   platform: MetroPlatform
+  webDocument?: WebPreviewDocument
   code: string
   map: string
   durationMs: number
@@ -129,6 +136,7 @@ export class MobileMetroRuntime {
       // preserving Preview behavior without creating WorkerThreads or falling
       // back to unsupported child processes.
       maxWorkers: 1,
+      transformerPath: platform === 'web' ? await webTransformerPath(store, base.transformerPath) : base.transformerPath,
       watchFolders: watchRoots,
       resolver: {
         ...base.resolver,
@@ -214,6 +222,7 @@ export class MobileMetroRuntime {
     }
     return {
       platform,
+      ...(platform === 'web' ? { webDocument: await readWebDocument(root) } : {}),
       code: result.code,
       map: result.map ?? '',
       durationMs: Date.now() - started,
@@ -235,7 +244,17 @@ export class MobileMetroRuntime {
     const hot = mode.hot && Boolean(liveBundler)
     const server = createServer((request, response) => {
       const url = new URL(request.url ?? '/', 'http://localhost')
-      if (!safeEqual(url.searchParams.get('token'), token)) {
+      // JSX resource URLs cannot inherit the page query string. Same-origin
+      // subresource requests may present the token through their Referer instead.
+      let assetReferrerAuthorized = false
+      if (bundle.platform === 'web' && isWebAssetPath(url.pathname) && request.headers.referer) {
+        try {
+          const referrer = new URL(request.headers.referer)
+          assetReferrerAuthorized = referrer.origin === `http://127.0.0.1:${(server.address() as { port: number }).port}`
+            && safeEqual(referrer.searchParams.get('token'), token)
+        } catch { /* An absent or malformed credential is unauthorized. */ }
+      }
+      if (!safeEqual(url.searchParams.get('token'), token) && !assetReferrerAuthorized) {
         response.writeHead(401, { 'content-type': 'text/plain', 'cache-control': 'no-store' })
         response.end('Unauthorized')
         return
@@ -254,9 +273,22 @@ export class MobileMetroRuntime {
         response.writeHead(200, {
           'content-type': 'text/html; charset=utf-8',
           'cache-control': 'no-store',
+          'referrer-policy': 'same-origin',
           'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws://127.0.0.1:*; font-src 'self' data:",
         })
-        response.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>html,body,#root{height:100%;margin:0;background:#07182a}</style></head><body><div id="root"></div><script src="${bundlePath}"></script></body></html>`)
+        response.end(renderWebDocument(bundle.webDocument, bundlePath, token))
+        return
+      }
+      if (bundle.platform === 'web' && isWebAssetPath(url.pathname)) {
+        const read = liveBundler && bundle.projectRoot
+          ? readLiveWebAsset(bundle.projectRoot, url.pathname)
+          : Promise.resolve(webAsset(bundle.webDocument, url.pathname))
+        void read.then((asset) => {
+          if (!asset) { response.writeHead(404).end(); return }
+          response.writeHead(200, { 'content-type': asset.contentType, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' })
+          const content = Buffer.from(asset.content, 'base64')
+          response.end(asset.contentType.startsWith('text/css') ? renderWebCss(content.toString('utf8'), asset.path, token) : content)
+        }).catch(() => { response.writeHead(500).end('Web asset could not be read') })
         return
       }
       if (url.pathname === '/index.map') {
@@ -550,7 +582,7 @@ function metroRequestPath(root: string, entry: string): string {
   return `/${relativeEntry}`
 }
 
-const PREVIEW_SOURCE_EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx', '.json', '.css', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'])
+const PREVIEW_SOURCE_EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx', '.json', '.html', '.css', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'])
 const PREVIEW_IGNORED_DIRECTORIES = new Set(['.runwhale', '.git', 'node_modules'])
 
 async function projectSourceSnapshot(root: string): Promise<Map<string, string>> {

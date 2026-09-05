@@ -35,6 +35,7 @@ declare class NodeHostNativeModule extends NativeModule<{
 }> {
   start(projectRoot: string, entry: string): Promise<NativeNodeSnapshot>
   startBundled(): Promise<NativeNodeSnapshot>
+  recoverTransport(): Promise<string | null>
   stop(port?: number, token?: string): Promise<NativeNodeSnapshot>
   snapshot(): NativeNodeSnapshot
   runtimeRoot(): string
@@ -48,6 +49,7 @@ const browserSnapshot: NativeNodeSnapshot = { state: 'stopped' }
 const browserShim = {
   async start() { return browserSnapshot },
   async startBundled() { return browserSnapshot },
+  async recoverTransport() { return null },
   async stop() { return browserSnapshot },
   snapshot() { return browserSnapshot },
   runtimeRoot() { return '' },

@@ -8,7 +8,10 @@ public final class NodeHostModule: Module {
   // node_start is process-wide and may only be called once. Keep its lifecycle
   // outside the bridge so a development reload reconnects to the existing host.
   private static let sharedRuntime = NodeRuntime()
-  private static let backgroundLifecycle = NodeBackgroundLifecycle { try? sharedRuntime.readHostInfo() }
+  private static let backgroundLifecycle = NodeBackgroundLifecycle(
+    hostInfo: { try? sharedRuntime.readHostInfo() },
+    requestTransportRecovery: { try sharedRuntime.requestTransportRecovery(revision: $0) }
+  )
   private let runtime = NodeHostModule.sharedRuntime
   private let nativePreviewLaunchState = NativePreviewLaunchState()
   private let stateListenerID = UUID()
@@ -42,6 +45,9 @@ public final class NodeHostModule: Module {
     AsyncFunction("startBundled") {
       try self.runtime.startBundled().dictionary
     }
+    AsyncFunction("recoverTransport") {
+      try NodeHostModule.backgroundLifecycle.recoverTransport()
+    }.runOnQueue(.main)
     AsyncFunction("stop") { (port: Int?, token: String?) in
       self.runtime.requestStop(port: port, token: token).dictionary
     }
@@ -308,6 +314,7 @@ private final class NodeRuntime: @unchecked Sendable {
     if state.state != "stopped" { return state }
     let root = try runtimeRoot()
     try? FileManager.default.removeItem(at: root.appendingPathComponent(".runwhale/host.json"))
+    try? FileManager.default.removeItem(at: root.appendingPathComponent(".runwhale/transport-recovery.json"))
     let entry = root.appendingPathComponent("runwhale-runtime.mjs")
     let assets = [
       ("runwhale-runtime", "mjs", 1, "Bundled Node runtime is missing"),
@@ -351,6 +358,15 @@ private final class NodeRuntime: @unchecked Sendable {
   func readHostInfo() throws -> String? {
     let file = try runtimeRoot().appendingPathComponent(".runwhale/host.json")
     return try? String(contentsOf: file, encoding: .utf8)
+  }
+
+  func requestTransportRecovery(revision: Int) throws -> String? {
+    guard snapshot.state == "running" else { return nil }
+    let id = UUID().uuidString
+    let file = try runtimeRoot().appendingPathComponent(".runwhale/transport-recovery.json")
+    let data = try JSONSerialization.data(withJSONObject: ["id": id, "revision": revision])
+    try data.write(to: file, options: .atomic)
+    return id
   }
 
   func requestStop(port: Int?, token: String?) -> Snapshot {

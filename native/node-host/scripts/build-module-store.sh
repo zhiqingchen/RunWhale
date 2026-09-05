@@ -40,7 +40,8 @@ rm -rf -- \
   "$MODULE_STORE/react-native-skia-apple-macos" \
   "$MODULE_STORE/react-native-skia-apple-tvos"
 node "$SCRIPT_DIR/validate-module-store.mjs" "$MODULE_STORE"
-RUNWHALE_TEST_MODULE_STORE="$MODULE_STORE" pnpm --filter @runwhale/node-runtime exec vitest run test/module-store.test.ts
+RUNWHALE_TEST_MODULE_STORE="$MODULE_STORE" pnpm --filter @runwhale/node-runtime exec vitest run test/module-store.test.ts test/project-template.test.ts
+rm -rf -- "$MODULE_STORE/.cache/runwhale"
 COPYFILE_DISABLE=1 tar -czf "$STAGE_DIR/runwhale-module-store.tgz" -C "$MODULE_STORE" .
 ARCHIVE_BYTES=$(wc -c <"$STAGE_DIR/runwhale-module-store.tgz")
 MAX_ARCHIVE_BYTES=$((96 * 1024 * 1024))
