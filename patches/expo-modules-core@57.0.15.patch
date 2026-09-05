@@ -1,0 +1,147 @@
+diff --git a/android/src/main/java/expo/modules/kotlin/services/FilePermissionService.kt b/android/src/main/java/expo/modules/kotlin/services/FilePermissionService.kt
+index 69149e9bedaf24ae7d2058ad576bb3ae1f429e8a..20ac9306da695fd7146f8e476eca6edf0f34d567 100644
+--- a/android/src/main/java/expo/modules/kotlin/services/FilePermissionService.kt
++++ b/android/src/main/java/expo/modules/kotlin/services/FilePermissionService.kt
+@@ -12,6 +12,13 @@ open class FilePermissionService : Service {
+     WRITE
+   }
+
++  /**
++   * Scoped hosts override this when this service must be authoritative for
++   * every URI scheme rather than inheriting application-global access.
++   */
++  open val isScoped: Boolean
++    get() = false
++
+   open fun getPathPermissions(context: Context, path: String): EnumSet<Permission> =
+     getInternalPathPermissions(path, context) ?: getExternalPathPermissions(path)
+
+diff --git a/ios/FileSystemUtilities/FileSystemManager.swift b/ios/FileSystemUtilities/FileSystemManager.swift
+index f2102b94e6f24ed16c4e6f2a7983a03d8b25a228..001d1327c63f10bd5a2d789765cf74543c5c0b56 100644
+--- a/ios/FileSystemUtilities/FileSystemManager.swift
++++ b/ios/FileSystemUtilities/FileSystemManager.swift
+@@ -61,6 +61,9 @@ public class FileSystemManager: NSObject, EXInternalModule, EXFileSystemInterfac
+
+   @objc
+   public func permissions(forURI uri: URL) -> EXFileSystemPermissionFlags {
++    if self.isScoped && uri.scheme != "file" {
++      return []
++    }
+     let validSchemas = [
+       "assets-library",
+       "http",
+@@ -107,9 +110,10 @@ public class FileSystemManager: NSObject, EXInternalModule, EXFileSystemInterfac
+   public func getInternalPathPermissions(_ url: URL) -> EXFileSystemPermissionFlags {
+     let appGroupSharedDirectories: [String] = self.appGroupSharedDirectories ?? []
+     let scopedDirs: [String] = [cachesDirectory, documentDirectory, applicationSupportDirectory] + appGroupSharedDirectories
+-    let standardizedPath = url.standardized.path
++    let canonicalPath = canonicalizedPath(url.path)
+     for scopedDirectory in scopedDirs {
+-      if standardizedPath.hasPrefix(scopedDirectory + "/") || standardizedPath == scopedDirectory {
++      let canonicalDirectory = canonicalizedPath(scopedDirectory)
++      if canonicalPath.hasPrefix(canonicalDirectory + "/") || canonicalPath == canonicalDirectory {
+         return [.read, .write]
+       }
+     }
+@@ -118,7 +122,7 @@ public class FileSystemManager: NSObject, EXInternalModule, EXFileSystemInterfac
+
+   @objc
+   public func getExternalPathPermissions(_ url: URL) -> EXFileSystemPermissionFlags {
+-    if self.isScoped && url.path.contains("ExponentExperienceData") {
++    if self.isScoped {
+       return []
+     }
+     var filePermissions: EXFileSystemPermissionFlags = []
+@@ -141,4 +145,20 @@ public class FileSystemManager: NSObject, EXInternalModule, EXFileSystemInterfac
+     }
+     self.appGroupSharedDirectories = appGroupSharedDirectories
+   }
++
++  private func canonicalizedPath(_ path: String) -> String {
++    var existing = URL(fileURLWithPath: path).standardizedFileURL
++    var missingComponents: [String] = []
++    var isDirectory: ObjCBool = false
++    while !FileManager.default.fileExists(atPath: existing.path, isDirectory: &isDirectory),
++      existing.path != "/" {
++      missingComponents.insert(existing.lastPathComponent, at: 0)
++      existing.deleteLastPathComponent()
++    }
++    var resolved = existing.resolvingSymlinksInPath().standardizedFileURL
++    for component in missingComponents {
++      resolved.appendPathComponent(component)
++    }
++    return resolved.standardizedFileURL.path
++  }
+ }
+diff --git a/ios/FileSystemUtilities/FileSystemUtilities.swift b/ios/FileSystemUtilities/FileSystemUtilities.swift
+index 3dfca0bbe3095a2b005987991601e6120faec3af..21dcbe0f96d252a12b1a213aabd592f863bf4c77 100644
+--- a/ios/FileSystemUtilities/FileSystemUtilities.swift
++++ b/ios/FileSystemUtilities/FileSystemUtilities.swift
+@@ -41,6 +41,10 @@ public struct FileSystemUtilities {
+       return [.none]
+     }
+
++    if appContext?.config.scoped == true && scheme != "file" {
++      return [.none]
++    }
++
+     if validSchemas.contains(scheme) {
+       return [.read]
+     }
+@@ -84,19 +88,20 @@ public struct FileSystemUtilities {
+     }
+
+     let scopedDirs = [appContext.config.cacheDirectory, appContext.config.documentDirectory] + appContext.config.appGroupSharedDirectories
+-    let standardizedPath = url.standardized.path
++    let canonicalPath = canonicalizedPath(url)
+
+     for dir in scopedDirs {
+       guard let dir else {
+         continue
+       }
+-      if standardizedPath.hasPrefix(dir.appendingPathComponent("/").path) || standardizedPath == dir.path {
++      let canonicalDirectory = canonicalizedPath(dir)
++      if canonicalPath.hasPrefix(canonicalDirectory + "/") || canonicalPath == canonicalDirectory {
+         return [.read, .write]
+       }
+     }
+
+-    let bundleDirectory = Bundle.main.bundlePath
+-    if url.path.hasPrefix(bundleDirectory + "/") {
++    let bundleDirectory = canonicalizedPath(URL(fileURLWithPath: Bundle.main.bundlePath))
++    if !appContext.config.scoped && canonicalPath.hasPrefix(bundleDirectory + "/") {
+       return [.read]
+     }
+
+@@ -104,9 +109,7 @@ public struct FileSystemUtilities {
+   }
+
+   private static func getExternalPathPermissions(_ url: URL, _ appContext: AppContext?) -> [FileSystemPermissionFlags] {
+-    if appContext?.config.scoped ?? false && url.path.contains("ExponentExperienceData") {
+-      return []
+-    }
++    if appContext?.config.scoped ?? false { return [] }
+
+     // Defer permission checks for external paths to the underlying system at the time of file operations
+     return [.read, .write]
+@@ -122,4 +125,20 @@ public struct FileSystemUtilities {
+     }
+     return appGroups
+   }
++
++  private static func canonicalizedPath(_ url: URL) -> String {
++    var existing = url.standardizedFileURL
++    var missingComponents: [String] = []
++    var isDirectory: ObjCBool = false
++    while !FileManager.default.fileExists(atPath: existing.path, isDirectory: &isDirectory),
++      existing.path != "/" {
++      missingComponents.insert(existing.lastPathComponent, at: 0)
++      existing.deleteLastPathComponent()
++    }
++    var resolved = existing.resolvingSymlinksInPath().standardizedFileURL
++    for component in missingComponents {
++      resolved.appendPathComponent(component)
++    }
++    return resolved.standardizedFileURL.path
++  }
+ }

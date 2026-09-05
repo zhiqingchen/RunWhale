@@ -1,0 +1,81 @@
+packages:
+  - apps/*
+  - packages/*
+  - native/*
+
+strictDepBuilds: true
+
+allowBuilds:
+  '@google/genai': false
+  '@shopify/react-native-skia': true
+  cpu-features: false
+  esbuild: true
+  protobufjs: false
+  ssh2: false
+
+patchedDependencies:
+  '@expo/dom-webview@57.0.1': patches/@expo__dom-webview@57.0.1.patch
+  expo-file-system@57.0.6: patches/expo-file-system@57.0.6.patch
+  expo-modules-core@57.0.15: patches/expo-modules-core@57.0.15.patch
+  heroui-native@1.0.9: patches/heroui-native@1.0.9.patch
+
+minimumReleaseAgeExclude:
+  - '@runwhale/node-mobile-runtime@24.19.0-runwhale.1'
+  - '@deepseek-ai/dsh-agent-loop@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-agent@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-attachment@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-authorization@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-brand@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-code-runtime-worker-thread@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-code-runtime@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-commands@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-compaction-basic@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-compaction-tool-result-pruner@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-compaction@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-credentials@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-fs@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-goal-round-driver@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-goal@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-invariants@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-launch-environment@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-llm-pi-ai@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-llm-retry@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-llm@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-plan-mode@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-sandbox@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-scope@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-session-projection@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-session-persistence@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-session@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-settings@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-skill@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-system-prompt@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-timeout@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-token-meter@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-tool-goal@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-tool-skill@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-tool-todo@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-tools@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-typert-protocol@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-user-approval@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-user-questions@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-util-crypto@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-util-values@0.1.2-rc.1'
+  - '@expo/cli@57.0.21'
+  - '@expo/fingerprint@0.20.12'
+  - '@expo/metro-runtime@57.0.15'
+  - '@expo/router-server@57.0.9'
+  - '@expo/ui@57.0.15'
+  - babel-preset-expo@57.0.10
+  - expo-asset@57.0.16
+  - expo-constants@57.0.17
+  - expo-font@57.0.3
+  - expo-image-manipulator@57.0.15
+  - expo-image@57.0.4
+  - expo-linking@57.0.9
+  - expo-modules-core@57.0.15
+  - expo-modules-jsi@57.0.7
+  - expo-router@57.0.18
+  - expo-secure-store@57.0.3
+  - expo-sharing@57.0.17
+  - expo@57.0.19

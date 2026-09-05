@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 2,
+  "verifiedAt": "2026-08-31",
+  "packages": {
+    "nodeMobileRuntime": {
+      "package": {
+        "name": "@runwhale/node-mobile-runtime",
+        "version": "24.19.0-runwhale.1"
+      },
+      "runtime": {
+        "node": "24.19.0",
+        "npm": "11.17.0"
+      },
+      "source": {
+        "repository": "https://github.com/zhiqingchen/nodejs-mobile.git",
+        "commit": "413f4424500cbd2a484b967a5722514b22f4f90b",
+        "baseRepository": "https://github.com/nodejs/node.git",
+        "baseCommit": "cdc1b38d40cb567b7ad0b39c86addf830a0af0ae",
+        "mobileUpstreamRepository": "https://github.com/nodejs-mobile/nodejs-mobile.git",
+        "mobileUpstreamCommit": "106c51f95d55d1010de56a2ffd09bfb4ba819a47"
+      },
+      "android": {
+        "abi": "arm64-v8a",
+        "minimumApi": 24,
+        "ndkVersion": "27.2.12479018",
+        "stl": "c++_shared"
+      },
+      "apple": {
+        "minimumIos": "16.4",
+        "deviceArchitectures": ["arm64"],
+        "simulatorArchitectures": ["arm64", "x86_64"]
+      }
+    }
+  }
+}

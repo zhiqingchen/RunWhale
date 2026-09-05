@@ -1,0 +1,362 @@
+diff --git a/lib/module/components/alert/default-icon.js b/lib/module/components/alert/default-icon.js
+index 80a580f36ba885be5a35fcaee49f09aed14cb0ab..886436c4c910cf9c2e8a423e0c52314f38573577 100644
+--- a/lib/module/components/alert/default-icon.js
++++ b/lib/module/components/alert/default-icon.js
+@@ -1,6 +1,7 @@
+ "use strict";
+
+ import React from 'react';
++import { Platform } from 'react-native';
+ import Svg, { Path } from 'react-native-svg';
+ import { jsx as _jsx } from "react/jsx-runtime";
+ /**
+@@ -16,8 +17,12 @@ export const DefaultIcon = ({
+     height: size,
+     viewBox: "0 0 16 16",
+     fill: color,
+-    accessibilityElementsHidden: true,
+-    importantForAccessibility: "no-hide-descendants",
++    ...(Platform.OS === 'web' ? {
++      "aria-hidden": true
++    } : {
++      accessibilityElementsHidden: true,
++      importantForAccessibility: "no-hide-descendants"
++    }),
+     children: /*#__PURE__*/_jsx(Path, {
+       d: "M8 13.5a5.5 5.5 0 1 0 0-11a5.5 5.5 0 0 0 0 11M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14m1-9.5a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-.25 3a.75.75 0 0 0-1.5 0V11a.75.75 0 0 0 1.5 0z",
+       fillRule: "evenodd",
+diff --git a/lib/module/components/alert/success-icon.js b/lib/module/components/alert/success-icon.js
+index ba67f57f679fa9428d7d09466d2f7f8efe96c193..0d0eebfe214f1edddc6425dd60528153bd79ef23 100644
+--- a/lib/module/components/alert/success-icon.js
++++ b/lib/module/components/alert/success-icon.js
+@@ -1,6 +1,7 @@
+ "use strict";
+
+ import React from 'react';
++import { Platform } from 'react-native';
+ import Svg, { Path } from 'react-native-svg';
+ import { jsx as _jsx } from "react/jsx-runtime";
+ /**
+@@ -16,8 +17,12 @@ export const SuccessIcon = ({
+     height: size,
+     viewBox: "0 0 16 16",
+     fill: color,
+-    accessibilityElementsHidden: true,
+-    importantForAccessibility: "no-hide-descendants",
++    ...(Platform.OS === 'web' ? {
++      "aria-hidden": true
++    } : {
++      accessibilityElementsHidden: true,
++      importantForAccessibility: "no-hide-descendants"
++    }),
+     children: /*#__PURE__*/_jsx(Path, {
+       d: "M13.5 8a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0m-3.9-1.55a.75.75 0 1 0-1.2-.9L7.419 8.858L6.03 7.47a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.13-.08z",
+       fillRule: "evenodd",
+diff --git a/lib/module/components/alert/warning-icon.js b/lib/module/components/alert/warning-icon.js
+index bd7e113b6a613e191008c3ae9ae9b24a7f90c1a6..1a2053a03c0112594939f7c7b21fca138325c8c9 100644
+--- a/lib/module/components/alert/warning-icon.js
++++ b/lib/module/components/alert/warning-icon.js
+@@ -1,6 +1,7 @@
+ "use strict";
+
+ import React from 'react';
++import { Platform } from 'react-native';
+ import Svg, { Path } from 'react-native-svg';
+ import { jsx as _jsx } from "react/jsx-runtime";
+ /**
+@@ -16,8 +17,12 @@ export const WarningIcon = ({
+     height: size,
+     viewBox: "0 0 16 16",
+     fill: color,
+-    accessibilityElementsHidden: true,
+-    importantForAccessibility: "no-hide-descendants",
++    ...(Platform.OS === 'web' ? {
++      "aria-hidden": true
++    } : {
++      accessibilityElementsHidden: true,
++      importantForAccessibility: "no-hide-descendants"
++    }),
+     children: /*#__PURE__*/_jsx(Path, {
+       d: "M7.134 2.994L2.217 11.5a1 1 0 0 0 .866 1.5h9.834a1 1 0 0 0 .866-1.5L8.866 2.993a1 1 0 0 0-1.732 0m3.03-.75c-.962-1.665-3.366-1.665-4.329 0L.918 10.749c-.963 1.666.24 3.751 2.165 3.751h9.834c1.925 0 3.128-2.085 2.164-3.751zM8 5a.75.75 0 0 1 .75.75v2a.75.75 0 0 1-1.5 0v-2A.75.75 0 0 1 8 5m1 5.75a1 1 0 1 1-2 0a1 1 0 0 1 2 0",
+       fillRule: "evenodd",
+diff --git a/lib/module/components/button/button.js b/lib/module/components/button/button.js
+index 4645bcd2cf81fac7f28327cfa0e478a31aad00d8..34f2731e497d636725a3704c1f580d6aca943895 100644
+--- a/lib/module/components/button/button.js
++++ b/lib/module/components/button/button.js
+@@ -1,6 +1,7 @@
+ "use strict";
+
+ import { forwardRef, useMemo } from 'react';
++import { Platform } from 'react-native';
+ import { useThemeColor } from "../../helpers/external/hooks/index.js";
+ import { colorKit } from "../../helpers/external/utils/index.js";
+ import { HeroText, ThemeBackground, useHasDefaultThemeBackground } from "../../helpers/internal/components/index.js";
+@@ -13,6 +14,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+ const [ButtonProvider, useButton] = createContext({
+   name: 'ButtonContext'
+ });
++const setColorAlpha = (color, alpha) => Platform.OS === 'web' ? `color-mix(in srgb, ${color} ${alpha * 100}%, transparent)` : colorKit.setAlpha(color, alpha).hex();
+
+ // --------------------------------------------------
+
+@@ -80,13 +82,13 @@ const ButtonRoot = /*#__PURE__*/forwardRef((props, ref) => {
+       // translucent surface, so the hover overlay uses a subtler alpha to
+       // avoid washing out the blur layer underneath.
+       case 'secondary':
+-        return hasDefaultThemeBackground ? colorKit.setAlpha(themeColorDefaultHover, 0.2).hex() : themeColorDefaultHover;
++        return hasDefaultThemeBackground ? setColorAlpha(themeColorDefaultHover, 0.2) : themeColorDefaultHover;
+       case 'tertiary':
+-        return hasDefaultThemeBackground ? colorKit.setAlpha(themeColorDefaultHover, 0.2).hex() : themeColorDefaultHover;
++        return hasDefaultThemeBackground ? setColorAlpha(themeColorDefaultHover, 0.2) : themeColorDefaultHover;
+       case 'outline':
+-        return colorKit.setAlpha(themeColorDefaultHover, hasDefaultThemeBackground ? 0.05 : 0.3).hex();
++        return setColorAlpha(themeColorDefaultHover, hasDefaultThemeBackground ? 0.05 : 0.3);
+       case 'ghost':
+-        return colorKit.setAlpha(themeColorDefaultHover, hasDefaultThemeBackground ? 0.05 : 0.3).hex();
++        return setColorAlpha(themeColorDefaultHover, hasDefaultThemeBackground ? 0.05 : 0.3);
+       case 'danger':
+         return themeColorDangerHover;
+       case 'danger-soft':
+diff --git a/lib/module/components/select/select.js b/lib/module/components/select/select.js
+index b38de00777bedf31fbfe8157ee134c240fe5d376..36dfbec1f98c400684555df0a8dfbc209e9cc187 100644
+--- a/lib/module/components/select/select.js
++++ b/lib/module/components/select/select.js
+@@ -193,6 +193,7 @@ const SelectTriggerIndicator = /*#__PURE__*/forwardRef((props, ref) => {
+ const SelectPortal = ({
+   className,
+   children,
++  style,
+   disableFullWindowOverlay = false,
+   unstable_accessibilityContainerViewIsModal,
+   ...props
+@@ -213,6 +214,7 @@ const SelectPortal = ({
+           unstable_accessibilityContainerViewIsModal: unstable_accessibilityContainerViewIsModal,
+           children: /*#__PURE__*/_jsx(View, {
+             className: portalClassName,
++            style: style,
+             pointerEvents: "box-none",
+             children: children
+           })
+diff --git a/lib/module/primitives/dialog/dialog.js b/lib/module/primitives/dialog/dialog.js
+index c25b386a48e2d863f0f3af7134c648cd65acd0e9..845a270143d48ad8ec224bee27fdef76fcaef978 100644
+--- a/lib/module/primitives/dialog/dialog.js
++++ b/lib/module/primitives/dialog/dialog.js
+@@ -1,7 +1,7 @@
+ "use strict";
+
+ import { createContext, forwardRef, useContext, useEffect, useId } from 'react';
+-import { BackHandler, Pressable, Text, View } from 'react-native';
++import { BackHandler, Platform, Pressable, Text, View } from 'react-native';
+ import { useControllableState } from "../../helpers/internal/hooks/index.js";
+ import { Portal as PortalPrimitive } from "../portal/index.js";
+ import * as Slot from "../slot/index.js";
+@@ -144,6 +144,7 @@ const Content = /*#__PURE__*/forwardRef(({
+     onOpenChange
+   } = useRootContext();
+   useEffect(() => {
++    if (Platform.OS !== 'android') return undefined;
+     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+       onOpenChange(false);
+       return true;
+diff --git a/lib/typescript/src/components/select/select.types.d.ts b/lib/typescript/src/components/select/select.types.d.ts
+index 99073a2591eef841f0174c103cf62e8815f828ae..29a7157a4ab6e64cc54bed388e7dc19d2946053b 100644
+--- a/lib/typescript/src/components/select/select.types.d.ts
++++ b/lib/typescript/src/components/select/select.types.d.ts
+@@ -217,6 +217,8 @@ export interface SelectPortalProps extends SelectPrimitivesTypes.PortalProps {
+      * Additional CSS class for the portal container
+      */
+     className?: string;
++    /** Custom styles for the portal container */
++    style?: ViewStyle;
+     /**
+      * The portal content
+      */
+diff --git a/src/components/alert/default-icon.tsx b/src/components/alert/default-icon.tsx
+index cd0e0c81b52cbce0c3839c39c1123bb34883363c..8eb3595cb528c378e39dcf23959a848c0ea82816 100644
+--- a/src/components/alert/default-icon.tsx
++++ b/src/components/alert/default-icon.tsx
+@@ -1,4 +1,5 @@
+ import React from 'react';
++import { Platform } from 'react-native';
+ import Svg, { Path } from 'react-native-svg';
+ import type { AlertIconProps } from './alert.types';
+
+@@ -13,8 +14,12 @@ export const DefaultIcon: React.FC<AlertIconProps> = ({ size = 20, color }) => {
+       height={size}
+       viewBox="0 0 16 16"
+       fill={color}
+-      accessibilityElementsHidden={true}
+-      importantForAccessibility="no-hide-descendants"
++      {...(Platform.OS === 'web'
++        ? { 'aria-hidden': true }
++        : {
++            accessibilityElementsHidden: true,
++            importantForAccessibility: 'no-hide-descendants' as const,
++          })}
+     >
+       <Path
+         d="M8 13.5a5.5 5.5 0 1 0 0-11a5.5 5.5 0 0 0 0 11M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14m1-9.5a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-.25 3a.75.75 0 0 0-1.5 0V11a.75.75 0 0 0 1.5 0z"
+diff --git a/src/components/alert/success-icon.tsx b/src/components/alert/success-icon.tsx
+index 3aa95a74c5ea1c0ca17cc5f0b3b65f2f67391dce..cdf3b2ee8f44a002c7cbaf8c6c4d612c4a2a16e3 100644
+--- a/src/components/alert/success-icon.tsx
++++ b/src/components/alert/success-icon.tsx
+@@ -1,4 +1,5 @@
+ import React from 'react';
++import { Platform } from 'react-native';
+ import Svg, { Path } from 'react-native-svg';
+ import type { AlertIconProps } from './alert.types';
+
+@@ -13,8 +14,12 @@ export const SuccessIcon: React.FC<AlertIconProps> = ({ size = 20, color }) => {
+       height={size}
+       viewBox="0 0 16 16"
+       fill={color}
+-      accessibilityElementsHidden={true}
+-      importantForAccessibility="no-hide-descendants"
++      {...(Platform.OS === 'web'
++        ? { 'aria-hidden': true }
++        : {
++            accessibilityElementsHidden: true,
++            importantForAccessibility: 'no-hide-descendants' as const,
++          })}
+     >
+       <Path
+         d="M13.5 8a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0m-3.9-1.55a.75.75 0 1 0-1.2-.9L7.419 8.858L6.03 7.47a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.13-.08z"
+diff --git a/src/components/alert/warning-icon.tsx b/src/components/alert/warning-icon.tsx
+index 01e42cceb1fa8ab08f2a1e0f1ae330a63f9bd1df..01e080bda26c8216a5b2b473fdb8104e76ee7751 100644
+--- a/src/components/alert/warning-icon.tsx
++++ b/src/components/alert/warning-icon.tsx
+@@ -1,4 +1,5 @@
+ import React from 'react';
++import { Platform } from 'react-native';
+ import Svg, { Path } from 'react-native-svg';
+ import type { AlertIconProps } from './alert.types';
+
+@@ -13,8 +14,12 @@ export const WarningIcon: React.FC<AlertIconProps> = ({ size = 20, color }) => {
+       height={size}
+       viewBox="0 0 16 16"
+       fill={color}
+-      accessibilityElementsHidden={true}
+-      importantForAccessibility="no-hide-descendants"
++      {...(Platform.OS === 'web'
++        ? { 'aria-hidden': true }
++        : {
++            accessibilityElementsHidden: true,
++            importantForAccessibility: 'no-hide-descendants' as const,
++          })}
+     >
+       <Path
+         d="M7.134 2.994L2.217 11.5a1 1 0 0 0 .866 1.5h9.834a1 1 0 0 0 .866-1.5L8.866 2.993a1 1 0 0 0-1.732 0m3.03-.75c-.962-1.665-3.366-1.665-4.329 0L.918 10.749c-.963 1.666.24 3.751 2.165 3.751h9.834c1.925 0 3.128-2.085 2.164-3.751zM8 5a.75.75 0 0 1 .75.75v2a.75.75 0 0 1-1.5 0v-2A.75.75 0 0 1 8 5m1 5.75a1 1 0 1 1-2 0a1 1 0 0 1 2 0"
+diff --git a/src/components/button/button.tsx b/src/components/button/button.tsx
+index 19af105397638ab01f0e37941a45f87a4970d6bc..e5a40285c6289515d1bf2f72e5d7b6ca66cfd992 100644
+--- a/src/components/button/button.tsx
++++ b/src/components/button/button.tsx
+@@ -1,5 +1,5 @@
+ import { forwardRef, useMemo } from 'react';
+-import type { PressableStateCallbackType } from 'react-native';
++import { Platform, type PressableStateCallbackType } from 'react-native';
+ import { useThemeColor } from '../../helpers/external/hooks';
+ import { colorKit } from '../../helpers/external/utils';
+ import {
+@@ -33,6 +33,11 @@ const [ButtonProvider, useButton] = createContext<ButtonContextValue>({
+   name: 'ButtonContext',
+ });
+
++const setColorAlpha = (color: string, alpha: number) =>
++  Platform.OS === 'web'
++    ? `color-mix(in srgb, ${color} ${alpha * 100}%, transparent)`
++    : colorKit.setAlpha(color, alpha).hex();
++
+ // --------------------------------------------------
+
+ /**
+@@ -117,26 +122,22 @@ const ButtonRoot = forwardRef<PressableRef, ButtonRootProps>((props, ref) => {
+       // avoid washing out the blur layer underneath.
+       case 'secondary':
+         return hasDefaultThemeBackground
+-          ? colorKit.setAlpha(themeColorDefaultHover, 0.2).hex()
++          ? setColorAlpha(themeColorDefaultHover, 0.2)
+           : themeColorDefaultHover;
+       case 'tertiary':
+         return hasDefaultThemeBackground
+-          ? colorKit.setAlpha(themeColorDefaultHover, 0.2).hex()
++          ? setColorAlpha(themeColorDefaultHover, 0.2)
+           : themeColorDefaultHover;
+       case 'outline':
+-        return colorKit
+-          .setAlpha(
+-            themeColorDefaultHover,
+-            hasDefaultThemeBackground ? 0.05 : 0.3
+-          )
+-          .hex();
++        return setColorAlpha(
++          themeColorDefaultHover,
++          hasDefaultThemeBackground ? 0.05 : 0.3
++        );
+       case 'ghost':
+-        return colorKit
+-          .setAlpha(
+-            themeColorDefaultHover,
+-            hasDefaultThemeBackground ? 0.05 : 0.3
+-          )
+-          .hex();
++        return setColorAlpha(
++          themeColorDefaultHover,
++          hasDefaultThemeBackground ? 0.05 : 0.3
++        );
+       case 'danger':
+         return themeColorDangerHover;
+       case 'danger-soft':
+diff --git a/src/components/select/select.tsx b/src/components/select/select.tsx
+index 6b6a51a8be3d4ea3937870142295a0580238a7b7..fe2e107fbb13aa0d89485c8e2dbcd6ede4d6605e 100644
+--- a/src/components/select/select.tsx
++++ b/src/components/select/select.tsx
+@@ -300,6 +300,7 @@ const SelectTriggerIndicator = forwardRef<ViewRef, SelectTriggerIndicatorProps>(
+ const SelectPortal = ({
+   className,
+   children,
++  style,
+   disableFullWindowOverlay = false,
+   unstable_accessibilityContainerViewIsModal,
+   ...props
+@@ -319,7 +320,7 @@ const SelectPortal = ({
+               unstable_accessibilityContainerViewIsModal
+             }
+           >
+-            <View className={portalClassName} pointerEvents="box-none">
++            <View className={portalClassName} style={style} pointerEvents="box-none">
+               {children}
+             </View>
+           </FullWindowOverlay>
+diff --git a/src/components/select/select.types.ts b/src/components/select/select.types.ts
+index 25cae3329f8a891e350edfdcb5e347c462c31d21..7dc03b3d46e5efd7c80e54009897d40395df3b16 100644
+--- a/src/components/select/select.types.ts
++++ b/src/components/select/select.types.ts
+@@ -246,6 +246,8 @@ export interface SelectPortalProps extends SelectPrimitivesTypes.PortalProps {
+    * Additional CSS class for the portal container
+    */
+   className?: string;
++  /** Custom styles for the portal container */
++  style?: ViewStyle;
+   /**
+    * The portal content
+    */
+diff --git a/src/primitives/dialog/dialog.tsx b/src/primitives/dialog/dialog.tsx
+index 58d35abe5e3842d38da841b92d4e06ba17ae22d9..549377c9bc78df6421dc6573d0a826be4d373514 100644
+--- a/src/primitives/dialog/dialog.tsx
++++ b/src/primitives/dialog/dialog.tsx
+@@ -1,6 +1,7 @@
+ import { createContext, forwardRef, useContext, useEffect, useId } from 'react';
+ import {
+   BackHandler,
++  Platform,
+   type GestureResponderEvent,
+   Pressable,
+   Text,
+@@ -171,6 +172,7 @@ const Content = forwardRef<ContentRef, ContentProps>(
+     const { isOpen, nativeID, onOpenChange } = useRootContext();
+
+     useEffect(() => {
++      if (Platform.OS !== 'android') return undefined;
+       const backHandler = BackHandler.addEventListener(
+         'hardwareBackPress',
+         () => {

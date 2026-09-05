@@ -1,0 +1,524 @@
+diff --git a/android/src/main/java/expo/modules/filesystem/FileSystemDirectory.kt b/android/src/main/java/expo/modules/filesystem/FileSystemDirectory.kt
+index b652a39c22632938b4cf0a8ef04d2085afb4d1ea..e21f248f378e3dc53ec9f9b4d38b293e5c367a59 100644
+--- a/android/src/main/java/expo/modules/filesystem/FileSystemDirectory.kt
++++ b/android/src/main/java/expo/modules/filesystem/FileSystemDirectory.kt
+@@ -10,6 +10,7 @@ class FileSystemDirectory(uri: Uri) : FileSystemPath(uri) {
+   }
+
+   override fun validateType() {
++    validatePermission(FilePermissionService.Permission.READ)
+     if (file.exists() && !file.isDirectory()) {
+       throw InvalidTypeFolderException()
+     }
+@@ -24,7 +25,7 @@ class FileSystemDirectory(uri: Uri) : FileSystemPath(uri) {
+   }
+
+   val size: Long get() {
+-    validatePermission(FilePermissionService.Permission.READ)
++    validatePermissionRecursively(FilePermissionService.Permission.READ)
+     validateType()
+     return file.walkTopDown().filter { it.isFile() }.map { it.length() }.sum()
+   }
+diff --git a/android/src/main/java/expo/modules/filesystem/FileSystemDownload.kt b/android/src/main/java/expo/modules/filesystem/FileSystemDownload.kt
+index 0222bdc1bf39968fc4ecc43fa81c8fd0bd1326c5..9a5212f87605ec41a1652a7d5a73079a465de505 100644
+--- a/android/src/main/java/expo/modules/filesystem/FileSystemDownload.kt
++++ b/android/src/main/java/expo/modules/filesystem/FileSystemDownload.kt
+@@ -83,7 +83,12 @@ suspend fun downloadFileWithStore(
+       val fileName = URLUtil.guessFileName(url.toString(), contentDisposition, contentType)
+
+       val destination = if (to is FileSystemDirectory) {
+-        File(to.javaFile, fileName)
++        val directory = to.javaFile.canonicalFile
++        val child = File(directory, fileName).canonicalFile
++        if (child.parentFile?.canonicalPath != directory.canonicalPath) {
++          throw InvalidPermissionException(FilePermissionService.Permission.WRITE)
++        }
++        child
+       } else {
+         to.javaFile
+       }
+diff --git a/android/src/main/java/expo/modules/filesystem/FileSystemDownloadTask.kt b/android/src/main/java/expo/modules/filesystem/FileSystemDownloadTask.kt
+index 44dd86d624d0065081dbae4073d0f1a272f643a0..9da52e4ac70d137466155db58525d872abd07660 100644
+--- a/android/src/main/java/expo/modules/filesystem/FileSystemDownloadTask.kt
++++ b/android/src/main/java/expo/modules/filesystem/FileSystemDownloadTask.kt
+@@ -330,7 +330,14 @@ fun resolveDownloadDestination(to: FileSystemPath, url: URI): UnifiedFileInterfa
+             )
+             ?: throw UnableToDownloadException("Unable to create destination file")
+         }
+-        is JavaFile -> JavaFile(java.io.File(directory, filename).toUri())
++        is JavaFile -> {
++          val canonicalDirectory = directory.canonicalFile
++          val destination = java.io.File(canonicalDirectory, filename).canonicalFile
++          if (destination.parentFile?.canonicalPath != canonicalDirectory.canonicalPath) {
++            throw InvalidPermissionException(expo.modules.kotlin.services.FilePermissionService.Permission.WRITE)
++          }
++          JavaFile(destination.toUri())
++        }
+         else -> throw UnableToDownloadException("Invalid destination directory type")
+       }
+     }
+diff --git a/android/src/main/java/expo/modules/filesystem/FileSystemFile.kt b/android/src/main/java/expo/modules/filesystem/FileSystemFile.kt
+index 815f3b5a263080cf212040920350008577499ab0..170f12701f125a92289ac9552d3454c51134aae7 100644
+--- a/android/src/main/java/expo/modules/filesystem/FileSystemFile.kt
++++ b/android/src/main/java/expo/modules/filesystem/FileSystemFile.kt
+@@ -172,6 +172,7 @@ class FileSystemFile(uri: Uri) : FileSystemPath(uri) {
+   }
+
+   val size: Long? get() {
++    validatePermission(FilePermissionService.Permission.READ)
+     return if (file.exists()) {
+       file.length()
+     } else {
+@@ -180,6 +181,7 @@ class FileSystemFile(uri: Uri) : FileSystemPath(uri) {
+   }
+
+   val type: String? get() {
++    validatePermission(FilePermissionService.Permission.READ)
+     return file.type
+   }
+
+diff --git a/android/src/main/java/expo/modules/filesystem/FileSystemModule.kt b/android/src/main/java/expo/modules/filesystem/FileSystemModule.kt
+index 5ad4088a817c8ae2ef1ba4044609c2a249f10783..5eb29c13501db433d7b0a1056f76eaa2cb8d0c6f 100644
+--- a/android/src/main/java/expo/modules/filesystem/FileSystemModule.kt
++++ b/android/src/main/java/expo/modules/filesystem/FileSystemModule.kt
+@@ -83,6 +83,9 @@ class FileSystemModule : Module() {
+     }
+
+     AsyncFunction("pickDirectoryAsync") Coroutine { initialUri: Uri? ->
++      if (appContext.filePermission.isScoped) {
++        throw InvalidPermissionException(FilePermissionService.Permission.READ)
++      }
+       val result = filePickerLauncher.launch(
+         FilePickerContractOptions(initialUri, emptyList(), false, PickerType.DIRECTORY)
+       )
+@@ -93,6 +96,9 @@ class FileSystemModule : Module() {
+     }
+
+     AsyncFunction("pickFileAsync") Coroutine { options: PickFileOptions? ->
++      if (appContext.filePermission.isScoped) {
++        throw InvalidPermissionException(FilePermissionService.Permission.READ)
++      }
+       val result = filePickerLauncher.launch(
+         FilePickerContractOptions(options?.initialUri, options?.mimeTypes ?: listOf(), options?.multipleFiles ?: false, PickerType.FILE)
+       )
+diff --git a/android/src/main/java/expo/modules/filesystem/FileSystemPath.kt b/android/src/main/java/expo/modules/filesystem/FileSystemPath.kt
+index 3e551feda41038cc9b2df1f75b678e2052f6a261..8d442ba1ff9cdf702c5f14f1df694542773be33b 100644
+--- a/android/src/main/java/expo/modules/filesystem/FileSystemPath.kt
++++ b/android/src/main/java/expo/modules/filesystem/FileSystemPath.kt
+@@ -84,7 +84,7 @@ abstract class FileSystemPath(var uri: Uri) : SharedObject() {
+       }
+
+   fun delete() {
+-    validatePermission(FilePermissionService.Permission.WRITE)
++    validatePermissionRecursively(FilePermissionService.Permission.WRITE)
+     if (!file.exists()) {
+       throw UnableToDeleteException("uri '${file.uri}' does not exist")
+     }
+@@ -135,7 +135,18 @@ abstract class FileSystemPath(var uri: Uri) : SharedObject() {
+     }
+   }
+
++  fun validatePermissionRecursively(permission: FilePermissionService.Permission) {
++    validatePermission(permission)
++    validateScopedTree(javaFile, permission)
++  }
++
+   fun checkPermission(permission: FilePermissionService.Permission): Boolean {
++    val context = appContext?.reactContext ?: throw Exceptions.ReactContextLost()
++    val permissionService = appContext?.filePermission ?: return false
++    if (permissionService.isScoped) {
++      val scopedPath = if (uri.scheme == "file" || uri.scheme == null) javaFile.path else uri.toString()
++      return permissionService.getPathPermissions(context, scopedPath).contains(permission)
++    }
+     if (uri.isContentUri) {
+       // TODO: Consider adding a check for content URIs (not in legacy FS)
+       return true
+@@ -154,6 +165,25 @@ abstract class FileSystemPath(var uri: Uri) : SharedObject() {
+     return permissions.contains(permission)
+   }
+
++  private fun validateScopedTree(path: File, permission: FilePermissionService.Permission) {
++    if (appContext?.filePermission?.isScoped != true) return
++
++    fun validate(entry: File) {
++      if (!checkPermissionForPath(entry.path, permission)) {
++        throw InvalidPermissionException(permission)
++      }
++    }
++
++    validate(path)
++    if (!path.isDirectory) return
++    path.walkTopDown()
++      .onEnter { directory ->
++        validate(directory)
++        true
++      }
++      .forEach(::validate)
++  }
++
+   fun validateCanCreate(options: CreateOptions) {
+     if (!options.overwrite && file.exists()) {
+       throw UnableToCreateException("it already exists")
+@@ -163,8 +193,9 @@ abstract class FileSystemPath(var uri: Uri) : SharedObject() {
+   suspend fun copy(to: FileSystemPath, options: RelocationOptions) {
+     validateType()
+     to.validateType()
+-    validatePermission(FilePermissionService.Permission.READ)
++    validatePermissionRecursively(FilePermissionService.Permission.READ)
+     to.validatePermission(FilePermissionService.Permission.WRITE)
++    validateScopedTree(getMoveOrCopyPath(to), FilePermissionService.Permission.WRITE)
+
+     withContext(Dispatchers.IO) {
+       file.copyTo(to.asCopyOrMoveDestination(options.overwrite))
+@@ -174,8 +205,9 @@ abstract class FileSystemPath(var uri: Uri) : SharedObject() {
+   suspend fun move(to: FileSystemPath, options: RelocationOptions) {
+     validateType()
+     to.validateType()
+-    validatePermission(FilePermissionService.Permission.WRITE)
++    validatePermissionRecursively(FilePermissionService.Permission.WRITE)
+     to.validatePermission(FilePermissionService.Permission.WRITE)
++    validateScopedTree(getMoveOrCopyPath(to), FilePermissionService.Permission.WRITE)
+
+     // moveTo returns the URI of where the file was actually moved to
+     val finalUri = withContext(Dispatchers.IO) {
+@@ -218,12 +250,14 @@ abstract class FileSystemPath(var uri: Uri) : SharedObject() {
+
+   val modificationTime: Long?
+     get() {
++      validatePermission(FilePermissionService.Permission.READ)
+       validateType()
+       return file.lastModified()
+     }
+
+   val creationTime: Long?
+     get() {
++      validatePermission(FilePermissionService.Permission.READ)
+       return file.creationTime
+     }
+ }
+diff --git a/android/src/main/java/expo/modules/filesystem/FileSystemUploadTask.kt b/android/src/main/java/expo/modules/filesystem/FileSystemUploadTask.kt
+index 90e9a68228ad2fa4327134374b772055b05c9ffa..9b3f53302af759dffc166213b219990562228c6f 100644
+--- a/android/src/main/java/expo/modules/filesystem/FileSystemUploadTask.kt
++++ b/android/src/main/java/expo/modules/filesystem/FileSystemUploadTask.kt
+@@ -2,6 +2,7 @@ package expo.modules.filesystem
+
+ import com.facebook.react.modules.network.OkHttpClientProvider
+ import expo.modules.filesystem.unifiedfile.UnifiedFileInterface
++import expo.modules.kotlin.services.FilePermissionService
+ import expo.modules.kotlin.types.Enumerable
+ import expo.modules.kotlin.records.Field
+ import expo.modules.kotlin.records.Record
+@@ -89,6 +90,7 @@ class FileSystemUploadTask : SharedObject() {
+   }
+
+   private fun buildUploadRequest(url: String, file: FileSystemFile, options: UploadTaskOptions): Request {
++    file.validatePermission(FilePermissionService.Permission.READ)
+     val unifiedFile = file.file
+
+     if (!unifiedFile.exists()) {
+diff --git a/android/src/main/java/expo/modules/filesystem/FileSystemWatcher.kt b/android/src/main/java/expo/modules/filesystem/FileSystemWatcher.kt
+index 04385d06ea27df587ab0b924ff5d7f93935eca0e..1a24636313f82d3597afaebfe30af8ba49fa702b 100644
+--- a/android/src/main/java/expo/modules/filesystem/FileSystemWatcher.kt
++++ b/android/src/main/java/expo/modules/filesystem/FileSystemWatcher.kt
+@@ -8,6 +8,7 @@ import expo.modules.kotlin.records.Field
+ import expo.modules.kotlin.records.Record
+ import expo.modules.kotlin.types.Enumerable
+ import expo.modules.kotlin.sharedobjects.SharedObject
++import expo.modules.kotlin.services.FilePermissionService
+ import expo.modules.kotlin.types.OptimizedRecord
+ import kotlinx.coroutines.Job
+ import kotlinx.coroutines.delay
+@@ -78,7 +79,11 @@ internal class FileSystemWatcher(
+     if (!watchedFile.exists()) {
+       throw WatcherPathNotFoundException(path)
+     }
+-    if (!watchedFile.canRead()) {
++    val context = appContext.reactContext ?: throw WatcherPermissionException(path)
++    val canRead = appContext.filePermission
++      .getPathPermissions(context, watchedFile.path)
++      .contains(FilePermissionService.Permission.READ)
++    if (!canRead) {
+       throw WatcherPermissionException(path)
+     }
+
+diff --git a/android/src/main/java/expo/modules/filesystem/legacy/FileSystemLegacyModule.kt b/android/src/main/java/expo/modules/filesystem/legacy/FileSystemLegacyModule.kt
+index 4626dac32067ec203788ae69de4b0f1d5b03eec0..5fa4f423394c734f91e7b1c2017d443a33dd08a5 100644
+--- a/android/src/main/java/expo/modules/filesystem/legacy/FileSystemLegacyModule.kt
++++ b/android/src/main/java/expo/modules/filesystem/legacy/FileSystemLegacyModule.kt
+@@ -456,6 +456,9 @@ open class FileSystemLegacyModule : Module() {
+     }
+
+     AsyncFunction("requestDirectoryPermissionsAsync") { initialFileUrl: String?, promise: Promise ->
++      if (appContext.filePermission.isScoped) {
++        throw IOException("Directory picking is unavailable in a scoped file system")
++      }
+       if (dirPermissionsRequest != null) {
+         throw FileSystemPendingPermissionsRequestException()
+       }
+@@ -471,6 +474,7 @@ open class FileSystemLegacyModule : Module() {
+     }
+
+     AsyncFunction("uploadAsync") { url: String, fileUriString: String, options: FileSystemUploadOptions, promise: Promise ->
++      ensurePermission(Uri.parse(slashifyFilePath(fileUriString)), FilePermissionService.Permission.READ)
+       val request = createUploadRequest(
+         url,
+         fileUriString,
+@@ -500,6 +504,7 @@ open class FileSystemLegacyModule : Module() {
+     }
+
+     AsyncFunction("uploadTaskStartAsync") { url: String, fileUriString: String, uuid: String, options: FileSystemUploadOptions, promise: Promise ->
++      ensurePermission(Uri.parse(slashifyFilePath(fileUriString)), FilePermissionService.Permission.READ)
+       val progressListener: CountingRequestListener = object : CountingRequestListener {
+         private var mLastUpdate: Long = -1
+         override fun onProgress(bytesWritten: Long, contentLength: Long) {
+@@ -620,6 +625,7 @@ open class FileSystemLegacyModule : Module() {
+
+     AsyncFunction("downloadResumableStartAsync") { url: String, fileUriStr: String, uuid: String, options: DownloadOptionsLegacy, resumeData: String?, promise: Promise ->
+       val fileUri = Uri.parse(slashifyFilePath(fileUriStr))
++      ensurePermission(fileUri, FilePermissionService.Permission.WRITE)
+       fileUri.checkIfFileDirExists()
+       if (fileUri.scheme != "file") {
+         throw IOException("Unsupported scheme for location '$fileUri'.")
+@@ -763,6 +769,9 @@ open class FileSystemLegacyModule : Module() {
+   }
+
+   private fun permissionsForUri(uri: Uri) = when {
++    appContext.filePermission.isScoped -> permissionsForPath(
++      if (uri.scheme == "file" || uri.scheme == null) uri.path else uri.toString()
++    ) ?: EnumSet.noneOf(FilePermissionService.Permission::class.java)
+     uri.isSAFUri -> permissionsForSAFUri(uri)
+     uri.scheme == "content" -> EnumSet.of(FilePermissionService.Permission.READ)
+     uri.scheme == "asset" -> EnumSet.of(FilePermissionService.Permission.READ)
+diff --git a/ios/FileSystemDownload.swift b/ios/FileSystemDownload.swift
+index c6fc7369065376ba5013194ac1f6da889ee8de21..bb6add588f1cb17242d24eba76805d0245e32cfa 100644
+--- a/ios/FileSystemDownload.swift
++++ b/ios/FileSystemDownload.swift
+@@ -153,6 +153,9 @@ func downloadFileWithStore(
+           } else {
+             destination = to.url
+           }
++          guard FileSystemUtilities.permissions(to.appContext, for: destination).contains(.write) else {
++            throw MissingPermissionException(destination.absoluteString)
++          }
+           if FileManager.default.fileExists(atPath: destination.path) {
+             if options?.idempotent == true {
+               try FileManager.default.removeItem(at: destination)
+@@ -267,6 +270,9 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
+         } else {
+           dest = destination.url
+         }
++        guard FileSystemUtilities.permissions(destination.appContext, for: dest).contains(.write) else {
++          throw MissingPermissionException(dest.absoluteString)
++        }
+         if FileManager.default.fileExists(atPath: dest.path) {
+           if options?.idempotent == true {
+             try FileManager.default.removeItem(at: dest)
+diff --git a/ios/FileSystemDownloadTask.swift b/ios/FileSystemDownloadTask.swift
+index 0698aa2ce7db16366c057f19848d55b6bd890836..ec222309a692b30722ed0d7e5a1e516dfee138c9 100644
+--- a/ios/FileSystemDownloadTask.swift
++++ b/ios/FileSystemDownloadTask.swift
+@@ -384,6 +384,10 @@ private final class DownloadTaskDelegate: NSObject, NetworkTaskDelegate {
+           destinationUrl = destination.url
+         }
+
++        guard FileSystemUtilities.permissions(destination.appContext, for: destinationUrl).contains(.write) else {
++          throw MissingPermissionException(destinationUrl.absoluteString)
++        }
++
+         if FileManager.default.fileExists(atPath: destinationUrl.path) {
+           try FileManager.default.removeItem(at: destinationUrl)
+         }
+diff --git a/ios/FileSystemFileHandle.swift b/ios/FileSystemFileHandle.swift
+index d0f8a0fbe79fe65434b00a2e4781717166ebaaa2..5d6e51c50e6bb4d9f0cb538136ebb933d0b2cd81 100644
+--- a/ios/FileSystemFileHandle.swift
++++ b/ios/FileSystemFileHandle.swift
+@@ -32,10 +32,14 @@ internal final class FileSystemFileHandle: SharedRef<FileHandle> {
+     self.file = file
+     self.mode = mode ?? FileMode.readWrite
+     if self.mode.readOnly {
++      try file.validatePermission(.read)
+       handle = try FileHandle(forReadingFrom: file.url)
+     } else if self.mode.writeOnly {
++      try file.validatePermission(.write)
+       handle = try FileHandle(forWritingTo: file.url)
+     } else {
++      try file.validatePermission(.read)
++      try file.validatePermission(.write)
+       handle = try FileHandle(forUpdating: file.url)
+     }
+
+diff --git a/ios/FileSystemModule.swift b/ios/FileSystemModule.swift
+index 7af943c7823e2d500337f363302cba13a8dfc445..3d6f8865502ae131136e5d73f01c177115a7b743 100644
+--- a/ios/FileSystemModule.swift
++++ b/ios/FileSystemModule.swift
+@@ -82,6 +82,9 @@ public final class FileSystemModule: Module {
+     }
+
+     AsyncFunction("pickDirectoryAsync") { (initialUri: URL?, promise: Promise) in
++      guard appContext?.config.scoped != true else {
++        throw MissingPermissionException(initialUri?.absoluteString ?? "outside the scoped file system")
++      }
+       #if os(iOS)
+       filePickingHandler.presentDocumentPicker(
+         picker: createDirectoryPicker(initialUri: initialUri),
+@@ -97,6 +100,9 @@ public final class FileSystemModule: Module {
+     }.runOnQueue(.main)
+
+     AsyncFunction("pickFileAsync") { (options: FilePickingOptions?, promise: Promise) in
++      guard appContext?.config.scoped != true else {
++        throw MissingPermissionException(options?.initialUri?.absoluteString ?? "outside the scoped file system")
++      }
+       #if os(iOS)
+       filePickingHandler.presentDocumentPicker(
+         picker: createFilePicker(initialUri: options?.initialUri, mimeTypes: options?.mimeTypes ?? []),
+@@ -389,7 +395,7 @@ public final class FileSystemModule: Module {
+
+     Class(FileSystemWatcher.self) {
+       Constructor { (path: URL, options: WatchOptions?) in
+-        try FileSystemWatcher(path: path, options: options)
++        try FileSystemWatcher(appContext: appContext, path: path, options: options)
+       }
+
+       Function("start") { watcher in
+diff --git a/ios/FileSystemPath.swift b/ios/FileSystemPath.swift
+index dfc402dbf8a4066f1416fd54898c996413d02b36..31387b63421c5661905d63d71ba9a25072060e17 100644
+--- a/ios/FileSystemPath.swift
++++ b/ios/FileSystemPath.swift
+@@ -70,6 +70,9 @@ internal class FileSystemPath: SharedObject {
+     try validatePermission(.read)
+     try destination.validatePermission(.write)
+     let destinationUrl = try getMoveOrCopyPath(to: destination)
++    guard FileSystemUtilities.permissions(destination.appContext, for: destinationUrl).contains(.write) else {
++      throw MissingPermissionException(destinationUrl.absoluteString)
++    }
+
+     if options.overwrite && FileManager.default.fileExists(atPath: destinationUrl.path) {
+       try FileManager.default.removeItem(at: destinationUrl)
+@@ -82,6 +85,9 @@ internal class FileSystemPath: SharedObject {
+     try validatePermission(.write)
+     try destination.validatePermission(.write)
+     let destinationUrl = try getMoveOrCopyPath(to: destination)
++    guard FileSystemUtilities.permissions(destination.appContext, for: destinationUrl).contains(.write) else {
++      throw MissingPermissionException(destinationUrl.absoluteString)
++    }
+
+     if options.overwrite && FileManager.default.fileExists(atPath: destinationUrl.path) {
+       try FileManager.default.removeItem(at: destinationUrl)
+@@ -91,16 +97,26 @@ internal class FileSystemPath: SharedObject {
+     url = destinationUrl
+   }
+
+-  func getRenamedUrl(newName: String) -> URL {
++  func getRenamedUrl(newName: String) throws -> URL {
++    guard !newName.isEmpty,
++      newName != ".",
++      newName != "..",
++      !newName.contains("/"),
++      !newName.contains("\\") else {
++      throw UnableToCreateException("new name must be a single path segment")
++    }
+     return url.deletingLastPathComponent().appendingPathComponent(newName)
+   }
+
+   func rename(_ newName: String) throws {
+     try validatePermission(.write)
+-    let newUrl = getRenamedUrl(newName: newName)
++    let newUrl = try getRenamedUrl(newName: newName)
++    guard FileSystemUtilities.permissions(appContext, for: newUrl).contains(.write) else {
++      throw MissingPermissionException(newUrl.absoluteString)
++    }
+     try FileManager.default.moveItem(at: url, to: newUrl)
+     // Refetch the URL to ensure it has the correct trailing slash, which differs for directories and files.
+-    let updatedUrl = getRenamedUrl(newName: newName)
++    let updatedUrl = try getRenamedUrl(newName: newName)
+     url = updatedUrl
+   }
+
+diff --git a/ios/FileSystemWatcher.swift b/ios/FileSystemWatcher.swift
+index 13a97c4cf45b573aa50a13219c7d7e9931b2cabe..2f4c1b2a17b73dfb386812bd02af7445c7e9751f 100644
+--- a/ios/FileSystemWatcher.swift
++++ b/ios/FileSystemWatcher.swift
+@@ -32,7 +32,7 @@ internal final class FileSystemWatcher: SharedObject {
+   private var pendingEvents: DispatchSource.FileSystemEvent = []
+   private var fileDescriptorClosed = false
+
+-  init(path: URL, options: WatchOptions?) throws {
++  init(appContext: AppContext?, path: URL, options: WatchOptions?) throws {
+     let standardizedPath = path.standardizedFileURL
+
+     guard standardizedPath.isFileURL else {
+@@ -44,7 +44,7 @@ internal final class FileSystemWatcher: SharedObject {
+       throw WatcherPathNotFoundException(standardizedPath.path)
+     }
+
+-    guard FileManager.default.isReadableFile(atPath: standardizedPath.path) else {
++    guard FileSystemUtilities.permissions(appContext, for: standardizedPath).contains(.read) else {
+       throw WatcherPermissionException(standardizedPath.path)
+     }
+
+diff --git a/ios/Legacy/FileSystemLegacyModule.swift b/ios/Legacy/FileSystemLegacyModule.swift
+index 0db6a3f9c25b0344fddc793bfc5e66460ace8bc3..aebbd691282544973c2351caa2eb45ec85d95274 100644
+--- a/ios/Legacy/FileSystemLegacyModule.swift
++++ b/ios/Legacy/FileSystemLegacyModule.swift
+@@ -48,6 +48,7 @@ public final class FileSystemLegacyModule: Module {
+     }
+
+     AsyncFunction("getInfoAsync") { (url: URL, options: InfoOptions, promise: Promise) in
++      try ensurePathPermission(appContext, path: url.path, flag: .read)
+       let optionsDict = options.toDictionary(appContext: appContext)
+       switch url.scheme {
+       case "file":
+@@ -144,14 +145,14 @@ public final class FileSystemLegacyModule: Module {
+     AsyncFunction("copyAsync") { (options: RelocatingOptions, promise: Promise) in
+       let (fromUrl, toUrl) = try options.asTuple()
+
++      try ensurePathPermission(appContext, path: fromUrl.path, flag: .read)
++      try ensurePathPermission(appContext, path: toUrl.path, flag: .write)
++
+       if isPHAsset(path: fromUrl.absoluteString) {
+         copyPHAsset(fromUrl: fromUrl, toUrl: toUrl, with: resourceManager, promise: promise)
+         return
+       }
+
+-      try ensurePathPermission(appContext, path: fromUrl.path, flag: .read)
+-      try ensurePathPermission(appContext, path: toUrl.path, flag: .write)
+-
+       if fromUrl.scheme == "file" {
+         EXFileSystemLocalFileHandler.copy(
+           from: fromUrl,
+@@ -190,8 +191,8 @@ public final class FileSystemLegacyModule: Module {
+     }
+
+     AsyncFunction("downloadAsync") { (sourceUrl: URL, localUrl: URL, options: DownloadOptionsLegacy, promise: Promise) in
+-      try ensureFileDirectoryExists(localUrl)
+       try ensurePathPermission(appContext, path: localUrl.path, flag: .write)
++      try ensureFileDirectoryExists(localUrl)
+
+       if sourceUrl.isFileURL {
+         try ensurePathPermission(appContext, path: sourceUrl.path, flag: .read)
+@@ -218,6 +219,7 @@ public final class FileSystemLegacyModule: Module {
+     }
+
+     AsyncFunction("uploadAsync") { (targetUrl: URL, localUrl: URL, options: UploadOptions, promise: Promise) in
++      try ensurePathPermission(appContext, path: localUrl.path, flag: .read)
+       guard localUrl.isFileURL else {
+         throw InvalidFileUrlException(localUrl)
+       }
+@@ -233,6 +235,7 @@ public final class FileSystemLegacyModule: Module {
+     }
+
+     AsyncFunction("uploadTaskStartAsync") { (targetUrl: URL, localUrl: URL, uuid: String, options: UploadOptions, promise: Promise) in
++      try ensurePathPermission(appContext, path: localUrl.path, flag: .read)
+       let session = options.sessionType == .background ? backgroundSession : foregroundSession
+       let task = try createUploadTask(session: session, targetUrl: targetUrl, sourceUrl: localUrl, options: options)
+       let onSend: EXUploadDelegateOnSendCallback = { [weak self] _, _, totalBytesSent, totalBytesExpectedToSend in
+@@ -259,8 +262,8 @@ public final class FileSystemLegacyModule: Module {
+
+     // swiftlint:disable:next line_length closure_body_length
+     AsyncFunction("downloadResumableStartAsync") { (sourceUrl: URL, localUrl: URL, uuid: String, options: DownloadOptionsLegacy, resumeDataString: String?, promise: Promise) in
+-      try ensureFileDirectoryExists(localUrl)
+       try ensurePathPermission(appContext, path: localUrl.path, flag: .write)
++      try ensureFileDirectoryExists(localUrl)
+
+       let session = options.sessionType == .background ? backgroundSession : foregroundSession
+       let onWrite: EXDownloadDelegateOnWriteCallback = { [weak self] _, _, totalBytesWritten, totalBytesExpectedToWrite in

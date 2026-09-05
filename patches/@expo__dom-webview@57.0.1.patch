@@ -1,0 +1,27 @@
+diff --git a/src/DomWebView.tsx b/src/DomWebView.tsx
+index 3a07ac938325385dc7e314f0e6d557068bc6f622..802eedce8806680bcb60dc98bdf4647162699c6e 100644
+--- a/src/DomWebView.tsx
++++ b/src/DomWebView.tsx
+@@ -23,7 +23,21 @@ const WebView = React.forwardRef<DomWebViewRef, DomWebViewProps>(
+       ref,
+       () => ({
+         scrollTo: (params) => viewRef.current?.scrollTo(params),
+-        injectJavaScript: (script: string) => viewRef.current?.injectJavaScript(script),
++        injectJavaScript: (script: string) => {
++          const result = viewRef.current?.injectJavaScript(script) as unknown;
++          // Expo's DOM wrapper can enqueue a final props injection while React
++          // is removing this native view. Android rejects that async command
++          // after the view tag disappears. It is an expected unmount race, not
++          // an editor failure, so consume only that precise rejection.
++          if (result && typeof (result as PromiseLike<unknown>).then === 'function') {
++            void Promise.resolve(result).catch((error: unknown) => {
++              const message = error instanceof Error ? error.message : String(error);
++              if (!message.includes('Unable to find') || !message.includes('view with tag')) {
++                console.error(error);
++              }
++            });
++          }
++        },
+         reload: () => viewRef.current?.reload(),
+       }),
+       []
