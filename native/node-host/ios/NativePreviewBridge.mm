@@ -11,6 +11,7 @@
 #import <ExpoModulesCore/EXReactSchedulerDispatch.h>
 #import <ExpoModulesCore/ExpoFabricViewObjC.h>
 #import <React/RCTComponentViewFactory.h>
+#import <React/RCTExceptionsManager.h>
 #import <React/RCTJavaScriptLoader.h>
 #import <React/RCTRootView.h>
 #import <React/RCTSurfacePresenter.h>
@@ -371,6 +372,28 @@ NSString *_Nullable RunWhaleTakeNativePreviewDiagnostic(void) {
 
 typedef void (^RunWhaleNativePreviewRuntimeFailureHandler)(NSString *stage, NSString *code, NSString *message);
 
+@interface RunWhaleNativePreviewExceptionsManager : RCTExceptionsManager
+@property(nonatomic, copy) RunWhaleNativePreviewRuntimeFailureHandler runtimeFailureHandler;
+@end
+
+@implementation RunWhaleNativePreviewExceptionsManager
+
+// In the pinned React Native version, both reportException (including render
+// errors) and the legacy fatal entry point dispatch through this method.
+// A delegate notification alone is insufficient: the default implementation
+// still calls RCTFatal after notifying its delegate.
+- (void)reportFatal:(NSString *)message
+              stack:(NSArray<NSDictionary *> *)stack
+        exceptionId:(double)exceptionId
+    extraDataAsJSON:(nullable NSString *)extraDataAsJSON {
+  if (self.runtimeFailureHandler != nil) {
+    self.runtimeFailureHandler(
+        @"javascript", @"javascript_fatal", message.length > 0 ? message : @"The Preview JavaScript runtime failed.");
+  }
+}
+
+@end
+
 static void RunWhaleInstallNativePreviewFatalReporter(
     facebook::jsi::Runtime &runtime,
     facebook::jsi::Object &errorUtils,
@@ -506,9 +529,19 @@ static void RunWhaleInstallNativePreviewFatalReporter(
 
 @interface RunWhaleNativePreviewDelegate : RCTDefaultReactNativeFactoryDelegate
 @property(nonatomic, strong) NSURL *previewBundleURL;
+@property(nonatomic, copy) RunWhaleNativePreviewRuntimeFailureHandler runtimeFailureHandler;
 @end
 
 @implementation RunWhaleNativePreviewDelegate
+
+- (id<RCTTurboModule>)getModuleInstanceFromClass:(Class)moduleClass {
+  if (moduleClass == RCTExceptionsManager.class) {
+    RunWhaleNativePreviewExceptionsManager *manager = [RunWhaleNativePreviewExceptionsManager new];
+    manager.runtimeFailureHandler = self.runtimeFailureHandler;
+    return (id<RCTTurboModule>)manager;
+  }
+  return [super getModuleInstanceFromClass:moduleClass];
+}
 
 - (NSURL *)bundleURL {
   return self.previewBundleURL;
@@ -623,6 +656,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
         [weakSelf handleRuntimeFailureAtStage:stage code:code message:message];
       });
     };
+    self.previewDelegate.runtimeFailureHandler = runtimeFailureHandler;
     self.previewFactory.runtimeFailureHandler = runtimeFailureHandler;
 
     UIView *preview = [self.previewFactory.rootViewFactory viewWithModuleName:@"main" initialProperties:@{}];
