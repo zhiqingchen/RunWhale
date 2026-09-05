@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+@import 'uniwind';
+@import 'heroui-native/styles';
+
+@source './app';
+@source './src';
+
+@theme {
+  --color-whale-blue: #356cff;
+  --color-whale-violet: #6758f3;
+  --color-whale-ink: #101a3a;
+  --color-whale-canvas: #f7f9ff;
+}

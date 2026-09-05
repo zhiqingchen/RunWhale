@@ -1,0 +1,156 @@
+{
+  "expo": {
+    "name": "RunWhale",
+    "slug": "runwhale",
+    "version": "1.0.0",
+    "orientation": "default",
+    "scheme": "runwhale",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "icon": "./assets/images/runwhale-icon.png",
+    "ios": {
+      "icon": "./assets/images/runwhale-icon.png",
+      "supportsTablet": true,
+      "bundleIdentifier": "app.runwhale.mobile",
+      "deploymentTarget": "16.4",
+      "entitlements": {
+        "keychain-access-groups": [
+          "$(AppIdentifierPrefix)app.runwhale.mobile"
+        ],
+        "com.apple.developer.associated-domains": [
+          "applinks:share.runwhale.dev"
+        ]
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "android": {
+      "package": "app.runwhale.mobile",
+      "blockedPermissions": [
+        "android.permission.ACTIVITY_RECOGNITION"
+      ],
+      "minSdkVersion": 24,
+      "compileSdkVersion": 36,
+      "targetSdkVersion": 36,
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/runwhale-adaptive-foreground-safe.png",
+        "backgroundColor": "#F5F8FF"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "share.runwhale.dev",
+              "pathPrefix": "/g/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow RunWhale previews to record audio.",
+          "recordAudioAndroid": true,
+          "enableBackgroundRecording": true,
+          "enableBackgroundPlayback": true
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow RunWhale previews and attachments to use the camera."
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow RunWhale previews to use motion sensors."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow RunWhale to choose photos to attach to Agent messages.",
+          "cameraPermission": "Allow RunWhale previews and attachments to use the camera."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow RunWhale previews to access your contacts."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow RunWhale previews to use Face ID."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow RunWhale previews to use your location.",
+          "locationAlwaysAndWhenInUsePermission": "Allow RunWhale previews to use your location.",
+          "locationAlwaysPermission": "Allow RunWhale previews to use your location.",
+          "motionUsagePermission": "Allow RunWhale previews to detect your motion activity."
+        }
+      ],
+      [
+        "expo-maps",
+        {
+          "requestLocationPermission": true,
+          "locationPermission": "Allow RunWhale previews to show your location on maps."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow RunWhale previews to access your media library.",
+          "savePhotosPermission": "Allow RunWhale previews to save media to your library.",
+          "granularPermissions": ["photo", "video", "audio"]
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/runwhale-splash-mark.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#F7F9FF",
+          "dark": {
+            "image": "./assets/images/runwhale-splash-mark.png",
+            "backgroundColor": "#07182A"
+          }
+        }
+      ],
+      "./plugins/with-node-ndk",
+      "expo-status-bar"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
