@@ -1,0 +1,21 @@
+{
+  "name": "runwhale-native-preview-fixture",
+  "license": "Apache-2.0",
+  "private": true,
+  "dependencies": {
+    "@shopify/react-native-skia": "2.6.2",
+    "expo-audio": "57.0.4",
+    "expo-constants": "57.0.17",
+    "expo-contacts": "57.0.4",
+    "expo-haptics": "57.0.2",
+    "expo-image-picker": "57.0.15",
+    "expo-linear-gradient": "57.0.1",
+    "expo-local-authentication": "57.0.2",
+    "expo-location": "57.0.15",
+    "expo-maps": "57.0.2",
+    "expo-media-library": "57.0.4",
+    "expo-video": "57.0.3",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  }
+}
