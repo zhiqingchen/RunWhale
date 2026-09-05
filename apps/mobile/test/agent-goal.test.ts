@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MOBILE_HOST_PROTOCOL_VERSION, type HostEvent } from '@runwhale/mobile-protocol'
-import { agentGoalProjectionVersion, parseAgentGoalCommand, projectAgentGoal } from '../src/utils/agent-goal'
+import { agentGoalProjectionVersion, isAgentGoalSessionReady, parseAgentGoalCommand, projectAgentGoal } from '../src/utils/agent-goal'
 
 function goal(objective: string, revision = 1) {
   return { id: 'goal-1', revision, objective, phase: 'active' as const, maxGoalRounds: 10, roundsStarted: 0, createdAt: 1, updatedAt: 1 }
@@ -113,4 +113,24 @@ describe('Agent Goal command', () => {
     expect(parseAgentGoalCommand('/goal EDIT\nship it')).toEqual({ kind: 'edit', objective: 'ship it' })
   })
 
+})
+
+describe('Goal session readiness', () => {
+  it('waits for this run to be saved before loading or mutating a Goal', () => {
+    const starting = { sessionId: 'session-1', connected: true, localRunActive: true }
+    expect(isAgentGoalSessionReady(starting)).toBe(false)
+    expect(isAgentGoalSessionReady({ ...starting, lifecycleState: 'running' })).toBe(false)
+    expect(isAgentGoalSessionReady({ ...starting, submittedLifecycleState: 'running' })).toBe(true)
+    expect(isAgentGoalSessionReady({ ...starting, submittedLifecycleState: 'failed' })).toBe(false)
+  })
+
+  it('allows a saved idle session and rejects disconnected or mismatched sessions', () => {
+    const saved = { sessionId: 'session-1', connected: true, localRunActive: false, record: {
+      sessionId: 'session-1', projectId: 'project-1', title: 'New session', updatedAt: 1, state: 'idle' as const, events: [],
+    } }
+    expect(isAgentGoalSessionReady(saved)).toBe(true)
+    expect(isAgentGoalSessionReady({ ...saved, connected: false })).toBe(false)
+    expect(isAgentGoalSessionReady({ ...saved, sessionId: 'other' })).toBe(false)
+    expect(isAgentGoalSessionReady({ ...saved, localRunActive: true })).toBe(false)
+  })
 })

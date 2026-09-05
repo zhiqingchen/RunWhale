@@ -218,9 +218,10 @@ export class RunWhaleRuntimeHost {
         const selectedProjectId = String(projectId)
         return this.withProjectWork(selectedProjectId, async () => ({ deleted: await this.deleteSession(selectedProjectId, String(sessionId)) }))
       },
-      'agent.run': async ({ projectId, prompt, sessionId, planMode, provider, model, modelProfile, agentPreset, permissionMode, attachmentPaths }, { signal }) => this.runAgent({
+      'agent.run': async ({ projectId, prompt, initialTitle, sessionId, planMode, provider, model, modelProfile, agentPreset, permissionMode, attachmentPaths }, { signal }) => this.runAgent({
         projectId: String(projectId),
         prompt: String(prompt),
+        ...(initialTitle === undefined ? {} : { initialTitle: { title: boundedText(String(initialTitle.title).trim(), 256), expectedTitle: String(initialTitle.expectedTitle) } }),
         ...(sessionId === undefined ? {} : { sessionId: String(sessionId) }),
         signal,
         ...(planMode === undefined ? {} : { planMode: Boolean(planMode) }),
@@ -1022,7 +1023,7 @@ export class RunWhaleRuntimeHost {
     return execution
   }
 
-  private async runAgent({ projectId, prompt, sessionId: requestedSession, signal, planMode, provider, model, modelProfile, agentPreset: requestedPreset, permissionMode: requestedPermissionMode, attachmentPaths, backgroundResume = false }: MobileHostRequestMap['agent.run']['params'] & { signal?: AbortSignal | undefined; backgroundResume?: boolean }): Promise<{ sessionId: string; taskId: string }> {
+  private async runAgent({ projectId, prompt, initialTitle, sessionId: requestedSession, signal, planMode, provider, model, modelProfile, agentPreset: requestedPreset, permissionMode: requestedPermissionMode, attachmentPaths, backgroundResume = false }: MobileHostRequestMap['agent.run']['params'] & { signal?: AbortSignal | undefined; backgroundResume?: boolean }): Promise<{ sessionId: string; taskId: string }> {
     if (signal) throwIfAborted(signal)
     const sessionId = requestedSession ?? randomUUID()
     assertSessionId(sessionId)
@@ -1043,8 +1044,6 @@ export class RunWhaleRuntimeHost {
     const repository = new MobileGitRepository(projectRoot)
     await repository.ensureInitialized()
     const attachments = await this.readAgentAttachments(projectId, attachmentPaths)
-    this.server.emit('task.state', { projectId, taskId, state: 'running' })
-    this.server.emit('agent.state', { projectId, sessionId, taskId, state: 'running' })
     let seed: readonly unknown[] = []
     let existingTitle = prompt.trim().slice(0, 80) || 'Untitled session'
     let agentPreset: MobileAgentPreset = requestedPreset ?? 'standard'
@@ -1052,6 +1051,7 @@ export class RunWhaleRuntimeHost {
     try {
       const saved = JSON.parse((await this.sessionFs(projectId).readText(`.runwhale/sessions/${sessionId}.json`)).content) as { title?: unknown; state?: unknown; events?: unknown; agentPreset?: unknown; permissionMode?: unknown }
       if (typeof saved.title === 'string' && saved.title.trim()) existingTitle = saved.title
+      if (initialTitle?.title && saved.title === initialTitle.expectedTitle && Array.isArray(saved.events) && saved.events.length === 0) existingTitle = initialTitle.title
       if (Array.isArray(saved.events)) seed = repairInterruptedSessionSeed(saved.events, saved.state)
       if (requestedPreset === undefined && (saved.agentPreset === 'standard' || saved.agentPreset === 'minimal')) agentPreset = saved.agentPreset
       if (requestedPermissionMode === undefined && isMobilePermissionMode(saved.permissionMode)) permissionMode = saved.permissionMode
@@ -1060,6 +1060,9 @@ export class RunWhaleRuntimeHost {
     const streamedEvents = execution.events
     const persist = (state: AgentSessionState) => execution.persist(state)
     await persist('running')
+    // Consumers can read Goal and history as soon as running is published.
+    this.server.emit('task.state', { projectId, taskId, state: 'running' })
+    this.server.emit('agent.state', { projectId, sessionId, taskId, state: 'running' })
     if (backgroundResume && execution.pauseRequested) {
       await persist('paused')
       this.server.emit('agent.state', { projectId, sessionId, taskId, state: 'paused' })
@@ -1365,7 +1368,8 @@ export class RunWhaleRuntimeHost {
     assertSessionId(sessionId)
     const pending = this.goalSessionLoads.get(sessionId)
     if (pending) { await pending; return }
-    if (this.sessionExecution(projectId, sessionId)?.record) return
+    // A durable record can outlive a run that failed before creating its harness.
+    if (this.sessionExecution(projectId, sessionId)?.active) return
     if (!this.options.agent.loadSession) return
     if (this.suspension || this.backgrounded) throw new Error('runtime is suspended')
     const execution = this.agentExecution(projectId, sessionId)

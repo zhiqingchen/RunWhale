@@ -1,4 +1,18 @@
-import type { AgentGoal, HostEvent } from '@runwhale/mobile-protocol'
+import type { AgentGoal, AgentSessionRecord, HostEvent } from '@runwhale/mobile-protocol'
+
+// Optimistic composer activity does not mean the host has saved the session.
+export function isAgentGoalSessionReady({ sessionId, connected, localRunActive, submittedLifecycleState, lifecycleState, record }: {
+  sessionId?: string
+  connected: boolean
+  localRunActive: boolean
+  submittedLifecycleState?: string
+  lifecycleState?: string
+  record?: AgentSessionRecord
+}): boolean {
+  if (!sessionId || !connected) return false
+  if (localRunActive) return submittedLifecycleState === 'running'
+  return lifecycleState === 'running' || record?.sessionId === sessionId
+}
 
 export interface AgentGoalProjectionOptions {
   projectId: string

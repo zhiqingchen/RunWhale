@@ -3,6 +3,7 @@ import type { AgentImageDraft } from './agent-image'
 
 export interface StudioAgentRunOptions {
   prompt: string
+  initialTitle?: { title: string; expectedTitle: string }
   resume?: boolean
   sessionId?: string
   planMode?: boolean

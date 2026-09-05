@@ -467,7 +467,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     return result.deleted
   }, [request])
 
-  const runAgent = useCallback(async (project: StudioProject, { prompt, resume, sessionId, planMode, provider, model, agentPreset, permissionMode, attachments = [], signal, modelProfile }: StudioAgentRunOptions): Promise<{ sessionId: string; taskId: string }> => {
+  const runAgent = useCallback(async (project: StudioProject, { prompt, initialTitle, resume, sessionId, planMode, provider, model, agentPreset, permissionMode, attachments = [], signal, modelProfile }: StudioAgentRunOptions): Promise<{ sessionId: string; taskId: string }> => {
     throwIfAgentRunAborted(signal)
     const projectId = await activateProject(project.id)
     throwIfAgentRunAborted(signal)
@@ -486,6 +486,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
         : await rpc(infoRef.current, 'agent.run', {
         projectId,
         prompt,
+        ...(initialTitle ? { initialTitle } : {}),
         ...(sessionId ? { sessionId } : {}),
         ...(planMode === undefined ? {} : { planMode }),
         ...(provider ? { provider } : {}),

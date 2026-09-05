@@ -232,21 +232,11 @@ export default function WorkspaceScreen() {
       const { prompt, sessionId, signal } = options
       if (signal?.aborted) throw signal.reason
       const summary = sessions.find((item) => item.sessionId === sessionId)
-      if (!options.resume && sessionId && shouldInitializeSessionTitle(summary, t('newSession'))) {
-        const title = firstPromptSessionTitle(prompt)
-        if (title) {
-          await runtime.request('session.delete', { projectId: project.id, sessionId })
-          try {
-            await runtime.request('session.create', { projectId: project.id, sessionId, title })
-          } catch (cause) {
-            await runtime.request('session.create', { projectId: project.id, sessionId, title: summary.title }).catch(() => undefined)
-            throw cause
-          }
-          setSessions((current) => current.map((item) => item.sessionId === sessionId ? { ...item, title, updatedAt: Date.now() } : item))
-        }
-      }
-      if (signal?.aborted) throw signal.reason
-      const result = await runtime.runAgent(project, options)
+      const title = !options.resume && shouldInitializeSessionTitle(summary, t('newSession')) ? firstPromptSessionTitle(prompt) : ''
+      const result = await runtime.runAgent(project, {
+        ...options,
+        ...(title && summary ? { initialTitle: { title, expectedTitle: summary.title } } : {}),
+      })
       await refreshFiles(project.id)
       await refreshSessions()
       return { sessionId: result.sessionId, taskId: result.taskId }

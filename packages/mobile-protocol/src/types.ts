@@ -266,7 +266,7 @@ export interface MobileHostRequestMap {
   'session.read': { params: { projectId: string; sessionId: string; surfaceOnly?: boolean }; result: AgentSessionRecord }
   'session.fork': { params: { projectId: string; sessionId: string; throughSequence?: number }; result: AgentSessionRecord }
   'session.delete': { params: { projectId: string; sessionId: string }; result: { deleted: boolean } }
-  'agent.run': { params: { projectId: string; prompt: string; sessionId?: string; planMode?: boolean; provider?: MobileModelProvider; model?: string; modelProfile?: MobileModelProviderProfile; agentPreset?: MobileAgentPreset; permissionMode?: MobilePermissionMode; attachmentPaths?: string[] }; result: { sessionId: string; taskId: string } }
+  'agent.run': { params: { projectId: string; prompt: string; initialTitle?: { title: string; expectedTitle: string }; sessionId?: string; planMode?: boolean; provider?: MobileModelProvider; model?: string; modelProfile?: MobileModelProviderProfile; agentPreset?: MobileAgentPreset; permissionMode?: MobilePermissionMode; attachmentPaths?: string[] }; result: { sessionId: string; taskId: string } }
   'agent.cancel': { params: { projectId: string; sessionId: string }; result: { outcome: 'accepted' | 'already-idle'; restoredMessages: AgentQueuedMessage[] } }
   'agent.resume': { params: { projectId: string; sessionId: string; provider?: MobileModelProvider; model?: string; modelProfile?: MobileModelProviderProfile }; result: { sessionId: string; taskId: string } }
   'agent.message': { params: { projectId: string; sessionId: string; prompt: string; mode: AgentMessageMode }; result: { accepted: boolean; messageId?: string } }

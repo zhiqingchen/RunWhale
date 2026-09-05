@@ -5,7 +5,7 @@ import { MOBILE_DEFAULT_MODELS, usePreferences } from '@/state/preferences'
 import { useRuntime } from '@/state/runtime'
 import { runExclusiveAction } from '@/utils/action-progress'
 import { agentDestructiveActionContract, agentImagePickerAvailable, agentPrimaryActionState, agentQueueActionReducer, agentResponseReducer, agentSendSubmissionBusy, idleAgentQueueActionState, idleAgentResponseState, mergeStoppedAgentMessages, performAgentDestructiveMutation, performAgentRun, resolveAgentPlanMode, restoreStoppedAgentMessages, shouldDismissConsumedQueuedMessage, type AgentDestructiveAction, type AgentQueueActionEvent, type AgentResponseEvent, type AgentSessionHistoryState } from '@/utils/agent-feedback'
-import { agentGoalProjectionVersion, parseAgentGoalCommand, projectAgentGoal, type AgentGoalCommand } from '@/utils/agent-goal'
+import { agentGoalProjectionVersion, isAgentGoalSessionReady, parseAgentGoalCommand, projectAgentGoal, type AgentGoalCommand } from '@/utils/agent-goal'
 import { latestAgentLifecycleState } from '@/utils/agent-lifecycle'
 import { lastHumanUserPrompt } from '@/utils/agent-message'
 import { isMobileModelProvider } from '@/utils/agent-model-selection'
@@ -261,7 +261,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
     : goalProjection.goal ? { ...goalProjection.goal, activation: goalSnapshot?.goal?.activation ?? 'disarmed' as const } : undefined
   const setGoal = (value: AgentGoal | undefined) => setGoalSnapshot({ version: goalProjectionVersion, goal: value })
   const ongoingGoal = goal?.phase === 'complete' ? undefined : goal
-  const goalSessionReady = Boolean(sessionId && runtime.info && (running || sessionRecord?.sessionId === sessionId))
+  const goalSessionReady = isAgentGoalSessionReady({ sessionId, connected: Boolean(runtime.info), localRunActive, submittedLifecycleState, lifecycleState, record: sessionRecord })
   useEffect(() => {
     setGoalSnapshot(undefined)
     setGoalLoadError(undefined)

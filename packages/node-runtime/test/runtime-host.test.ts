@@ -1,4 +1,4 @@
-import { lstat, mkdir, mkdtemp, readdir, readFile, symlink, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -1416,6 +1416,102 @@ describe('RunWhaleRuntimeHost', () => {
       expect.objectContaining({ name: 'approval.resolved', data: expect.objectContaining({ kind: 'agent-tool', outcome: 'allowed-once' }) }),
       expect.objectContaining({ name: 'question.resolved', data: expect.objectContaining({ outcome: 'answered' }) }),
     ]))
+  })
+
+  it('publishes running only after the new session is readable by Goal requests', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'runwhale-goal-admission-'))
+    let releaseWrite!: () => void
+    let enteredWrite!: () => void
+    let finishRun!: () => void
+    const writing = new Promise<void>((resolve) => { enteredWrite = resolve })
+    const writeAllowed = new Promise<void>((resolve) => { releaseWrite = resolve })
+    const running = new Promise<void>((resolve) => { finishRun = resolve })
+    const loadSession = vi.fn(async () => {})
+    const host = new RunWhaleRuntimeHost({ root, moduleStore: join(root, 'modules'), platform: 'ios', agent: {
+      run: async () => { await running; return { text: 'Done' } },
+      getGoal: () => undefined,
+      loadSession,
+    } })
+    hosts.push(host)
+    const rpc = createRuntimeRpc(await host.start())
+    const params = { projectId: 'goal-project', sessionId: 'new-session' }
+    await rpc('project.create', { id: params.projectId, name: 'Goal project' })
+    const writeText = MobileProjectFileSystem.prototype.writeText
+    vi.spyOn(MobileProjectFileSystem.prototype, 'writeText').mockImplementation(async function (this: MobileProjectFileSystem, path, ...args) {
+      if (path === '.runwhale/sessions/new-session.json') { enteredWrite(); await writeAllowed }
+      return writeText.call(this, path, ...args)
+    })
+    const run = rpc('agent.run', { ...params, prompt: 'Start' })
+    try {
+      await writing
+      const before = await rpc('host.snapshot', { afterSequence: 0 })
+      expect(before.result.events.some((event: any) => event.name === 'agent.state' && event.data.state === 'running')).toBe(false)
+      releaseWrite()
+      await vi.waitFor(async () => {
+        const snapshot = await rpc('host.snapshot', { afterSequence: 0 })
+        expect(snapshot.result.events.some((event: any) => event.name === 'agent.state' && event.data.state === 'running')).toBe(true)
+      })
+      expect(await rpc('agent.goal.get', params)).toMatchObject({ ok: true, result: {} })
+      expect(await rpc('session.read', params)).toMatchObject({ ok: true, result: { state: 'running' } })
+      expect(loadSession).not.toHaveBeenCalled()
+    } finally {
+      releaseWrite()
+      finishRun()
+      await run
+      await host.stop()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('loads Goal after a run failed before its harness was initialized', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'runwhale-goal-failed-admission-'))
+    let loaded = false
+    const loadSession = vi.fn(async () => { loaded = true })
+    const host = new RunWhaleRuntimeHost({ root, moduleStore: join(root, 'modules'), platform: 'ios', agent: {
+      run: async () => ({ text: '', failure: { code: 'MISSING_CREDENTIAL', message: 'Configure a provider' } }),
+      loadSession,
+      getGoal: () => { if (!loaded) throw new Error('Agent harness is unavailable'); return undefined },
+    } })
+    hosts.push(host)
+    const rpc = createRuntimeRpc(await host.start())
+    const params = { projectId: 'goal-project', sessionId: 'failed-session' }
+    try {
+      await rpc('project.create', { id: params.projectId, name: 'Goal project' })
+      expect(await rpc('agent.run', { ...params, prompt: 'Start' })).toMatchObject({ error: { message: 'MISSING_CREDENTIAL: Configure a provider' } })
+      expect(await rpc('agent.goal.get', { ...params, provider: 'google' })).toMatchObject({ ok: true, result: {} })
+      expect(loadSession).toHaveBeenCalledWith(expect.objectContaining({ sessionId: params.sessionId, provider: 'google' }))
+      expect(await rpc('session.read', params)).toMatchObject({ result: { state: 'failed', failure: { code: 'MISSING_CREDENTIAL' } } })
+    } finally {
+      await host.stop()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('initializes a placeholder title during admission without deleting the session or overwriting history', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'runwhale-session-title-'))
+    const host = new RunWhaleRuntimeHost({ root, moduleStore: join(root, 'modules'), platform: 'ios', agent: {
+      run: async ({ seed = [] }) => ({ text: 'Done', events: [...seed, { type: 'turn/end', data: { reason: { kind: 'completed' } } }] }),
+    } })
+    hosts.push(host)
+    const rpc = createRuntimeRpc(await host.start())
+    const params = { projectId: 'title-project', sessionId: 'title-session' }
+    try {
+      await rpc('project.create', { id: params.projectId, name: 'Title project' })
+      await rpc('session.create', { ...params, title: 'New session' })
+      const run = (title: string, expectedTitle: string) => rpc('agent.run', { ...params, prompt: 'Build a drawing app', initialTitle: { title, expectedTitle } })
+      expect(await run('Drawing app', 'New session')).toMatchObject({ ok: true })
+      expect(await rpc('session.read', params)).toMatchObject({ result: { title: 'Drawing app' } })
+      expect(await run('Replacement', 'Drawing app')).toMatchObject({ ok: true })
+      const record = await rpc('session.read', params)
+      expect(record.result.title).toBe('Drawing app')
+      expect(record.result.events).toHaveLength(2)
+      await rpc('session.create', { ...params, sessionId: 'custom-session', title: 'Pinned title' })
+      expect(await rpc('agent.run', { ...params, sessionId: 'custom-session', prompt: 'Start', initialTitle: { title: 'Replacement', expectedTitle: 'New session' } })).toMatchObject({ ok: true })
+      expect(await rpc('session.read', { ...params, sessionId: 'custom-session' })).toMatchObject({ result: { title: 'Pinned title' } })
+    } finally {
+      await host.stop()
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
   it('persists project-scoped Goal lifecycle mutations in the DSH session log', async () => {
