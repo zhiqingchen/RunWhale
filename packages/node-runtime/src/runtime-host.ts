@@ -1,6 +1,7 @@
 import type { AgentDriver, AgentCancellationResult, AgentImageInput } from './agent-driver.js'
 export type { AgentDriver, AgentRunOptions, AgentCancellationResult, AgentImageInput } from './agent-driver.js'
 import { AgentSessionExecution } from './session-execution.js'
+import { exportSessionLog } from './session-log-export.js'
 import { randomUUID } from 'node:crypto'
 import type { Stats } from 'node:fs'
 import { lstat, mkdir, readdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises'
@@ -209,6 +210,12 @@ export class RunWhaleRuntimeHost {
         return surfaceOnly
           ? this.readSessionSurface(selectedProjectId, selectedSessionId)
           : this.readSessionWithCaches(selectedProjectId, selectedSessionId)
+      },
+      'session.export': async ({ projectId, sessionId }, { signal }) => {
+        const selectedProjectId = String(projectId)
+        const selectedSessionId = String(sessionId)
+        assertSessionId(selectedSessionId)
+        return this.withProjectWork(selectedProjectId, () => exportSessionLog(this.options.root, selectedSessionId, this.sessionExportRecords(selectedProjectId, selectedSessionId, signal), signal))
       },
       'session.fork': async ({ projectId, sessionId, throughSequence }) => {
         const selectedProjectId = String(projectId)
@@ -1549,6 +1556,21 @@ export class RunWhaleRuntimeHost {
     }
     await this.writeSession(projectId, record)
     return record
+  }
+
+  private async *sessionExportRecords(projectId: string, sessionId: string, signal: AbortSignal): AsyncGenerator<AgentSessionRecord> {
+    const pending = [sessionId]
+    const seen = new Set<string>()
+    const summaries = await this.listSessions(projectId)
+    for (const id of pending) {
+      signal.throwIfAborted()
+      if (seen.has(id)) continue
+      seen.add(id)
+      const execution = this.sessionExecution(projectId, id)
+      if (execution?.active) await execution.persist('running')
+      yield await this.readSessionFile(projectId, id)
+      for (const child of summaries) if (child.parentSessionId === id) pending.push(child.sessionId)
+    }
   }
 
   private async readSession(projectId: string, sessionId: string): Promise<AgentSessionRecord> {

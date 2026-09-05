@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { strFromU8, unzipSync } from 'fflate'
 import { RunWhaleRuntimeHost, hasSuccessfulWorkspaceMutation, metroDiagnostic, repairInterruptedSessionSeed } from '../src/runtime-host.js'
 import { MobileGitRepository, MobilePackageInstaller, validateGitHubSshPrivateKey } from '@runwhale/mobile-runtime'
 import { MobileProjectFileSystem } from '@runwhale/mobile-runtime/sandbox'
@@ -1123,10 +1124,15 @@ describe('RunWhaleRuntimeHost', () => {
     const pendingRun = rpc('agent.run', { projectId: created.result.id, sessionId: empty.result.sessionId, prompt: 'Build a whale game', agentPreset: 'minimal', permissionMode: 'read-only' })
     await ready
     const liveRecord = await rpc('session.read', { projectId: created.result.id, sessionId: empty.result.sessionId, surfaceOnly: true })
+    const liveExport = await rpc('session.export', { projectId: created.result.id, sessionId: empty.result.sessionId })
     release()
     const run = await pendingRun
     expect(liveRecord.result.events).toEqual(sessionEvents.filter(event => event.type !== 'assistant/chunk'))
     expect(run.ok).toBe(true)
+    expect(liveExport.ok).toBe(true)
+    const liveZip = unzipSync(await readFile(liveExport.result.path))
+    expect(strFromU8(liveZip['session.jsonl']!).trimEnd().split('\n').slice(1).map(line => JSON.parse(line))).toEqual(sessionEvents)
+    await rm(join(liveExport.result.path, '..'), { recursive: true })
     const list = await rpc('session.list', { projectId: created.result.id })
     expect(list.result).toEqual([expect.objectContaining({
       sessionId: run.result.sessionId,
@@ -1142,6 +1148,10 @@ describe('RunWhaleRuntimeHost', () => {
     const forked = await rpc('session.fork', { projectId: created.result.id, sessionId: run.result.sessionId, throughSequence: 4 })
     expect(forked.result).toMatchObject({ parentSessionId: run.result.sessionId, parentEventSequence: 4, agentPreset: 'minimal', permissionMode: 'read-only' })
     expect(forked.result.events).toHaveLength(4)
+    const exportTree = await rpc('session.export', { projectId: created.result.id, sessionId: run.result.sessionId })
+    expect(exportTree.ok).toBe(true)
+    expect(Object.keys(unzipSync(await readFile(exportTree.result.path)))).toEqual(['session.jsonl', `subagents/${forked.result.sessionId}/session.jsonl`])
+    await rm(join(exportTree.result.path, '..'), { recursive: true })
     const snapshot = await hostSnapshot(info.origin, info.token) as { result: { events: Array<{ name: string; data: Record<string, unknown> }> } }
     expect(snapshot.result.events).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: 'session.event', data: expect.objectContaining({

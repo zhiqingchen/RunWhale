@@ -56,6 +56,9 @@ export function AgentPanel(props: AgentPanelProps) {
   const systemPrompt = useMemo(() => latestSessionSystemPrompt(currentSessionEvents), [currentSessionEvents])
   return <View style={[styles.root, keyboardOverlap > 0 && { paddingBottom: keyboardOverlap }]}>
     {props.onSessionDetailsOpenChange ? <SessionDetailsSheet
+      key={`${props.projectId}:${sessionId ?? ''}`}
+      projectId={props.projectId}
+      sessionId={sessionId}
       open={Boolean(props.sessionDetailsOpen)}
       onOpenChange={props.onSessionDetailsOpenChange}
       title={props.sessionSummaries.find(session => session.sessionId === sessionId)?.title ?? sessionRecord?.title ?? t('newSession')}

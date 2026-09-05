@@ -264,6 +264,7 @@ export interface MobileHostRequestMap {
   'session.create': { params: { projectId: string; sessionId?: string; title?: string }; result: AgentSessionRecord }
   'session.list': { params: { projectId: string }; result: AgentSessionSummary[] }
   'session.read': { params: { projectId: string; sessionId: string; surfaceOnly?: boolean }; result: AgentSessionRecord }
+  'session.export': { params: { projectId: string; sessionId: string }; result: { path: string } }
   'session.fork': { params: { projectId: string; sessionId: string; throughSequence?: number }; result: AgentSessionRecord }
   'session.delete': { params: { projectId: string; sessionId: string }; result: { deleted: boolean } }
   'agent.run': { params: { projectId: string; prompt: string; initialTitle?: { title: string; expectedTitle: string }; sessionId?: string; planMode?: boolean; provider?: MobileModelProvider; model?: string; modelProfile?: MobileModelProviderProfile; agentPreset?: MobileAgentPreset; permissionMode?: MobilePermissionMode; attachmentPaths?: string[] }; result: { sessionId: string; taskId: string } }

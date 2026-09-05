@@ -12,7 +12,7 @@ export function runtimeBootStepTimeoutMs(deadlineAt: number, maximumMs: number, 
 
 export function runtimeRequestTimeoutMs(method: MobileHostMethod): number {
   if (method === 'host.suspend' || method === 'agent.run' || method === 'agent.resume' || method === 'agent.cancel' || method === 'project.clone' || method === 'project.import.githubSnapshot' || method === 'git.share.publish') return 10 * 60_000
-  if (method === 'preview.open' || method === 'preview.run' || method === 'package.install' || method === 'project.delete') return 5 * 60_000
+  if (method === 'preview.open' || method === 'preview.run' || method === 'package.install' || method === 'project.delete' || method === 'session.export') return 5 * 60_000
   return 30_000
 }
 

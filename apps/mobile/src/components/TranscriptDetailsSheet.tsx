@@ -17,6 +17,8 @@ interface SheetProps {
   open: boolean
   onOpenChange(open: boolean): void
   title: string
+  titleNumberOfLines?: number
+  disableFullWindowOverlay?: boolean
   onBack?(): void
   action?: ReactNode
   testID?: string
@@ -24,7 +26,7 @@ interface SheetProps {
   minimumHeight?: number
 }
 
-export function TranscriptDetailsSheet({ open, onOpenChange, title, onBack, action, testID, expanded, minimumHeight = 0, children }: SheetProps & { children: ReactNode }) {
+export function TranscriptDetailsSheet({ open, onOpenChange, title, titleNumberOfLines = 1, disableFullWindowOverlay, onBack, action, testID, expanded, minimumHeight = 0, children }: SheetProps & { children: ReactNode }) {
   const { t } = useI18n()
   const colors = useAppColors()
   const styles = useMemo(() => createStyles(colors), [colors])
@@ -33,13 +35,13 @@ export function TranscriptDetailsSheet({ open, onOpenChange, title, onBack, acti
   const usableHeight = Math.max(0, height - insets.top - insets.bottom)
   const sheetHeight = expanded ? Math.round(usableHeight * 0.85) : Math.min(usableHeight, Math.max(minimumHeight, toolActivityDialogHeight(usableHeight)))
   return <Dialog isOpen={open} onOpenChange={onOpenChange}>
-    <Dialog.Portal unstable_accessibilityContainerViewIsModal style={styles.portal}>
+    <Dialog.Portal disableFullWindowOverlay={disableFullWindowOverlay} unstable_accessibilityContainerViewIsModal style={styles.portal}>
       <Dialog.Overlay isCloseOnPress style={styles.overlay} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} pointerEvents="box-none" style={styles.container}>
         <Dialog.Content testID={testID} isSwipeable={false} animation={{ entering: SlideInDown.duration(220), exiting: SlideOutDown.duration(160) }} style={[styles.content, { height: sheetHeight, paddingBottom: insets.bottom }]}>
           <View style={styles.header}>
             {onBack ? <Button isIconOnly size="sm" variant="ghost" accessibilityLabel={t('back')} onPress={onBack} testID={testID ? `${testID}-back` : undefined} style={styles.control}><AppIcon icon={ArrowLeft} color={colors.blue} size={18} /></Button> : null}
-            <Dialog.Title numberOfLines={1} style={styles.title}>{title}</Dialog.Title>
+            <Dialog.Title numberOfLines={titleNumberOfLines} style={[styles.title, titleNumberOfLines > 1 && { paddingVertical: 12 }]}>{title}</Dialog.Title>
             {action}
             <Dialog.Close accessibilityLabel={t('close')} variant="ghost" style={styles.control} />
           </View>
