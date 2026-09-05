@@ -1,0 +1,10 @@
+{
+  "platforms": ["android", "apple"],
+  "android": {
+    "modules": ["com.runwhale.nodehost.NodeHostModule"]
+  },
+  "apple": {
+    "modules": ["NodeHostModule"],
+    "podspecPath": "RunWhaleNodeHost.podspec"
+  }
+}
