@@ -44,7 +44,12 @@ export const webPreviewTestingScript = String.raw`
     let result;
     try {
       if (observer.takeRecords().length) epoch++;
-      if (command.kind === 'logs') {
+      if (command.kind === 'close') {
+        snapshotId = '';
+        snapshotEpoch = -1;
+        nodes.clear();
+        result = { closed: true };
+      } else if (command.kind === 'logs') {
         result = { logs: logs.filter(entry => entry.sequence > command.afterSequence), nextSequence: logSequence, gap: logs.length > 0 && command.afterSequence < logs[0].sequence - 1 };
       } else if (command.kind === 'inspect') {
         nodes = new Map();

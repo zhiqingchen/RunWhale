@@ -41,6 +41,7 @@ import kotlin.math.max
 @OptIn(UnstableReactNativeAPI::class, FrameworkAPI::class)
 class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
   internal val testing = NativePreviewTesting()
+  private val closeCallbacks = mutableListOf<(Boolean) -> Unit>()
   private data class SafeWindowInsets(val top: Int, val right: Int, val bottom: Int, val left: Int)
 
   private val mainHandler = Handler(Looper.getMainLooper())
@@ -244,7 +245,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
   }
 
   private fun completeIfReady() {
-    if (contentReady || startupFailed || crashed || !surfaceStarted || !firstContentDrawn) return
+    if (startupFailed || crashed || !surfaceStarted || !firstContentDrawn || previewView?.hasWindowFocus() != true) return
     contentReady = true
     cancelReadinessObservers()
     completePendingRequests(NativePreviewLaunchResult(opened = true))
@@ -362,7 +363,10 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
       discardUnusedBundle(nextBundle)
       intent.putExtra(EXTRA_BUNDLE_PATH, requireNotNull(bundleFile).absolutePath)
       setIntent(intent)
-      NativePreviewLaunchCoordinator.complete(requestId, NativePreviewLaunchResult(opened = true))
+      // A retained Activity receives this intent before regaining window focus.
+      // Do not let Agent inspection race ahead of the visible Preview.
+      pendingRequestIds.add(requestId)
+      completeIfReady()
       return
     }
     if (
@@ -431,11 +435,15 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
     host?.onHostPause(this)
     (application as ReactApplication).reactHost?.onHostPause(this)
     super.onPause()
+    val callbacks = closeCallbacks.toList()
+    closeCallbacks.clear()
+    callbacks.forEach { it(true) }
   }
 
   override fun onWindowFocusChanged(hasFocus: Boolean) {
     super.onWindowFocusChanged(hasFocus)
     host?.onWindowFocusChange(hasFocus)
+    if (hasFocus) completeIfReady()
   }
 
   override fun onConfigurationChanged(newConfig: Configuration) {
@@ -686,6 +694,12 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
           View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
           View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
     }
+  }
+
+  internal fun closeForTesting(complete: (Boolean) -> Unit) {
+    closeCallbacks.add(complete)
+    testing.invalidateSnapshot()
+    minimizeToStudio()
   }
 
   private fun minimizeToStudio() {

@@ -15,6 +15,16 @@ import {
 const bundleUrl = 'http://127.0.0.1:31337/index.bundle?platform=web&dev=true&token=private-token'
 
 describe('Preview lifecycle', () => {
+  it('closes without discarding the bundle and treats cancelled startup as an idle state', () => {
+    let state = previewLifecycleReducer(initialPreviewLifecycleState(), { type: 'bundle-ready', target: 'web', bundleUrl })
+    state = previewLifecycleReducer(state, { type: 'launch-cancelled' })
+    expect(state.operation).toBeUndefined()
+    expect(state.error).toBeUndefined()
+    state = previewLifecycleReducer(state, { type: 'content-opened', bundleUrl })
+    state = previewLifecycleReducer(state, { type: 'preview-closed' })
+    expect(state.webVisible).toBe(false)
+    expect(state.active).toMatchObject({ bundleUrl, opened: true })
+  })
   it('tracks cache lookup as an open operation rather than an explicit rebuild', () => {
     const state = previewLifecycleReducer(initialPreviewLifecycleState(), { type: 'open-requested' })
 

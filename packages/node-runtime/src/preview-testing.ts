@@ -23,7 +23,7 @@ export class PreviewTesting {
     const endpoint = this.active()
     if (!endpoint || endpoint.projectId !== projectId) throw new Error('Run this project Preview before testing it.')
     if (command.kind === 'action' && (!command.snapshotId || !command.nodeId)) throw new Error('Inspect the Preview before selecting an action target.')
-    const request: PreviewTestRequest = { id: randomUUID(), projectId, platform: endpoint.platform, revision: endpoint.revision, expiresAt: Date.now() + 15_000 }
+    const request: PreviewTestRequest = { id: randomUUID(), kind: command.kind, projectId, platform: endpoint.platform, revision: endpoint.revision, expiresAt: Date.now() + 15_000 }
     return new Promise<PreviewTestObservation>((resolve, reject) => {
       const finish = (result: PreviewTestResult) => {
         clearTimeout(timer)
@@ -59,6 +59,7 @@ export class PreviewTesting {
     if (!result.error && ((pending.command.kind === 'inspect' && (!Array.isArray(result.nodes) || !result.snapshotId))
       || (pending.command.kind === 'screenshot' && (!result.image || result.image.mediaType !== 'image/jpeg'))
       || (pending.command.kind === 'logs' && !Array.isArray(result.logs))
+      || (pending.command.kind === 'close' && result.closed !== true)
       || (pending.command.kind === 'action' && result.performed !== true))) {
       pending.finish({ timestamp: Date.now(), error: 'Preview did not return the requested test evidence.' })
       return false
@@ -73,11 +74,12 @@ export class PreviewTesting {
       })) } : {}),
     }
     pending.finish(sanitized)
+    if (pending.command.kind === 'close' && result.closed) this.cancelAll()
     return true
   }
 
   cancelAll(): void {
-    for (const pending of this.pending.values()) pending.finish({ timestamp: Date.now(), error: 'Preview changed or stopped. Inspect the current Preview again.' })
+    for (const pending of this.pending.values()) pending.finish({ timestamp: Date.now(), error: 'Preview changed, closed, or stopped. Inspect the current Preview again.' })
   }
 
   private current(id: string, projectId: string, revision: number): PendingProbe | undefined {

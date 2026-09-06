@@ -47,6 +47,7 @@ declare class NodeHostNativeModule extends NativeModule<{
   cancelNativePreviewOpen(requestId: string): boolean
   testNativePreview?(projectId: string, bundleUrl: string, command: string): Promise<string>
   captureWebPreview?(viewTag: number): Promise<string>
+  closeNativePreview?(projectId: string, bundleUrl: string): Promise<boolean>
 }
 
 const browserSnapshot: NativeNodeSnapshot = { state: 'stopped' }

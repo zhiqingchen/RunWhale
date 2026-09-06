@@ -23,6 +23,7 @@ export interface PreviewLog {
   message: string
 }
 export type PreviewTestCommand =
+  | { kind: 'close' }
   | { kind: 'inspect' }
   | { kind: 'screenshot' }
   | { kind: 'logs'; afterSequence: number }
@@ -30,6 +31,7 @@ export type PreviewTestCommand =
 
 export interface PreviewTestRequest {
   id: string
+  kind: PreviewTestCommand['kind']
   projectId: string
   revision: number
   platform: PreviewPlatform
@@ -46,6 +48,7 @@ export interface PreviewTestResult {
   nextSequence?: number
   gap?: boolean
   performed?: boolean
+  closed?: boolean
   method?: string
   error?: string
 }

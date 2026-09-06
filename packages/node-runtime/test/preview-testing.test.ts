@@ -13,6 +13,22 @@ function testing() {
 }
 
 describe('Preview test request lifetime', () => {
+  it('cancels unfinished evidence requests after a confirmed close and preserves the served endpoint', async () => {
+    const { bridge, requests, claim } = testing()
+    const inspect = bridge.query('test-project', { kind: 'inspect' }, new AbortController().signal)
+    const cancelled = expect(inspect).rejects.toThrow('closed')
+    claim()
+    const closed = bridge.query('test-project', { kind: 'close' }, new AbortController().signal)
+    claim()
+    const request = requests.at(-1)!
+    expect(bridge.complete(request.id, request.projectId, 1, { timestamp: 1, closed: true })).toBe(true)
+    await expect(closed).resolves.toMatchObject({ closed: true, revision: 1 })
+    await cancelled
+    const reopened = bridge.query('test-project', { kind: 'inspect' }, new AbortController().signal)
+    const cancellation = expect(reopened).rejects.toThrow('closed')
+    bridge.cancelAll()
+    await cancellation
+  })
   it('claims once, confines results to the project/revision, and sanitizes runtime evidence', async () => {
     const { bridge, requests, claim } = testing()
     const result = bridge.query('test-project', { kind: 'logs', afterSequence: 0 }, new AbortController().signal)

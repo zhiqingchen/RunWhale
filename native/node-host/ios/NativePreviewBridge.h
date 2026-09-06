@@ -25,5 +25,6 @@ FOUNDATION_EXPORT NSString *RunWhaleRecordNativePreviewDiagnostic(
     NSString *stage, NSString *code, NSString *message);
 FOUNDATION_EXPORT NSString *_Nullable RunWhaleTakeNativePreviewDiagnostic(void);
 FOUNDATION_EXPORT NSString *RunWhaleTestNativePreview(NSString *projectId, NSString *sourceId, NSString *command);
+FOUNDATION_EXPORT void RunWhaleCloseNativePreview(NSString *projectId, NSString *sourceId, void (^completion)(BOOL));
 
 NS_ASSUME_NONNULL_END

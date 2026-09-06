@@ -45,6 +45,13 @@ public final class NodeHostModule: Module {
     AsyncFunction("captureWebPreview") { (viewTag: Int, promise: Promise) in
       RunWhaleCaptureWebPreview(NSNumber(value: viewTag)) { result in promise.resolve(result) }
     }.runOnQueue(.main)
+    AsyncFunction("closeNativePreview") { (projectId: String, bundleUrl: String, promise: Promise) in
+      guard bundleUrl == self.testingBundleURL, let sourceId = self.testingSourceIdentifier else {
+        promise.resolve(false)
+        return
+      }
+      RunWhaleCloseNativePreview(projectId, sourceId) { closed in promise.resolve(closed) }
+    }.runOnQueue(.main)
     Function("runtimeRoot") { try self.runtime.runtimeRoot().path }
     Function("readHostInfo") { try self.runtime.readHostInfo() }
     Function("takeNativePreviewDiagnostic") {

@@ -45,6 +45,12 @@ static NSString *RWTestImage(UIImage *image, NSDictionary *viewport) {
   return self;
 }
 
+- (void)invalidateSnapshot {
+  _snapshotId = nil;
+  [_targets removeAllObjects];
+  [_descriptions removeAllObjects];
+}
+
 - (void)logLevel:(NSString *)level message:(NSString *)message {
   @synchronized(self) {
     NSString *selected = [@[@"debug", @"info", @"warn", @"error"] containsObject:level] ? level : @"info";

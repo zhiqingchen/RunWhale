@@ -40,6 +40,8 @@ internal class NativePreviewTesting {
   var projectId: String? = null
   var sourceId: String? = null
 
+  fun invalidateSnapshot() { snapshotId = ""; targets.clear() }
+
   @Synchronized fun log(level: String, message: String) {
     logs.addLast(JSONObject().put("sequence", ++sequence).put("timestamp", System.currentTimeMillis())
       .put("level", if (level in listOf("debug", "info", "warn", "error")) level else "info").put("message", message.take(1024)))

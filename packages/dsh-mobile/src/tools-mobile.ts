@@ -235,6 +235,17 @@ export function registerMobileWorkspaceTools(
   }))
 
   ctx.tools.register(defineTool({
+    name: 'preview_close',
+    description: 'Close the current project Preview and return to Studio after collecting test evidence. Keeps the Preview server available. Leave the Preview open when the user wants to inspect the result. Use preview_stop when the server should also stop.',
+    parameters: {},
+    output: { schema: { type: 'json' }, render: renderJson },
+    async execute(_args, exec) {
+      if (!services.testPreview) throw new Error('Preview testing is unavailable')
+      return portableJson(await services.testPreview(executionRoot(exec.agent), { kind: 'close' }, exec.signal))
+    },
+  }))
+
+  ctx.tools.register(defineTool({
     name: 'preview_stop',
     description: 'Stop the active Preview server for the current project.',
     parameters: {},

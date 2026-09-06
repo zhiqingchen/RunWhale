@@ -585,11 +585,13 @@ static void RunWhaleInstallNativePreviewFatalReporter(
 @property(nonatomic, copy) NSString *lastFailureMessage;
 @property(nonatomic, copy) RunWhaleNativePreviewActionHandler actionHandler;
 @property(nonatomic, assign) BOOL ready;
+@property(nonatomic, assign) BOOL appeared;
 @property(nonatomic, assign) BOOL failed;
 @property(nonatomic, assign) BOOL crashed;
 @property(atomic, assign) BOOL launchCancelled;
 @property(nonatomic, assign) BOOL cancellationHandled;
 - (void)cancelPendingLaunch;
+- (void)closePreviewWithCompletion:(void (^)(void))completion;
 @end
 
 static __weak UIView *RunWhaleRegisteredNativePreviewHostView;
@@ -626,10 +628,6 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
 
 - (void)addReadyHandler:(RunWhaleNativePreviewReadyHandler)readyHandler
           failureHandler:(RunWhaleNativePreviewFailureHandler)failureHandler {
-  if (self.ready) {
-    dispatch_async(dispatch_get_main_queue(), readyHandler);
-    return;
-  }
   if (self.failed) {
     NSString *message = self.lastFailureMessage ?: @"Native Preview failed";
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -639,6 +637,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
   }
   [self.readyHandlers addObject:[readyHandler copy]];
   [self.failureHandlers addObject:[failureHandler copy]];
+  dispatch_async(dispatch_get_main_queue(), ^{ [self completeVisibleReadiness]; });
 }
 
 - (void)viewDidLoad {
@@ -706,6 +705,17 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
 - (void)viewDidLayoutSubviews {
   [super viewDidLayoutSubviews];
   [self clampPreviewControlPosition];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+  [super viewDidAppear:animated];
+  self.appeared = YES;
+  [self completeVisibleReadiness];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+  self.appeared = NO;
+  [super viewWillDisappear:animated];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -848,6 +858,12 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
   self.ready = YES;
   [self cancelStartupTimeout];
   [self removeContentObserver];
+  [self completeVisibleReadiness];
+}
+
+- (void)completeVisibleReadiness {
+  // Cached content may already be ready while its presentation is still pending.
+  if (!self.ready || !self.appeared || self.previewView.window == nil || self.failed || self.launchCancelled) return;
   NSArray *handlers = [self.readyHandlers copy];
   [self.readyHandlers removeAllObjects];
   [self.failureHandlers removeAllObjects];
@@ -872,9 +888,8 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
   [self.failureHandlers removeAllObjects];
   if (failedAfterReady && self.actionHandler != nil) {
     self.actionHandler(@"failure", self.lastFailureMessage);
-  } else if (!failedAfterReady) {
-    for (RunWhaleNativePreviewFailureHandler handler in handlers) handler(self.lastFailureMessage);
   }
+  for (RunWhaleNativePreviewFailureHandler handler in handlers) handler(self.lastFailureMessage);
 
   [self tearDownPreviewRuntime];
 
@@ -914,14 +929,21 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
 }
 
 - (void)closePreview {
+  [self closePreviewWithCompletion:^{}];
+}
+
+- (void)closePreviewWithCompletion:(void (^)(void))completion {
+  [self.testing invalidateSnapshot];
   if (self.parentViewController != nil) {
     RunWhaleDetachNativePreviewController(self);
     RunWhaleRestoreStudioStatusBar();
-  } else {
+    completion();
+  } else if (self.presentingViewController != nil) {
     [self dismissViewControllerAnimated:YES completion:^{
       RunWhaleRestoreStudioStatusBar();
+      completion();
     }];
-  }
+  } else completion();
 }
 
 - (void)tearDownPreviewRuntime {
@@ -1114,4 +1136,13 @@ NSString *RunWhaleTestNativePreview(NSString *projectId, NSString *sourceId, NSS
     return @"{\"timestamp\":0,\"error\":\"The requested Native Preview is not visible. Open the current revision.\"}";
   }
   return [controller.testing execute:command];
+}
+
+void RunWhaleCloseNativePreview(NSString *projectId, NSString *sourceId, void (^completion)(BOOL)) {
+  RunWhaleNativePreviewController *controller = RunWhaleActiveNativePreviewController;
+  if (controller == nil) { completion(YES); return; }
+  if (![controller.projectIdentifier isEqual:projectId] || ![controller.sourceIdentifier isEqual:sourceId]) {
+    completion(NO); return;
+  }
+  [controller closePreviewWithCompletion:^{ completion(controller.view.window == nil); }];
 }

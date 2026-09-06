@@ -4,6 +4,7 @@ import type { PreviewEndpoint } from '@runwhale/mobile-protocol'
 import { Animated, BackHandler, Keyboard, PanResponder, Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { FullWindowOverlay } from 'react-native-screens'
+import { useFocusEffect } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button } from 'heroui-native/button'
 import { Portal } from 'heroui-native/portal'
@@ -25,6 +26,7 @@ import {
 } from '@/utils/preview-lifecycle'
 import { projectPreviewConfiguration } from '@/utils/project-preview'
 import { resolvePreviewLaunch } from '@/utils/preview-open'
+import { NativePreviewLaunchCancelled } from '@/utils/native-preview-launch'
 import { latestAgentPreviewPublication } from '@/utils/preview-publication'
 import { previewDeviceReport } from '@/utils/preview-feedback'
 import {
@@ -150,9 +152,39 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
   const [reportedError, setReportedError] = useState<string>()
   const handledAgentPublicationSequence = useRef(runtime.events.reduce((latest, event) => Math.max(latest, event.sequence), 0))
   const active = selectedActivePreview(state)
+  const [focused, setFocused] = useState(false)
+  useFocusEffect(useCallback(() => {
+    setFocused(true)
+    return () => {
+      setFocused(false)
+      launchGeneration.current += 1
+      operationInFlight.current = false
+      const requestId = pendingLaunchRequest.current
+      pendingLaunchRequest.current = undefined
+      if (requestId) runtime.cancelPreviewLaunch(requestId)
+      dispatch({ type: 'launch-cancelled' })
+    }
+  }, [runtime.cancelPreviewLaunch]))
   const webViewRef = useRef<WebView>(null)
   const webCaptureRef = useRef<View>(null)
-  const receiveTestMessage = usePreviewTesting({ projectId: project.id, active, webVisible: state.webVisible, events: runtime.events, request: runtime.request, webView: webViewRef, webCaptureView: webCaptureRef })
+  const closePreview = useCallback(async () => {
+    const generation = ++launchGeneration.current
+    operationInFlight.current = false
+    const requestId = pendingLaunchRequest.current
+    pendingLaunchRequest.current = undefined
+    if (requestId) runtime.cancelPreviewLaunch(requestId)
+    Keyboard.dismiss()
+    if (active?.target === 'native') {
+      if (!NodeHost.closeNativePreview) throw new Error('Update the RunWhale native host to enable closing Preview.')
+      if (!await NodeHost.closeNativePreview(project.id, active.bundleUrl)) throw new Error('Native Preview changed before it could close. Inspect the current revision.')
+    } else if (active?.target === 'web') {
+      webViewRef.current?.injectJavaScript("if (window.__runwhalePreviewTest) window.__runwhalePreviewTest(null, {kind:'close'}); true;")
+    }
+    if (launchGeneration.current !== generation) throw new Error('Preview changed while closing. Inspect the current revision.')
+    dispatch({ type: 'preview-closed' })
+    onPresentationRequested?.('hidden')
+  }, [active, project.id, runtime.cancelPreviewLaunch, onPresentationRequested])
+  const receiveTestMessage = usePreviewTesting({ projectId: project.id, enabled: focused, active, webVisible: state.webVisible, events: runtime.events, request: runtime.request, webView: webViewRef, webCaptureView: webCaptureRef, closePreview })
   const activeNativeBundleUrl = active?.target === 'native' ? active.bundleUrl : undefined
   const deviceReport = previewDeviceReport(state, publishedAgentPreview.current)
   const reportKey = deviceReport ? `${deviceReport.sessionId}:${deviceReport.revision}:${deviceReport.status}` : undefined
@@ -184,6 +216,10 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
   }, [project.id, runtime.cancelPreviewLaunch])
 
   const fail = useCallback((cause: unknown, bundleUrl?: string) => {
+    if (cause instanceof NativePreviewLaunchCancelled) {
+      dispatch({ type: 'launch-cancelled' })
+      return
+    }
     const message = cause instanceof Error ? cause.message : String(cause)
     dispatch({
       type: 'content-failed',
@@ -230,6 +266,8 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
       if (result.requestedBySessionId === sessionId) publishedAgentPreview.current = result
       if (runTarget === 'web') {
         dispatch({ type: 'bundle-ready', target: runTarget, bundleUrl, revision: result.revision, pageUrl: webPreviewPageUrl(bundleUrl) })
+        // Reopening the retained WebView does not emit another onLoad event.
+        if (active?.target === 'web' && active.bundleUrl === bundleUrl && active.opened) dispatch({ type: 'content-opened', bundleUrl })
         bundlePublished = true
       } else {
         dispatch({ type: 'bundle-ready', target: runTarget, bundleUrl, revision: result.revision })
@@ -245,7 +283,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
       if (pendingLaunchRequest.current === requestId) pendingLaunchRequest.current = undefined
       if (isCurrent()) operationInFlight.current = false
     }
-  }, [fail, flushFiles, loadFile, runtimePlatform, onPresentationRequested, presentation, project, runtime.openNativePreview, runtime.openPreview, runtime.runPreview, sessionId])
+  }, [active, fail, flushFiles, loadFile, runtimePlatform, onPresentationRequested, presentation, project, runtime.openNativePreview, runtime.openPreview, runtime.runPreview, sessionId])
 
   const run = useCallback(() => launch('run'), [launch])
   const openCachedOrRun = useCallback(() => launch('open'), [launch])
@@ -256,13 +294,13 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
   }, [openCachedOrRun])
 
   useEffect(() => {
-    if (!autoOpen || handledAutoOpen.current || !runtime.info) return
+    if (!focused || !autoOpen || handledAutoOpen.current || !runtime.info) return
     handledAutoOpen.current = true
     void openOrRun()
-  }, [autoOpen, openOrRun, runtime.info])
+  }, [autoOpen, focused, openOrRun, runtime.info])
 
   useEffect(() => {
-    if (operationInFlight.current || state.operation || 'error' in previewConfiguration) return
+    if (!focused || operationInFlight.current || state.operation || 'error' in previewConfiguration) return
     const publication = latestAgentPreviewPublication(runtime.events, project.id, sessionId, handledAgentPublicationSequence.current)
     if (!publication) return
     if (publication.endpoint.platform !== previewConfiguration.platform) return
@@ -296,7 +334,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
         if (isCurrent()) operationInFlight.current = false
       }
     })()
-  }, [active?.revision, fail, onPresentationRequested, presentation, previewConfiguration, project.id, runtime.events, runtime.openNativePreview, sessionId, state.operation])
+  }, [active?.revision, fail, focused, onPresentationRequested, presentation, previewConfiguration, project.id, runtime.events, runtime.openNativePreview, sessionId, state.operation])
 
   useEffect(() => {
     const subscription = NodeHost.addListener('onNativePreviewAction', (event) => {

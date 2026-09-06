@@ -72,6 +72,15 @@ class NodeHostModule : Module() {
         else NativePreviewTesting.capture(activity, webView) { promise.resolve(it) }
       }
     }
+    AsyncFunction("closeNativePreview") { projectId: String, bundleUrl: String, promise: Promise ->
+      nativePreviewMainHandler.post {
+        val activity = NativePreviewTesting.activeActivity()
+        if (bundleUrl != testingBundleUrl) promise.resolve(false)
+        else if (activity == null) promise.resolve(true)
+        else if (activity.testing.projectId != projectId || activity.testing.sourceId != testingSourceId) promise.resolve(false)
+        else activity.closeForTesting { promise.resolve(it) }
+      }
+    }
     Function("runtimeRoot") { nodeRuntime.runtimeRoot() }
     Function("supportsProjectShortcuts") {
       appContext.reactContext?.let(ProjectShortcuts::supported) ?: false
