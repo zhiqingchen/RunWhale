@@ -1,3 +1,5 @@
+import type { PreviewTestCommand, PreviewTestResult } from './preview-testing.js'
+
 export const MOBILE_HOST_PROTOCOL_VERSION = 1 as const
 
 export const DEFAULT_PROTOCOL_LIMITS = {
@@ -295,6 +297,8 @@ export interface MobileHostRequestMap {
   'preview.stop': { params: { projectId: string }; result: { stopped: boolean } }
   'preview.logs': { params: { projectId: string; afterSequence?: number }; result: { events: HostEvent[] } }
   'preview.report': { params: { projectId: string; sessionId: string; platform: PreviewPlatform; revision: number; status: 'opened' | 'failed'; message?: string }; result: { recorded: boolean; notified: boolean } }
+  'preview.test.claim': { params: { id: string; projectId: string; revision: number }; result: { command?: PreviewTestCommand } }
+  'preview.test.complete': { params: { id: string; projectId: string; revision: number; result: PreviewTestResult }; result: { accepted: boolean } }
 }
 
 export type MobileHostMethod = keyof MobileHostRequestMap
@@ -359,6 +363,7 @@ export type HostEventName =
   | 'preview.crashed'
   | 'preview.log'
   | 'preview.ready'
+  | 'preview.test.request'
   | 'project.changed'
   | 'project.clone-progress'
   | 'question.requested'

@@ -3,6 +3,8 @@ import type { Socket } from 'node:net'
 import { access, mkdir, readFile, readdir, realpath, stat, writeFile } from 'node:fs/promises'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
+import { nativePreviewConsoleSource } from './preview-console.js'
+import { webPreviewTestingScript } from '@runwhale/mobile-protocol'
 import type { MetroMiddleWare } from '@expo/metro/metro'
 import {
   isNativePreviewBuiltIn,
@@ -523,7 +525,8 @@ async function writePreviewEntry(root: string, platform: MetroPlatform): Promise
   const source = projectEntry.kind === 'expo-router'
     ? `${fastRefresh}import { AppRegistry } from 'react-native'\nimport App from '../app/index'\nAppRegistry.registerComponent('main', () => App)\n${platform === 'web' ? `AppRegistry.runApplication('main', { rootTag: document.getElementById('root') })\n` : ''}`
     : `${fastRefresh}import '../${projectEntry.path}'\n`
-  await writeFile(path, source)
+  await writeFile(resolve(directory, 'preview-testing.js'), platform === 'web' ? webPreviewTestingScript : nativePreviewConsoleSource)
+  await writeFile(path, `import './preview-testing'\n${source}`)
   return path
 }
 

@@ -1,4 +1,5 @@
 #import <UIKit/UIKit.h>
+#import "NativePreviewTesting.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -23,5 +24,6 @@ FOUNDATION_EXPORT void RunWhaleCancelNativePreviewController(UIViewController *c
 FOUNDATION_EXPORT NSString *RunWhaleRecordNativePreviewDiagnostic(
     NSString *stage, NSString *code, NSString *message);
 FOUNDATION_EXPORT NSString *_Nullable RunWhaleTakeNativePreviewDiagnostic(void);
+FOUNDATION_EXPORT NSString *RunWhaleTestNativePreview(NSString *projectId, NSString *sourceId, NSString *command);
 
 NS_ASSUME_NONNULL_END

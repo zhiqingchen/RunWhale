@@ -1,6 +1,7 @@
 import type { AgentDriver, AgentCancellationResult, AgentImageInput } from './agent-driver.js'
 export type { AgentDriver, AgentRunOptions, AgentCancellationResult, AgentImageInput } from './agent-driver.js'
 import { AgentSessionExecution } from './session-execution.js'
+import { PreviewTesting } from './preview-testing.js'
 import { exportSessionLog } from './session-log-export.js'
 import { randomUUID } from 'node:crypto'
 import type { Stats } from 'node:fs'
@@ -33,6 +34,7 @@ import {
   type PreviewEndpoint,
   type PreviewOpenResult,
   type PreviewPlatform,
+  type PreviewTestCommand,
   type ProjectCloneProgress,
   type RuntimePlatform,
 } from '@runwhale/mobile-protocol'
@@ -103,6 +105,7 @@ export class RunWhaleRuntimeHost {
   private state: HostSnapshot
   private preview: PreviewEndpoint & { startedAt: number } | undefined
   private previewReport: { endpoint: PreviewEndpoint; status: 'opened' | 'failed'; notified: boolean } | undefined
+  private readonly previewTesting = new PreviewTesting(() => this.preview, (request) => this.server.emit('preview.test.request', request))
 
   constructor(private readonly options: RuntimeHostOptions) {
     this.projectsRoot = resolve(options.root, 'projects')
@@ -355,7 +358,9 @@ export class RunWhaleRuntimeHost {
       'preview.run': async ({ projectId, platform }, { signal }) => this.runPreview(String(projectId), previewPlatform(platform), signal),
       'preview.reload': async ({ projectId }, { signal }) => ({ reloaded: await this.reloadPreview(String(projectId), signal) }),
       'preview.stop': async ({ projectId }) => ({ stopped: await this.stopPreview(String(projectId)) }),
-      'preview.logs': async ({ afterSequence }) => ({ events: this.server.eventsAfter(afterSequence ?? 0).filter((event) => event.name === 'diagnostic' || event.name === 'preview.ready') }),
+      'preview.logs': async ({ projectId, afterSequence }) => ({ events: this.agentPreviewLogs(this.projectRoot(projectId), afterSequence ?? 0) }),
+      'preview.test.claim': async ({ id, projectId, revision }) => this.previewTesting.claim(id, projectId, revision),
+      'preview.test.complete': async ({ id, projectId, revision, result }) => ({ accepted: this.previewTesting.complete(id, projectId, revision, result) }),
       'preview.report': async (result) => this.enqueuePreviewOperation(undefined, () => this.reportPreview(result)),
     })
     this.tasks.on('output', (taskId, chunk) => this.server.emit('task.output', { taskId, chunk }))
@@ -452,6 +457,7 @@ export class RunWhaleRuntimeHost {
   }
 
   async stop(): Promise<void> {
+    this.previewTesting.cancelAll()
     this.backgrounded = true
     this.clearBackgroundWait(false)
     this.backgroundSessions.clear()
@@ -653,6 +659,10 @@ export class RunWhaleRuntimeHost {
       const data = event.data as Record<string, unknown>
       return data.projectId === undefined || data.projectId === projectId
     }).slice(-200)
+  }
+
+  async testAgentPreview(projectRoot: string, command: PreviewTestCommand, signal: AbortSignal) {
+    return this.previewTesting.query(this.projectIdForRoot(projectRoot), command, signal)
   }
 
   private async reportPreview(result: MobileHostRequestMap['preview.report']['params']): Promise<MobileHostRequestMap['preview.report']['result']> {
@@ -1796,6 +1806,7 @@ export class RunWhaleRuntimeHost {
     if (signal) throwIfAborted(signal)
     if (!artifact) return { status: 'missing' }
     try {
+      this.previewTesting.cancelAll()
       this.preview = undefined
       const served = await this.metro.serve(artifact, { live: false })
       if (signal?.aborted) {
@@ -1860,6 +1871,7 @@ export class RunWhaleRuntimeHost {
       }
       if (signal) throwIfAborted(signal)
       replacingServedPreview = true
+      this.previewTesting.cancelAll()
       this.preview = undefined
       const served = await this.metro.serve(bundle, { live: true })
       if (signal) throwIfAborted(signal)
@@ -1929,6 +1941,7 @@ export class RunWhaleRuntimeHost {
 
   private async stopPreviewNow(projectId: string): Promise<boolean> {
     if (!this.preview || this.preview.projectId !== projectId) return false
+    this.previewTesting.cancelAll()
     try {
       await this.metro.stop()
     } finally {

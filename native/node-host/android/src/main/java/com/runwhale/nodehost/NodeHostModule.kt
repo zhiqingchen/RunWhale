@@ -16,6 +16,7 @@ import java.net.URL
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.text.Charsets.UTF_8
+import org.json.JSONObject
 
 class NodeHostModule : Module() {
   private data class DownloadedNativePreviewBundle(
@@ -26,6 +27,8 @@ class NodeHostModule : Module() {
   private val nativePreviewRequestGate = NativePreviewRequestGate()
   private val nativePreviewMainHandler = Handler(Looper.getMainLooper())
   private val nativePreviewTimeouts = ConcurrentHashMap<String, Runnable>()
+  private var testingBundleUrl: String? = null
+  private var testingSourceId: String? = null
 
   private val nodeRuntime by lazy {
     val context = requireNotNull(appContext.reactContext) { "React context is unavailable" }
@@ -49,6 +52,26 @@ class NodeHostModule : Module() {
     }
 
     Function("snapshot") { nodeRuntime.snapshot().toMap() }
+    AsyncFunction("testNativePreview") { projectId: String, bundleUrl: String, command: String, promise: Promise ->
+      nativePreviewMainHandler.post {
+        val activity = NativePreviewTesting.activeActivity()
+        if (activity == null || activity.testing.projectId != projectId || bundleUrl != testingBundleUrl || activity.testing.sourceId != testingSourceId) {
+          promise.resolve(NativePreviewTesting.failure("The requested Native Preview is not visible. Open the current revision."))
+        } else {
+          try { activity.testing.execute(activity, JSONObject(command)) { promise.resolve(it) } }
+          catch (error: Exception) { promise.resolve(NativePreviewTesting.failure(error.message ?: "Invalid test command")) }
+        }
+      }
+    }
+    AsyncFunction("captureWebPreview") { viewTag: Int, promise: Promise ->
+      nativePreviewMainHandler.post {
+        val activity = appContext.currentActivity
+        val root = activity?.findViewById<android.view.View>(viewTag)
+        val webView = root?.let(NativePreviewTesting::findWebView)
+        if (activity == null || webView == null) promise.resolve(NativePreviewTesting.failure("Web Preview is not mounted"))
+        else NativePreviewTesting.capture(activity, webView) { promise.resolve(it) }
+      }
+    }
     Function("runtimeRoot") { nodeRuntime.runtimeRoot() }
     Function("supportsProjectShortcuts") {
       appContext.reactContext?.let(ProjectShortcuts::supported) ?: false
@@ -142,6 +165,8 @@ class NodeHostModule : Module() {
         bundle.file.delete()
         return@AsyncFunction
       }
+      testingBundleUrl = bundleUrl
+      testingSourceId = bundle.sourceIdentifier
       val activity = appContext.currentActivity
       if (activity == null) {
         bundle.file.delete()

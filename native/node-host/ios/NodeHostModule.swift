@@ -15,6 +15,8 @@ public final class NodeHostModule: Module {
   private let runtime = NodeHostModule.sharedRuntime
   private let nativePreviewLaunchState = NativePreviewLaunchState()
   private let stateListenerID = UUID()
+  private var testingBundleURL: String?
+  private var testingSourceIdentifier: String?
 
   public func definition() -> ModuleDefinition {
     Name("RunWhaleNodeHost")
@@ -34,6 +36,15 @@ public final class NodeHostModule: Module {
       self.runtime.removeStateListener(id: self.stateListenerID)
     }
     Function("snapshot") { self.runtime.snapshot.dictionary }
+    AsyncFunction("testNativePreview") { (projectId: String, bundleUrl: String, command: String) -> String in
+      guard bundleUrl == self.testingBundleURL, let sourceId = self.testingSourceIdentifier else {
+        return "{\"timestamp\":0,\"error\":\"Open the current Native Preview before testing.\"}"
+      }
+      return RunWhaleTestNativePreview(projectId, sourceId, command)
+    }.runOnQueue(.main)
+    AsyncFunction("captureWebPreview") { (viewTag: Int, promise: Promise) in
+      RunWhaleCaptureWebPreview(NSNumber(value: viewTag)) { result in promise.resolve(result) }
+    }.runOnQueue(.main)
     Function("runtimeRoot") { try self.runtime.runtimeRoot().path }
     Function("readHostInfo") { try self.runtime.readHostInfo() }
     Function("takeNativePreviewDiagnostic") {
@@ -124,6 +135,8 @@ public final class NodeHostModule: Module {
           let sourceIdentifier = nativePreviewSourceIdentifier(bundleUrl: bundleUrl, data: data)
           DispatchQueue.main.async {
             guard launchState.isCurrent(launchToken) else { return }
+            self?.testingBundleURL = bundleUrl.absoluteString
+            self?.testingSourceIdentifier = sourceIdentifier
             guard let presenter = self?.appContext?.utilities?.currentViewController() else {
               settlement.once {
                 promise.reject(nativePreviewFailure(

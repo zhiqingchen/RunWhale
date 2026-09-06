@@ -20,6 +20,7 @@ import android.view.WindowInsets
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
+import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
 import com.facebook.react.bridge.JSBundleLoader
 import com.facebook.react.common.annotations.FrameworkAPI
@@ -39,6 +40,7 @@ import kotlin.math.max
 
 @OptIn(UnstableReactNativeAPI::class, FrameworkAPI::class)
 class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
+  internal val testing = NativePreviewTesting()
   private data class SafeWindowInsets(val top: Int, val right: Int, val bottom: Int, val left: Int)
 
   private val mainHandler = Handler(Looper.getMainLooper())
@@ -103,6 +105,8 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
       bundleFile = expectedBundle
       sourceIdentifier = sourceId
       projectIdentifier = projectId
+      testing.projectId = projectId
+      testing.sourceId = sourceId
       startPreview(root, expectedBundle.absolutePath, projectId)
     } catch (error: Throwable) {
       failStartup(
@@ -119,7 +123,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
     val delegate = DefaultReactHostDelegate(
       jsMainModulePath = "index",
       jsBundleLoader = JSBundleLoader.createFileLoader(bundlePath, PREVIEW_SCRIPT_URL, false),
-      reactPackages = NativePreviewReactPackages.create(application, projectId),
+      reactPackages = NativePreviewReactPackages.create(application, projectId) + NativePreviewConsolePackage(testing),
       turboModuleManagerDelegateBuilder = DefaultTurboModuleManagerDelegate.Builder(),
       exceptionHandler = { error ->
         runOnUiThread { handleRuntimeFailure(error.message) }
@@ -139,6 +143,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
     host = previewHost
     surface = previewSurface
     previewView = preview
+    testing.root = preview
     root.addView(
       preview,
       0,
@@ -414,11 +419,17 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
 
   override fun onResume() {
     super.onResume()
+    // Studio owns Agent RPC and test dispatch. Its host must keep processing
+    // events and timers while this in-app Preview is the foreground activity.
+    (application as ReactApplication).reactHost?.onHostResume(this, this)
+    NativePreviewTesting.activate(this)
     host?.onHostResume(this, this)
   }
 
   override fun onPause() {
+    NativePreviewTesting.deactivate(this)
     host?.onHostPause(this)
+    (application as ReactApplication).reactHost?.onHostPause(this)
     super.onPause()
   }
 

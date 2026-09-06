@@ -44,7 +44,11 @@ adb reverse tcp:8081 tcp:8081
 
 Computer Metro serves Studio only. User-project Preview remains on the embedded, token-protected phone Metro server.
 
+Agent Preview testing uses `preview_logs`, `preview_inspect`, `preview_screenshot`, and `preview_action`. Keep the current Preview visible while testing. Actions require a fresh node snapshot and follow the session permission mode. Native actions dispatch app view events; they do not validate OS gestures or system dialogs. Screenshots cover the Preview content area and require a vision-capable model for visual verification. Rebuild Preview to add console capture to older cached native bundles.
+
 ## iOS Simulator Workflow
+
+Use the iOS Simulator for routine iOS validation. Use a physical iPhone only when explicitly requested or when the behavior requires device hardware.
 
 Keep Metro running, boot the target Simulator, and reuse the native build cache:
 

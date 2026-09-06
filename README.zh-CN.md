@@ -19,6 +19,7 @@ https://github.com/user-attachments/assets/b8b7d184-8d6b-4fc0-b954-c159c02aa1b4
 - 编辑文件、运行受限的 Node.js 和 TypeScript 任务，并安装受支持的纯 JavaScript 依赖。
 - 审查 Git 变更，在持久化会话中继续工作。
 - 在 Web、iOS 和 Android 上预览同一个 Expo 项目。
+- 让智能体读取预览日志和节点、操作受支持的控件，并使用支持视觉的模型检查截图。
 
 用户项目绝不会触发 Xcode、Gradle、EAS、IPA 或 APK 构建。哪里跑会直接在手机本地打包和预览这些项目。
 

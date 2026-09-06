@@ -15,6 +15,8 @@ import { useRuntime } from '@/state/runtime'
 import { useI18n } from '@/i18n'
 import { AppIcon } from '@/components/AppIcon'
 import { NativePreviewHost, NodeHost } from '@runwhale/node-host'
+import { usePreviewTesting } from '@/hooks/use-preview-testing'
+import { webPreviewTestingScript } from '@runwhale/mobile-protocol'
 import {
   initialPreviewLifecycleState,
   previewLifecycleReducer,
@@ -148,6 +150,9 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
   const [reportedError, setReportedError] = useState<string>()
   const handledAgentPublicationSequence = useRef(runtime.events.reduce((latest, event) => Math.max(latest, event.sequence), 0))
   const active = selectedActivePreview(state)
+  const webViewRef = useRef<WebView>(null)
+  const webCaptureRef = useRef<View>(null)
+  const receiveTestMessage = usePreviewTesting({ projectId: project.id, active, webVisible: state.webVisible, events: runtime.events, request: runtime.request, webView: webViewRef, webCaptureView: webCaptureRef })
   const activeNativeBundleUrl = active?.target === 'native' ? active.bundleUrl : undefined
   const deviceReport = previewDeviceReport(state, publishedAgentPreview.current)
   const reportKey = deviceReport ? `${deviceReport.sessionId}:${deviceReport.revision}:${deviceReport.status}` : undefined
@@ -321,7 +326,11 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
     return () => subscription.remove()
   }, [minimizeWeb, webOverlay.visible])
 
-  const webViewContent = webActive && webSource ? <WebView
+  const webViewContent = webActive && webSource ? <View ref={webCaptureRef} collapsable={false} style={styles.webView}><WebView
+    ref={webViewRef}
+    injectedJavaScriptBeforeContentLoaded={webPreviewTestingScript}
+    injectedJavaScript={webPreviewTestingScript}
+    onMessage={(event) => receiveTestMessage(event.nativeEvent.data)}
     key={webActive.bundleUrl}
     source={webSource}
     style={styles.webView}
@@ -336,7 +345,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
     renderLoading={() => <View accessible accessibilityLabel={t('openingPreview')} accessibilityLiveRegion="polite" accessibilityRole="progressbar" style={styles.webLoading}><Spinner color={colors.accent} size="lg" /></View>}
     onLoad={() => dispatch({ type: 'content-opened', bundleUrl: webActive.bundleUrl })}
     onError={(event) => fail(new Error(event.nativeEvent.description || 'Web Preview failed to load'), webActive.bundleUrl)}
-  /> : <View accessible accessibilityLabel={t('openingPreview')} accessibilityLiveRegion="polite" accessibilityRole="progressbar" style={styles.webLoading}><Spinner color={colors.accent} size="lg" /></View>
+  /></View> : <View accessible accessibilityLabel={t('openingPreview')} accessibilityLiveRegion="polite" accessibilityRole="progressbar" style={styles.webLoading}><Spinner color={colors.accent} size="lg" /></View>
 
   const webOverlayContent = presentation === 'overlay' && webOverlay.mounted && webActive && webSource ? (
     <View

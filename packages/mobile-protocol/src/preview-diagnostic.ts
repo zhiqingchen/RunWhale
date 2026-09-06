@@ -44,3 +44,8 @@ function sanitizeDiagnosticMessage(value: string): string {
     .trim()
     .slice(0, 2_048)
 }
+
+/** Page and console text is plain evidence, even when it happens to contain JSON. */
+export function previewEvidenceText(value: string): string {
+  return sanitizeDiagnosticMessage(value)
+}
