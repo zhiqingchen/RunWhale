@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name           = 'RunWhaleNodeHost'
-  s.version        = '1.0.0'
+  s.version        = '1.0.1'
   s.summary        = 'Embedded Node 24 host for RunWhale'
   s.description    = 'Runs one embedded Node instance on a private serial thread.'
   s.license        = { :type => 'Apache-2.0' }

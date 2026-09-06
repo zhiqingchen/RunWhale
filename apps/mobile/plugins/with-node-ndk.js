@@ -130,7 +130,7 @@ import com.facebook.react.devsupport.DefaultDevLoadingViewImplementation`)
     return project
   })
   config = withXcodeProject(config, (project) => {
-    const version = config.version ?? '1.0.0'
+    const version = config.version ?? '1.0.1'
     for (const entry of Object.values(project.modResults.pbxXCBuildConfigurationSection())) {
       if (entry && typeof entry === 'object' && entry.buildSettings) entry.buildSettings.MARKETING_VERSION = version
     }
