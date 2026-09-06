@@ -475,8 +475,8 @@ importers:
         specifier: 24.13.3
         version: 24.13.3
       '@types/ssh2':
-        specifier: 1.15.5
-        version: 1.15.5
+        specifier: 1.15.6
+        version: 1.15.6
       '@types/ws':
         specifier: 8.18.1
         version: 8.18.1
@@ -2729,8 +2729,8 @@ packages:
   '@types/retry@0.12.0':
     resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}
 
-  '@types/ssh2@1.15.5':
-    resolution: {integrity: sha512-N1ASjp/nXH3ovBHddRJpli4ozpk6UdDYIX4RJWFa9L1YKnzdhTlVmiGHm4DZnj/jLbqZpes4aeR30EFGQtvhQQ==}
+  '@types/ssh2@1.15.6':
+    resolution: {integrity: sha512-oGdxhBqcRTwSTKFm+9EiKzkNVYRLEFkcW44lhguvBalGJbWfGnDt/ezwSUZc+SF9m9bMc3VyklNAtp7zICjS5w==}
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
@@ -7961,7 +7961,7 @@ snapshots:
 
   '@types/retry@0.12.0': {}
 
-  '@types/ssh2@1.15.5':
+  '@types/ssh2@1.15.6':
     dependencies:
       '@types/node': 18.19.130
 
