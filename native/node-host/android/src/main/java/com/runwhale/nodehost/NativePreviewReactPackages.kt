@@ -16,6 +16,7 @@ import expo.modules.kotlin.services.Service
 
 internal object NativePreviewReactPackages {
   private val allowedReactPackageClasses = setOf(
+    "com.airbnb.android.react.lottie.LottiePackage",
     "com.shopify.reactnative.skia.RNSkiaPackage",
     "com.horcrux.svg.SvgPackage",
     "com.reactnativecommunity.webview.RNCWebViewPackage",

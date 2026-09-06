@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { AppRegistry, PanResponder, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import Constants from 'expo-constants'
 import * as Audio from 'expo-audio'
@@ -12,6 +12,8 @@ import * as Maps from 'expo-maps'
 import * as MediaLibrary from 'expo-media-library'
 import * as Video from 'expo-video'
 import { Canvas, Circle } from '@shopify/react-native-skia'
+import LottieView from 'lottie-react-native'
+import animation from './animation.json'
 
 const POST_READY_CRASH_MESSAGE = 'Native Preview acceptance crash after first content'
 
@@ -24,6 +26,8 @@ function scheduleFatalCrashAfterReady(): void {
 function NativePreviewFixture() {
   const [tapCount, setTapCount] = useState(0)
   const [dragDistance, setDragDistance] = useState(0)
+  const lottie = useRef<LottieView>(null)
+  const [animationStatus, setAnimationStatus] = useState('loading')
   const { height, width } = useWindowDimensions()
   const orientation = width >= height ? 'landscape' : 'portrait'
   const dimensions = `${Math.round(width)} × ${Math.round(height)}`
@@ -40,6 +44,18 @@ function NativePreviewFixture() {
     <Canvas accessibilityLabel="Native Preview Skia canvas" style={styles.skia} testID="native-preview-skia">
       <Circle cx={14} cy={14} r={12} color="#62E6C7" />
     </Canvas>
+    <LottieView
+      ref={lottie}
+      source={animation}
+      autoPlay
+      loop={false}
+      onAnimationLoaded={() => setAnimationStatus('loaded')}
+      onAnimationFinish={(cancelled) => { if (!cancelled) setAnimationStatus('finished') }}
+      onAnimationFailure={(error) => setAnimationStatus(`failed: ${error}`)}
+      style={styles.lottie}
+      testID="native-preview-lottie"
+    />
+    <Text style={styles.dimensions} testID="native-preview-lottie-status">Lottie: {animationStatus}</Text>
     <Text
       accessibilityLabel={`Native Preview viewport ${orientation}, ${dimensions}`}
       style={styles.dimensions}
@@ -52,6 +68,8 @@ function NativePreviewFixture() {
       accessibilityRole="button"
       onPress={() => {
         setTapCount((count) => count + 1)
+        setAnimationStatus('playing')
+        lottie.current?.play()
         void Haptics.selectionAsync()
       }}
       style={styles.button}
@@ -95,6 +113,7 @@ const styles = StyleSheet.create({
   title: { color: '#FFFFFF', fontSize: 20, fontWeight: '800', marginBottom: 12 },
   dimensions: { color: '#9EC5FF', fontSize: 15, fontWeight: '700', marginBottom: 12 },
   skia: { width: 28, height: 28, marginBottom: 12 },
+  lottie: { width: 48, height: 48 },
   button: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#526BFF' },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   crashButton: { marginTop: 12, backgroundColor: '#A93245' },

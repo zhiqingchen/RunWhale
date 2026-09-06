@@ -347,6 +347,9 @@ NSString *_Nullable RunWhaleTakeNativePreviewDiagnostic(void) {
   if (linked.count == 0) return @{};
   NSArray<NSString *> *allowedPrefixes = @[@"REA", @"RNCWebView", @"RNCSafeArea", @"RNGesture", @"RNS", @"RNSVG", @"Skia"];
   NSMutableDictionary<NSString *, Class<RCTComponentViewProtocol>> *filtered = [NSMutableDictionary new];
+  if (linked[@"LottieAnimationView"] != Nil) {
+    filtered[@"LottieAnimationView"] = linked[@"LottieAnimationView"];
+  }
   [linked enumerateKeysAndObjectsUsingBlock:^(NSString *name, Class<RCTComponentViewProtocol> component, BOOL *stop) {
     for (NSString *prefix in allowedPrefixes) {
       if ([name hasPrefix:prefix]) {

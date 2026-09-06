@@ -80,6 +80,7 @@
     "expo-video": "57.0.3",
     "expo-web-browser": "57.0.2",
     "heroui-native": "1.0.9",
+    "lottie-react-native": "7.5.0",
     "lucide-react-native": "1.38.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

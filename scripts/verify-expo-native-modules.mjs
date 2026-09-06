@@ -83,6 +83,11 @@ for (const [name, androidClasses, iosClasses] of [
 }
 const androidScope = await readFile(resolve(root, 'native/node-host/android/src/main/java/com/runwhale/nodehost/NativePreviewProjectScope.kt'), 'utf8')
 const iosBridge = await readFile(resolve(root, 'native/node-host/ios/NativePreviewBridge.mm'), 'utf8')
+if (!catalog.modules.some((module) => module.name === 'lottie-react-native')
+  || !androidProvider.includes('"com.airbnb.android.react.lottie.LottiePackage"')
+  || !iosBridge.includes('filtered[@"LottieAnimationView"] = linked[@"LottieAnimationView"]')) {
+  throw new Error('Lottie is missing from the Native Preview catalog or a platform provider')
+}
 const metroRuntime = await readFile(resolve(root, 'packages/node-runtime/src/metro-runtime.ts'), 'utf8')
 if (!androidProvider.includes('NativePreviewStorageModule::class.java')
   || !iosProvider.includes('NativePreviewStorageModule.self')) {

@@ -50,6 +50,7 @@
     { "name": "@expo/vector-icons", "version": "15.0.2", "platforms": ["android", "ios"] },
     { "name": "@react-native-async-storage/async-storage", "version": "2.2.0", "platforms": ["android", "ios"], "template": false },
     { "name": "@shopify/react-native-skia", "version": "2.6.2", "platforms": ["android", "ios"] },
+    { "name": "lottie-react-native", "version": "7.5.0", "platforms": ["android", "ios"] },
     { "name": "react", "version": "19.2.3", "platforms": ["android", "ios"] },
     { "name": "react-native", "version": "0.86.3", "platforms": ["android", "ios"] },
     { "name": "react-native-gesture-handler", "version": "2.32.0", "platforms": ["android", "ios"] },

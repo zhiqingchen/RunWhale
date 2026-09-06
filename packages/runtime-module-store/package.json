@@ -58,6 +58,7 @@
     "expo-system-ui": "57.0.3",
     "expo-video": "57.0.3",
     "expo-web-browser": "57.0.2",
+    "lottie-react-native": "7.5.0",
     "metro-runtime": "0.84.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",

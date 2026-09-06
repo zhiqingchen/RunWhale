@@ -363,6 +363,8 @@ function expectNativePreviewAcceptanceSignals(code: string): void {
   for (const marker of [
     'Native Preview fixture ready',
     'native-preview-dimensions',
+    'native-preview-lottie',
+    'LottieAnimationView',
     'Viewport:',
     'native-preview-tap',
     'native-preview-drag',
