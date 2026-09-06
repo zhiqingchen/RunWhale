@@ -79,6 +79,7 @@ export interface RuntimeHostOptions {
 
 type RuntimePreparation = 'module-store' | 'npm'
 type RuntimePreparationState = { ready: boolean; pending?: Promise<void> }
+type ContinuedAgentWork = { id: string; granted: boolean; ended: boolean; execution?: AgentSessionExecution; taskId?: string }
 
 export class RunWhaleRuntimeHost {
   private readonly projectsRoot: string
@@ -94,6 +95,8 @@ export class RunWhaleRuntimeHost {
   private backgroundTimer: ReturnType<typeof setTimeout> | undefined
   private finishBackgroundWait: ((suspended: boolean) => void) | undefined
   private readonly backgroundSessions = new Set<AgentSessionExecution>()
+  private continuedWork: ContinuedAgentWork | undefined
+  private continuedWatchdog: ReturnType<typeof setTimeout> | undefined
   private readonly pendingAgentApprovals = new Map<string, PendingAgentApproval>()
   private readonly pendingAgentQuestions = new Map<string, PendingAgentQuestion>()
   private readonly activeProjectWork = new Map<string, number>()
@@ -126,6 +129,9 @@ export class RunWhaleRuntimeHost {
       'host.suspend': async () => this.suspend(),
       'host.background': async ({ revision, graceMs }) => this.background(revision, graceMs),
       'host.foreground': async ({ revision }) => this.foreground(revision),
+      'host.continued.prepare': async ({ id }) => this.prepareContinuedWork(id),
+      'host.continued.status': async ({ id, granted }) => this.continuedWorkStatus(id, granted),
+      'host.continued.end': async ({ id, pause }) => ({ ended: this.endContinuedWork(id, pause) }),
       'host.stop': async () => { queueMicrotask(() => { void this.stop() }); return this.snapshot('stopping') },
       'host.snapshot': async ({ afterSequence }) => ({ snapshot: this.snapshot(), events: this.server.eventsAfter(afterSequence ?? 0) }),
       'host.environment': async () => this.runtimeEnvironment(),
@@ -228,7 +234,7 @@ export class RunWhaleRuntimeHost {
         const selectedProjectId = String(projectId)
         return this.withProjectWork(selectedProjectId, async () => ({ deleted: await this.deleteSession(selectedProjectId, String(sessionId)) }))
       },
-      'agent.run': async ({ projectId, prompt, initialTitle, sessionId, planMode, provider, model, modelProfile, agentPreset, permissionMode, attachmentPaths }, { signal }) => this.runAgent({
+      'agent.run': async ({ projectId, prompt, initialTitle, sessionId, planMode, provider, model, modelProfile, agentPreset, permissionMode, attachmentPaths, continuedTaskId }, { signal }) => this.runAgent({
         projectId: String(projectId),
         prompt: String(prompt),
         ...(initialTitle === undefined ? {} : { initialTitle: { title: boundedText(String(initialTitle.title).trim(), 256), expectedTitle: String(initialTitle.expectedTitle) } }),
@@ -241,9 +247,10 @@ export class RunWhaleRuntimeHost {
         ...(agentPreset === undefined ? {} : { agentPreset: mobileAgentPreset(agentPreset) }),
         ...(permissionMode === undefined ? {} : { permissionMode: mobilePermissionMode(permissionMode) }),
         ...(attachmentPaths === undefined ? {} : { attachmentPaths }),
+        ...(continuedTaskId === undefined ? {} : { continuedTaskId }),
       }),
       'agent.cancel': async ({ projectId, sessionId }) => this.cancelAgent(String(projectId), String(sessionId)),
-      'agent.resume': async ({ projectId, sessionId, provider, model, modelProfile }, { signal }) => {
+      'agent.resume': async ({ projectId, sessionId, provider, model, modelProfile, continuedTaskId }, { signal }) => {
         const record = await this.assertSessionProject(String(projectId), String(sessionId))
         if (record.state !== 'paused') throw new Error('Agent session is not paused')
         await this.loadAgentGoalSession(String(projectId), String(sessionId), {
@@ -251,7 +258,7 @@ export class RunWhaleRuntimeHost {
           ...(model === undefined ? {} : { model: boundedText(String(model).trim(), 256) }),
           ...(modelProfile === undefined ? {} : { modelProfile: mobileModelProviderProfile(modelProfile) }),
         })
-        return this.runAgent({ projectId: String(projectId), sessionId: String(sessionId), prompt: '', signal, backgroundResume: true })
+        return this.runAgent({ projectId: String(projectId), sessionId: String(sessionId), prompt: '', signal, backgroundResume: true, ...(continuedTaskId === undefined ? {} : { continuedTaskId }) })
       },
       'agent.message': async ({ projectId, sessionId, prompt, mode }) => this.messageAgent(String(projectId), String(sessionId), String(prompt), mode),
       'agent.message.list': async ({ projectId, sessionId }) => this.listAgentMessages(String(projectId), String(sessionId)),
@@ -391,6 +398,77 @@ export class RunWhaleRuntimeHost {
     this.finishBackgroundWait = undefined
   }
 
+  private prepareContinuedWork(id: string): { prepared: boolean } {
+    if (typeof id !== 'string' || !/^app\.runwhale\.mobile\.agent\.[A-Za-z0-9-]{1,64}$/.test(id)) throw new Error('Invalid continued task identifier')
+    const current = this.continuedWork
+    if (this.options.platform !== 'ios' || this.backgrounded || this.suspension
+      || (current && !current.ended && (!current.execution || current.execution.active))) return { prepared: false }
+    if (this.continuedWatchdog) clearTimeout(this.continuedWatchdog)
+    this.continuedWork = { id, granted: false, ended: false }
+    // Preparation and native delivery are bounded, including a failed Studio submission.
+    this.continuedWatchdog = setTimeout(() => { this.endContinuedWork(id, false) }, 10_000)
+    return { prepared: true }
+  }
+
+  private continuedWorkStatus(id: string, granted: boolean): MobileHostRequestMap['host.continued.status']['result'] {
+    const work = this.continuedWork
+    if (!work || work.id !== id) return { state: 'missing', completedSteps: 0 }
+    const execution = work.execution
+    const completedSteps = execution && execution.taskId === work.taskId ? execution.completedSteps : 0
+    if (work.ended || (execution && (execution.taskId !== work.taskId || execution.pauseRequested))) return { state: 'stopped', completedSteps }
+    if (execution && !execution.active) return { state: execution.record?.state === 'completed' ? 'completed' : 'stopped', completedSteps }
+    if (this.backgrounded && execution && (
+      [...this.pendingAgentApprovals.values()].some((request) => request.sessionId === execution.sessionId)
+      || [...this.pendingAgentQuestions.values()].some((request) => request.sessionId === execution.sessionId)
+    )) {
+      this.endContinuedWork(id, true)
+      return { state: 'waiting', completedSteps }
+    }
+    if (granted === true) {
+      work.granted = true
+      if (this.continuedWatchdog) clearTimeout(this.continuedWatchdog)
+      // A lost native connection must never leave an unbounded runtime exemption.
+      this.continuedWatchdog = setTimeout(() => { this.endContinuedWork(id, true) }, 10_000)
+    }
+    return { state: execution ? 'running' : 'pending', completedSteps }
+  }
+
+  private endContinuedWork(id: string, pause: boolean): boolean {
+    const work = this.continuedWork
+    if (!work || work.id !== id || work.ended) return false
+    work.ended = true
+    work.granted = false
+    if (this.continuedWatchdog) clearTimeout(this.continuedWatchdog)
+    this.continuedWatchdog = undefined
+    const execution = work.execution
+    if (pause && execution && execution.taskId === work.taskId) {
+      // iOS uses the same expiration callback for system expiry and user cancellation.
+      execution.requiresExplicitResume = true
+      this.backgroundSessions.delete(execution)
+      if (execution.active) void this.pauseExecution(execution).catch(() => {
+        execution.controller.abort(new Error('Continued background work expired'))
+      })
+    }
+    return true
+  }
+
+  private canContinueInBackground(execution: AgentSessionExecution): boolean {
+    const work = this.continuedWork
+    return Boolean(work && !work.ended && work.granted && work.execution === execution && work.taskId === execution.taskId)
+  }
+
+  private async pauseExecution(execution: AgentSessionExecution): Promise<void> {
+    if (!this.options.agent.pause || !this.options.agent.resume) {
+      await this.cancelAgent(execution.projectId, execution.sessionId)
+      return
+    }
+    if (execution.stopping || execution.phase === 'finishing') { await execution.completion; return }
+    execution.pauseRequested = true
+    if (execution.phase === 'driving') await this.options.agent.pause(execution.sessionId)
+    await execution.completion
+    if (execution.record?.state === 'paused' && !execution.requiresExplicitResume) this.backgroundSessions.add(execution)
+  }
+
   private async background(revision: number, graceMs: number): Promise<{ suspended: boolean }> {
     if (!Number.isSafeInteger(revision) || revision < 0 || !Number.isFinite(graceMs) || graceMs < 0) throw new Error('Invalid background lease')
     if (this.options.platform !== 'ios' || revision <= this.backgroundRevision) return { suspended: false }
@@ -427,7 +505,7 @@ export class RunWhaleRuntimeHost {
     if (this.backgrounded || revision !== this.backgroundRevision || this.state.state !== 'running') return { resumed: false }
     for (const execution of this.backgroundSessions) {
       this.backgroundSessions.delete(execution)
-      if (execution.record?.state !== 'paused' || this.agentSessions.get(execution.sessionId) !== execution) continue
+      if (execution.requiresExplicitResume || execution.record?.state !== 'paused' || this.agentSessions.get(execution.sessionId) !== execution) continue
       // Only sessions checkpointed by this live host resume automatically.
       // Process-death recovery remains explicit, with the durable transcript.
       void this.runAgent({ projectId: execution.projectId, sessionId: execution.sessionId, prompt: '', backgroundResume: true }).catch(() => undefined)
@@ -438,17 +516,13 @@ export class RunWhaleRuntimeHost {
   suspend(forBackground = false): Promise<{ suspended: true }> {
     if (this.suspension) return this.suspension
     this.suspension = (async () => {
-      await Promise.all([...this.agentSessions.values()].filter((execution) => execution.active)
+      await Promise.all([...this.agentSessions.values()].filter((execution) => execution.active && (!forBackground || !this.canContinueInBackground(execution)))
         .map(async (execution) => {
           if (!forBackground || !this.options.agent.pause || !this.options.agent.resume) {
             await this.cancelAgent(execution.projectId, execution.sessionId)
             return
           }
-          if (execution.stopping || execution.phase === 'finishing') { await execution.completion; return }
-          execution.pauseRequested = true
-          if (execution.phase === 'driving') await this.options.agent.pause(execution.sessionId)
-          await execution.completion
-          if (execution.record?.state === 'paused') this.backgroundSessions.add(execution)
+          await this.pauseExecution(execution)
         }))
       if (this.preview) await this.stopPreview(this.preview.projectId)
       return { suspended: true as const }
@@ -461,6 +535,7 @@ export class RunWhaleRuntimeHost {
     this.backgrounded = true
     this.clearBackgroundWait(false)
     this.backgroundSessions.clear()
+    if (this.continuedWork) this.endContinuedWork(this.continuedWork.id, false)
     this.state = this.snapshot('stopping')
     for (const requestId of [...this.pendingAgentApprovals.keys()]) this.settleAgentApproval(requestId, 'unavailable')
     for (const requestId of [...this.pendingAgentQuestions.keys()]) this.settleAgentQuestion(requestId, new Error('runtime stopped while waiting for an answer'))
@@ -625,6 +700,7 @@ export class RunWhaleRuntimeHost {
 
   async runAgentPreview(projectRoot: string, sessionId: string, signal: AbortSignal) {
     const projectId = this.projectIdForRoot(projectRoot)
+    this.requirePreviewForeground(projectId)
     throwIfAborted(signal)
     const manifest = parseRunWhaleManifest(JSON.parse(await readFile(join(this.projectRoot(projectId), 'runwhale.json'), 'utf8')) as unknown)
     const platform = resolveProjectPreviewPlatform(manifest, this.options.platform)
@@ -639,6 +715,7 @@ export class RunWhaleRuntimeHost {
 
   async reloadAgentPreview(projectRoot: string, sessionId: string, signal: AbortSignal): Promise<boolean> {
     const projectId = this.projectIdForRoot(projectRoot)
+    this.requirePreviewForeground(projectId)
     throwIfAborted(signal)
     const reloaded = await this.reloadPreview(projectId, signal, sessionId)
     if (signal.aborted) {
@@ -662,7 +739,16 @@ export class RunWhaleRuntimeHost {
   }
 
   async testAgentPreview(projectRoot: string, command: PreviewTestCommand, signal: AbortSignal) {
-    return this.previewTesting.query(this.projectIdForRoot(projectRoot), command, signal)
+    const projectId = this.projectIdForRoot(projectRoot)
+    this.requirePreviewForeground(projectId)
+    return this.previewTesting.query(projectId, command, signal)
+  }
+
+  private requirePreviewForeground(projectId: string): void {
+    if (this.options.platform !== 'ios' || !this.backgrounded) return
+    const work = this.continuedWork
+    if (work?.execution?.projectId === projectId) this.endContinuedWork(work.id, true)
+    throw new Error('Open RunWhale and continue the session to use Preview.')
   }
 
   private async reportPreview(result: MobileHostRequestMap['preview.report']['params']): Promise<MobileHostRequestMap['preview.report']['result']> {
@@ -1045,7 +1131,7 @@ export class RunWhaleRuntimeHost {
     return execution
   }
 
-  private async runAgent({ projectId, prompt, initialTitle, sessionId: requestedSession, signal, planMode, provider, model, modelProfile, agentPreset: requestedPreset, permissionMode: requestedPermissionMode, attachmentPaths, backgroundResume = false }: MobileHostRequestMap['agent.run']['params'] & { signal?: AbortSignal | undefined; backgroundResume?: boolean }): Promise<{ sessionId: string; taskId: string }> {
+  private async runAgent({ projectId, prompt, initialTitle, sessionId: requestedSession, signal, planMode, provider, model, modelProfile, agentPreset: requestedPreset, permissionMode: requestedPermissionMode, attachmentPaths, continuedTaskId, backgroundResume = false }: MobileHostRequestMap['agent.run']['params'] & { signal?: AbortSignal | undefined; backgroundResume?: boolean }): Promise<{ sessionId: string; taskId: string }> {
     if (signal) throwIfAborted(signal)
     const sessionId = requestedSession ?? randomUUID()
     assertSessionId(sessionId)
@@ -1054,9 +1140,12 @@ export class RunWhaleRuntimeHost {
     const projectRoot = this.projectRoot(projectId)
     const taskId = `agent-${randomUUID()}`
     if (this.suspension || this.backgrounded) throw new Error('runtime is suspended')
+    const continuedWork = continuedTaskId === undefined ? undefined : this.continuedWork
+    if (continuedTaskId !== undefined && (!continuedWork || continuedWork.id !== continuedTaskId || continuedWork.ended || continuedWork.execution)) throw new Error('Continued task is no longer available; try again')
     const execution = this.agentExecution(projectId, sessionId)
     this.backgroundSessions.delete(execution)
     execution.begin(taskId)
+    if (continuedWork) { continuedWork.execution = execution; continuedWork.taskId = taskId }
     const runController = execution.controller
     const abortRun = () => runController.abort(signal?.reason)
     signal?.addEventListener('abort', abortRun, { once: true })
@@ -1795,6 +1884,7 @@ export class RunWhaleRuntimeHost {
   }
 
   private async openPreviewNow(projectId: string, platform: PreviewPlatform, signal?: AbortSignal): Promise<PreviewOpenResult> {
+    this.requirePreviewForeground(projectId)
     if (this.preview?.projectId === projectId && this.preview.platform === platform) {
       return { status: 'ready', source: 'active', endpoint: previewEndpoint(this.preview) }
     }
@@ -1834,6 +1924,7 @@ export class RunWhaleRuntimeHost {
   }
 
   private async runPreviewNow(projectId: string, platform: PreviewPlatform, signal?: AbortSignal, requestedBySessionId?: string): Promise<PreviewEndpoint> {
+    this.requirePreviewForeground(projectId)
     const previewAtStart = this.preview
     let bundleStarted = false
     let replacingServedPreview = false
@@ -1849,6 +1940,7 @@ export class RunWhaleRuntimeHost {
       }
       await this.ensureModuleStore()
       if (signal) throwIfAborted(signal)
+      this.requirePreviewForeground(projectId)
       bundleStarted = true
       const bundle = await this.metro.bundle(root, platform)
       if (signal) throwIfAborted(signal)
@@ -1875,6 +1967,7 @@ export class RunWhaleRuntimeHost {
       this.preview = undefined
       const served = await this.metro.serve(bundle, { live: true })
       if (signal) throwIfAborted(signal)
+      this.requirePreviewForeground(projectId)
       this.previewRevisions.set(projectId, revision)
       this.preview = { projectId, platform, revision, ...served, ...(requestedBySessionId ? { requestedBySessionId } : {}), startedAt: Date.now() }
       this.state = { ...this.snapshot(), activeProjectId: projectId }

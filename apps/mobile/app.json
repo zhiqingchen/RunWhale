@@ -22,6 +22,8 @@
         ]
       },
       "infoPlist": {
+        "UIBackgroundModes": ["processing"],
+        "BGTaskSchedulerPermittedIdentifiers": ["app.runwhale.mobile.agent.*"],
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true

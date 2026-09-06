@@ -36,6 +36,9 @@ public final class NodeHostModule: Module {
       self.runtime.removeStateListener(id: self.stateListenerID)
     }
     Function("snapshot") { self.runtime.snapshot.dictionary }
+    AsyncFunction("beginContinuedAgentTask") { (copy: [String: String], promise: Promise) in
+      NodeHostModule.backgroundLifecycle.beginContinuedTask(copy: copy) { promise.resolve($0) }
+    }.runOnQueue(.main)
     AsyncFunction("testNativePreview") { (projectId: String, bundleUrl: String, command: String) -> String in
       guard bundleUrl == self.testingBundleURL, let sourceId = self.testingSourceIdentifier else {
         return "{\"timestamp\":0,\"error\":\"Open the current Native Preview before testing.\"}"

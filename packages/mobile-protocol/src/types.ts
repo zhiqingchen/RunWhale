@@ -241,6 +241,9 @@ export interface MobileHostRequestMap {
   'host.suspend': { params: Record<string, never>; result: { suspended: true } }
   'host.background': { params: { revision: number; graceMs: number }; result: { suspended: boolean } }
   'host.foreground': { params: { revision: number }; result: { resumed: boolean } }
+  'host.continued.prepare': { params: { id: string }; result: { prepared: boolean } }
+  'host.continued.status': { params: { id: string; granted: boolean }; result: { state: 'pending' | 'running' | 'completed' | 'stopped' | 'waiting' | 'missing'; completedSteps: number } }
+  'host.continued.end': { params: { id: string; pause: boolean }; result: { ended: boolean } }
   'host.stop': { params: Record<string, never>; result: HostSnapshot }
   'host.snapshot': { params: { afterSequence?: number }; result: { snapshot: HostSnapshot; events: HostEvent[] } }
   'host.environment': { params: Record<string, never>; result: RuntimeEnvironment }
@@ -269,9 +272,9 @@ export interface MobileHostRequestMap {
   'session.export': { params: { projectId: string; sessionId: string }; result: { path: string } }
   'session.fork': { params: { projectId: string; sessionId: string; throughSequence?: number }; result: AgentSessionRecord }
   'session.delete': { params: { projectId: string; sessionId: string }; result: { deleted: boolean } }
-  'agent.run': { params: { projectId: string; prompt: string; initialTitle?: { title: string; expectedTitle: string }; sessionId?: string; planMode?: boolean; provider?: MobileModelProvider; model?: string; modelProfile?: MobileModelProviderProfile; agentPreset?: MobileAgentPreset; permissionMode?: MobilePermissionMode; attachmentPaths?: string[] }; result: { sessionId: string; taskId: string } }
+  'agent.run': { params: { projectId: string; prompt: string; initialTitle?: { title: string; expectedTitle: string }; sessionId?: string; planMode?: boolean; provider?: MobileModelProvider; model?: string; modelProfile?: MobileModelProviderProfile; agentPreset?: MobileAgentPreset; permissionMode?: MobilePermissionMode; attachmentPaths?: string[]; continuedTaskId?: string }; result: { sessionId: string; taskId: string } }
   'agent.cancel': { params: { projectId: string; sessionId: string }; result: { outcome: 'accepted' | 'already-idle'; restoredMessages: AgentQueuedMessage[] } }
-  'agent.resume': { params: { projectId: string; sessionId: string; provider?: MobileModelProvider; model?: string; modelProfile?: MobileModelProviderProfile }; result: { sessionId: string; taskId: string } }
+  'agent.resume': { params: { projectId: string; sessionId: string; provider?: MobileModelProvider; model?: string; modelProfile?: MobileModelProviderProfile; continuedTaskId?: string }; result: { sessionId: string; taskId: string } }
   'agent.message': { params: { projectId: string; sessionId: string; prompt: string; mode: AgentMessageMode }; result: { accepted: boolean; messageId?: string } }
   'agent.message.list': { params: { projectId: string; sessionId: string }; result: { messages: AgentQueuedMessage[] } }
   'agent.message.update': { params: { projectId: string; sessionId: string; messageId: string; prompt: string }; result: { accepted: boolean; messageId?: string } }

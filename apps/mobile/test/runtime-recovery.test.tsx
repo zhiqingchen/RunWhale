@@ -10,6 +10,7 @@ const native = vi.hoisted(() => ({
   onNodeState: undefined as ((snapshot: { state: string }) => void) | undefined,
   startBundled: vi.fn(async () => ({ state: 'running' })),
   recoverTransport: vi.fn<() => Promise<string | null>>(async () => null),
+  beginContinuedAgentTask: vi.fn<() => Promise<string | null>>(async () => null),
   hostInfo: { port: 4100, origin: 'http://127.0.0.1:4100', websocketUrl: 'ws://127.0.0.1:4100/events', token: 'fixture', nodeVersion: '24.19.0', recoveryId: undefined as string | undefined },
 }))
 
@@ -24,11 +25,13 @@ vi.mock('react-native', () => ({
   },
 }))
 vi.mock('expo-secure-store', () => ({ getItemAsync: async () => null }))
+vi.mock('../src/i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 vi.mock('@runwhale/node-host', () => ({
   NodeHost: {
     snapshot: () => ({ state: native.state }),
     startBundled: native.startBundled,
     recoverTransport: native.recoverTransport,
+    beginContinuedAgentTask: native.beginContinuedAgentTask,
     readHostInfo: () => JSON.stringify(native.hostInfo),
     takeNativePreviewDiagnostic: () => null,
     addListener: (_event: string, listener: typeof native.onNodeState) => {
@@ -78,6 +81,7 @@ beforeEach(async () => {
   native.appState = 'active'
   native.startBundled.mockClear()
   native.recoverTransport.mockReset().mockResolvedValue(null)
+  native.beginContinuedAgentTask.mockReset().mockResolvedValue(null)
   native.hostInfo = { port: 4100, origin: 'http://127.0.0.1:4100', websocketUrl: 'ws://127.0.0.1:4100/events', token: 'fixture', nodeVersion: '24.19.0', recoveryId: undefined }
   reachable = true
   hang = false
@@ -117,6 +121,24 @@ async function loseConnection() {
 }
 
 describe('iOS runtime connection recovery', () => {
+  it('binds a user submission to its native continued task', async () => {
+    runtime.registerFileFlush(async () => undefined)
+    const id = 'app.runwhale.mobile.agent.ui-test'
+    native.beginContinuedAgentTask.mockResolvedValue(id)
+    await act(async () => { await runtime.runAgent({ id: 'project', name: 'Project', description: '', updatedAt: 0, files: [] }, { sessionId: 'session', prompt: 'Make the change' }) })
+    const requests = vi.mocked(fetch).mock.calls.map(([, init]) => JSON.parse(init!.body as string))
+    expect(requests.find((request) => request.method === 'agent.run').params).toMatchObject({ sessionId: 'session', continuedTaskId: id })
+    expect(native.beginContinuedAgentTask).toHaveBeenCalledTimes(1)
+  })
+
+  it('still submits foreground work when native background scheduling fails', async () => {
+    runtime.registerFileFlush(async () => undefined)
+    native.beginContinuedAgentTask.mockRejectedValue(new Error('Background scheduling unavailable'))
+    await act(async () => { await runtime.runAgent({ id: 'project', name: 'Project', description: '', updatedAt: 0, files: [] }, { sessionId: 'session', prompt: 'Make the change' }) })
+    const requests = vi.mocked(fetch).mock.calls.map(([, init]) => JSON.parse(init!.body as string))
+    expect(requests.find((request) => request.method === 'agent.run').params).not.toHaveProperty('continuedTaskId')
+  })
+
   it('distinguishes a lost client connection from a provider authentication failure', async () => {
     runtime.registerFileFlush(async () => undefined)
     vi.mocked(fetch).mockRejectedValueOnce(new Error('fetch failed: UnexpectedException: The network connection was lost. (at ExpoModulesCore/Promise.swift:56)'))

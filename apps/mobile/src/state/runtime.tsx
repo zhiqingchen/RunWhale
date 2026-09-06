@@ -1,4 +1,5 @@
 import type { StudioAgentRunOptions } from '@/utils/agent-run'
+import { useI18n } from '@/i18n'
 import { NodeHost, type NativeNodeSnapshot } from '@runwhale/node-host'
 import * as SecureStore from 'expo-secure-store'
 import { AppState, Platform } from 'react-native'
@@ -44,6 +45,7 @@ const RuntimeContext = createContext<RuntimeContextValue | null>(null)
 const NODE_RELAUNCH_REQUIRED = 'Embedded Node stopped and cannot restart inside the current app process. Fully close and reopen RunWhale.'
 
 export function RuntimeProvider({ children }: PropsWithChildren) {
+  const { t } = useI18n()
   const [snapshot, setSnapshot] = useState<NativeNodeSnapshot>(() => NodeHost.snapshot())
   const [info, setInfo] = useState<HostInfo>()
   const [lastError, setLastError] = useState<string>()
@@ -497,15 +499,24 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
       uploaded.push(await request('project.attach', { projectId, sourcePath: attachment.sourcePath, name: attachment.name, mediaType: attachment.mediaType }))
       throwIfAgentRunAborted(signal)
     }
+    const continuedTaskId = Platform.OS === 'ios'
+      ? await NodeHost.beginContinuedAgentTask?.({
+        title: t('agentBackgroundTitle'), working: t('agentBackgroundWorking'),
+        steps: t('agentBackgroundSteps'), waiting: t('agentBackgroundWaiting'),
+      }).catch(() => null) ?? undefined
+      : undefined
+    if (signal?.aborted && continuedTaskId) void request('host.continued.end', { id: continuedTaskId, pause: false }).catch(() => undefined)
+    throwIfAgentRunAborted(signal)
     const requestId = `${Platform.OS}-agent-${Date.now()}-${Math.random().toString(36).slice(2)}`
     activeAgentRequest.current = { requestId, projectId, ...(sessionId ? { sessionId } : {}) }
     let result: MobileHostRequestMap['agent.run']['result']
     try {
       result = resume && sessionId
-        ? await rpc(infoRef.current, 'agent.resume', { projectId, sessionId, provider, model, modelProfile }, requestId, undefined, signal)
+        ? await rpc(infoRef.current, 'agent.resume', { projectId, sessionId, provider, model, modelProfile, ...(continuedTaskId ? { continuedTaskId } : {}) }, requestId, undefined, signal)
         : await rpc(infoRef.current, 'agent.run', {
         projectId,
         prompt,
+        ...(continuedTaskId ? { continuedTaskId } : {}),
         ...(initialTitle ? { initialTitle } : {}),
         ...(sessionId ? { sessionId } : {}),
         ...(planMode === undefined ? {} : { planMode }),
@@ -521,7 +532,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     }
     throwIfAgentRunAborted(signal)
     return { sessionId: result.sessionId, taskId: result.taskId }
-  }, [activateProject, request])
+  }, [activateProject, request, t])
 
   const cancelAgent = useCallback(async (projectId: string, sessionId: string): Promise<MobileHostRequestMap['agent.cancel']['result']> => {
     const active = activeAgentRequest.current

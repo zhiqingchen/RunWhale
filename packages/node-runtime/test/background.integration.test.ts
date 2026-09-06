@@ -54,7 +54,7 @@ async function setup(platform: 'ios' | 'android' = 'ios', initialization?: Promi
   }
   await rpc('project.create', { id: 'project', name: 'Background test' })
   const session = { projectId: 'project', sessionId: 'session' }
-  const start = () => rpc('agent.run', { ...session, prompt: 'Do the work once' })
+  const start = (continuedTaskId?: string) => rpc('agent.run', { ...session, prompt: 'Do the work once', ...(continuedTaskId ? { continuedTaskId } : {}) })
   const record = () => rpc('session.read', session)
   const restart = async () => {
     await host.stop()
@@ -67,6 +67,119 @@ async function setup(platform: 'ios' | 'android' = 'ios', initialization?: Promi
   }
   return { host, driver, rpc, session, start, record, root, restart, reconnect, requests: () => requests, release: () => releases.splice(0).forEach((release) => release()) }
 }
+
+const continuedId = 'app.runwhale.mobile.agent.background-test'
+
+it('continues only the granted execution and reports real completed steps', async () => {
+  const test = await setup()
+  expect(await test.rpc('host.continued.prepare', { id: continuedId })).toEqual({ prepared: true })
+  const running = test.start(continuedId)
+  const other = { projectId: 'project', sessionId: 'other-session' }
+  const ungranted = test.rpc('agent.run', { ...other, prompt: 'Other work' })
+  await vi.waitFor(() => expect(test.requests()).toBe(2))
+  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toEqual({ state: 'running', completedSteps: 0 })
+  await test.rpc('host.background', { revision: 1, graceMs: 0 })
+  await ungranted
+  expect((await test.record()).state).toBe('running')
+  expect((await test.rpc('session.read', other)).state).toBe('paused')
+  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toEqual({ state: 'running', completedSteps: 0 })
+  test.release()
+  await running
+  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toEqual({ state: 'completed', completedSteps: 1 })
+  await test.rpc('host.continued.end', { id: continuedId, pause: false })
+})
+
+it('preserves the existing pause fallback until a native task is actually granted', async () => {
+  const test = await setup()
+  await test.rpc('host.continued.prepare', { id: continuedId })
+  const running = test.start(continuedId)
+  await vi.waitFor(() => expect(test.requests()).toBe(1))
+  await test.rpc('host.continued.status', { id: continuedId, granted: false })
+  await test.rpc('host.background', { revision: 1, graceMs: 0 })
+  await running
+  expect((await test.record()).state).toBe('paused')
+  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toMatchObject({ state: 'stopped' })
+  await test.rpc('host.foreground', { revision: 2 })
+  await vi.waitFor(() => expect(test.requests()).toBe(2))
+  test.release()
+})
+
+it('requires explicit continuation after native expiration and ignores stale callbacks', async () => {
+  const test = await setup()
+  await test.rpc('host.continued.prepare', { id: continuedId })
+  const running = test.start(continuedId)
+  await vi.waitFor(() => expect(test.requests()).toBe(1))
+  await test.rpc('host.continued.status', { id: continuedId, granted: true })
+  await test.rpc('host.background', { revision: 1, graceMs: 0 })
+  await test.rpc('host.continued.end', { id: continuedId, pause: true })
+  await running
+  await test.reconnect(2)
+  expect((await test.record()).state).toBe('paused')
+  expect(test.requests()).toBe(1)
+  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toMatchObject({ state: 'stopped' })
+  const next = `${continuedId}-next`
+  await test.rpc('host.continued.prepare', { id: next })
+  const resumed = test.rpc('agent.resume', { ...test.session, continuedTaskId: next })
+  await vi.waitFor(() => expect(test.requests()).toBe(2))
+  await test.rpc('host.continued.status', { id: next, granted: true })
+  expect(await test.rpc('host.continued.end', { id: continuedId, pause: true })).toEqual({ ended: false })
+  test.release()
+  await resumed
+  expect((await test.record()).state).toBe('completed')
+})
+
+it('does not admit an execution after its prepared native task was cancelled', async () => {
+  const test = await setup()
+  await test.rpc('host.continued.prepare', { id: continuedId })
+  await test.rpc('host.continued.end', { id: continuedId, pause: true })
+  await expect(test.start(continuedId)).rejects.toThrow('Continued task is no longer available')
+  expect(test.requests()).toBe(0)
+})
+
+it('pauses background work that needs a user answer', async () => {
+  const test = await setup()
+  await test.rpc('host.continued.prepare', { id: continuedId })
+  const running = test.start(continuedId)
+  await vi.waitFor(() => expect(test.requests()).toBe(1))
+  const controller = new AbortController()
+  const approval = test.host.requestAgentApproval({ sessionId: test.session.sessionId, toolName: 'write_file' }, controller.signal)
+  await test.rpc('host.continued.status', { id: continuedId, granted: true })
+  await test.rpc('host.background', { revision: 1, graceMs: 0 })
+  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toMatchObject({ state: 'waiting' })
+  await running
+  await test.rpc('host.foreground', { revision: 2 })
+  expect((await test.record()).state).toBe('paused')
+  expect(test.requests()).toBe(1)
+  controller.abort()
+  await approval
+})
+
+it('revokes background execution when the native status connection is lost', async () => {
+  const test = await setup()
+  await test.rpc('host.continued.prepare', { id: continuedId })
+  const running = test.start(continuedId)
+  await vi.waitFor(() => expect(test.requests()).toBe(1))
+  await test.rpc('host.continued.status', { id: continuedId, granted: true })
+  await test.rpc('host.background', { revision: 1, graceMs: 0 })
+  await running
+  expect((await test.record()).state).toBe('paused')
+  await test.rpc('host.foreground', { revision: 2 })
+  expect(test.requests()).toBe(1)
+}, 15_000)
+
+it('saves the continued session instead of starting Preview in the background', async () => {
+  const test = await setup()
+  await test.rpc('host.continued.prepare', { id: continuedId })
+  const running = test.start(continuedId)
+  await vi.waitFor(() => expect(test.requests()).toBe(1))
+  await test.rpc('host.continued.status', { id: continuedId, granted: true })
+  await test.rpc('host.background', { revision: 1, graceMs: 0 })
+  await expect(test.host.runAgentPreview(join(test.root, 'projects/project'), test.session.sessionId, new AbortController().signal)).rejects.toThrow('Open RunWhale')
+  await running
+  await test.rpc('host.foreground', { revision: 2 })
+  expect((await test.record()).state).toBe('paused')
+  expect(test.requests()).toBe(1)
+})
 
 it('continues a paused session exactly once after replacing the localhost listener', async () => {
   const test = await setup()
@@ -135,6 +248,7 @@ it('preserves queued input at pause and lets a user stop prevent foreground resu
 
 it('keeps Android work running when an iOS lifecycle message arrives', async () => {
   const test = await setup('android')
+  expect(await test.rpc('host.continued.prepare', { id: continuedId })).toEqual({ prepared: false })
   const running = test.start()
   await vi.waitFor(() => expect(test.requests()).toBe(1))
   expect(await test.rpc('host.background', { revision: 1, graceMs: 0 })).toEqual({ suspended: false })

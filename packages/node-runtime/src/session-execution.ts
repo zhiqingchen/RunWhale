@@ -14,6 +14,8 @@ export class AgentSessionExecution {
   phase: 'idle' | 'preparing' | 'driving' | 'finishing' = 'idle'
   stopping = false
   pauseRequested = false
+  requiresExplicitResume = false
+  completedSteps = 0
   packageMutated = false
   readonly messageOperations = new Set<Promise<unknown>>()
   controller = new AbortController()
@@ -46,6 +48,8 @@ export class AgentSessionExecution {
     this.completion = new Promise((resolve) => { this.finishCompletion = resolve })
     this.stopping = false
     this.pauseRequested = false
+    this.requiresExplicitResume = false
+    this.completedSteps = 0
     this.packageMutated = false
     this.receivedLiveEvent = false
     this.persistenceFailure = undefined
@@ -69,6 +73,7 @@ export class AgentSessionExecution {
     this.events.push(event)
     this.options.publish(this.taskId, event, this.afterSequence)
     const value = event as { type?: unknown; seq?: unknown } | undefined
+    if (this.active && value?.type === 'step/end') this.completedSteps += 1
     if (value?.type !== 'assistant/chunk' && typeof value?.seq === 'number') this.afterSequence = value.seq
     if (!this.timer) this.timer = setTimeout(() => {
       void this.persist(this.active ? 'running' : this.record?.state ?? 'completed').catch((error: unknown) => {

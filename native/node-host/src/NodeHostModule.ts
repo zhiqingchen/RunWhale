@@ -36,6 +36,7 @@ declare class NodeHostNativeModule extends NativeModule<{
   start(projectRoot: string, entry: string): Promise<NativeNodeSnapshot>
   startBundled(): Promise<NativeNodeSnapshot>
   recoverTransport(): Promise<string | null>
+  beginContinuedAgentTask?(copy: { title: string; working: string; steps: string; waiting: string }): Promise<string | null>
   stop(port?: number, token?: string): Promise<NativeNodeSnapshot>
   snapshot(): NativeNodeSnapshot
   runtimeRoot(): string
