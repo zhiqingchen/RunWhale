@@ -59,6 +59,8 @@ assert_equal() {
 [[ -f "$info_plist" ]] || fail "Info.plist is missing"
 [[ -f "$embedded_profile" ]] || fail "embedded.mobileprovision is missing"
 
+framework_validation=$(bash "$repository_dir/scripts/validate-ios-framework-dependencies.sh" "$app_path" 2>&1) || fail "$framework_validation"
+
 node_mobile_runtime_package_json=$(node -e 'const { createRequire } = require("node:module"); process.stdout.write(createRequire(process.argv[1]).resolve("@runwhale/node-mobile-runtime/package.json"))' "$repository_dir/native/node-host/package.json") || fail 'installed @runwhale/node-mobile-runtime package cannot be resolved'
 expected_npm_archive="$(dirname "$node_mobile_runtime_package_json")/runtime/runwhale-npm.tgz"
 
@@ -204,6 +206,7 @@ mkdir -p "$(dirname "$report_path")"
   printf -- '- Xcode / SDK: `%s` / `%s`\n' "$xcode_build" "$sdk_name"
   printf -- '- Architectures: `%s`\n' "$architectures"
   printf -- '- Mach-O files checked: `%s`\n' "$mach_o_count"
+  printf -- '- Framework dependencies: %s\n' "$framework_validation"
   printf -- '- Signing team: `%s`\n' "$signature_team"
   printf -- '- Provisioning profile: `%s` (`%s`, expires `%s`)\n' "$profile_name" "$profile_uuid" "$profile_expiration"
   printf -- '- Keychain group: `%s`\n' "$keychain_group"

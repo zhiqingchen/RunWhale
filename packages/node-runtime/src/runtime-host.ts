@@ -1102,13 +1102,17 @@ export class RunWhaleRuntimeHost {
       execution.phase = 'finishing'
       const aborted = runController.signal.aborted
       await execution.cancelAndDrain(error)
-      if (!aborted && execution.record) execution.record = { ...execution.record, failure: agentFailure(error) }
+      const failure = agentFailure(error)
+      if (!aborted && execution.record) execution.record = { ...execution.record, failure }
       const state = aborted ? execution.pauseRequested ? 'paused' : 'aborted' : 'failed'
       await persist(state)
       this.server.emit('task.state', { projectId, taskId, state: aborted ? 'cancelled' : 'failed' })
       this.server.emit('agent.state', { projectId, sessionId, taskId, state })
       if (!aborted) this.server.emit('diagnostic', { source: 'agent', projectId, sessionId, taskId, message: boundedText(error instanceof Error ? error.message : error, 8 * 1024) })
       if (aborted) return { sessionId, taskId }
+      // Keep coded admission failures recognizable after the RPC boundary,
+      // which serializes ordinary thrown errors as INTERNAL.
+      if (failure.code && !failure.message.startsWith(`${failure.code}:`)) throw new Error(`${failure.code}: ${failure.message}`, { cause: error })
       throw error
     }
     streamedEvents.splice(0, streamedEvents.length, ...(answer.events ?? streamedEvents))

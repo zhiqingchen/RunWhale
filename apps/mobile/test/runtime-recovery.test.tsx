@@ -1,6 +1,7 @@
 import { act, create, type ReactTestRenderer } from 'react-test-renderer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RuntimeProvider, useRuntime } from '../src/state/runtime'
+import { RuntimeTransportError } from '../src/utils/runtime-request'
 
 const native = vi.hoisted(() => ({
   state: 'running',
@@ -116,6 +117,13 @@ async function loseConnection() {
 }
 
 describe('iOS runtime connection recovery', () => {
+  it('distinguishes a lost client connection from a provider authentication failure', async () => {
+    runtime.registerFileFlush(async () => undefined)
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('fetch failed: UnexpectedException: The network connection was lost. (at ExpoModulesCore/Promise.swift:56)'))
+    await expect(runtime.request('agent.run', { projectId: 'project', sessionId: 'session', prompt: 'Test' })).rejects.toBeInstanceOf(RuntimeTransportError)
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => ({ ok: false, error: { code: 'AUTH_FAILED', message: 'Provider rejected the credential.' } }) } as Response)
+    await expect(runtime.request('agent.run', { projectId: 'project', sessionId: 'session', prompt: 'Test' })).rejects.toMatchObject({ code: 'AUTH_FAILED', message: 'Provider rejected the credential.' })
+  })
   it('keeps a failed retry visible and settles it within the reconnect deadline', async () => {
     await loseConnection()
     const connectionError = runtime.lastError

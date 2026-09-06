@@ -1,5 +1,6 @@
 import { useAgentViewport } from '@/hooks/useAgentViewport'
 import { AgentGoalBar } from '@/components/AgentGoalBar'
+import { AgentNotice } from '@/components/AgentNotice'
 import { AgentGoalDialog } from '@/components/AgentGoalDialog'
 import { AgentTodoDialog } from '@/components/AgentTodoDialog'
 import { AgentTranscript, TranscriptRichText } from '@/components/AgentTranscript'
@@ -23,7 +24,6 @@ import { agentPanelInteractionContract } from '@/utils/agent-panel-layout'
 import { latestSessionSystemPrompt } from '@/utils/session-transcript'
 import { isTranscriptAtBottom } from '@/utils/transcript-position'
 import type { AgentQuestion, AgentQuestionAnswer, HostEvent } from '@runwhale/mobile-protocol'
-import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
 import { Portal } from 'heroui-native/portal'
 import { Spinner } from 'heroui-native/spinner'
@@ -42,8 +42,8 @@ export function AgentPanel(props: AgentPanelProps) {
     pendingDestructiveAction, setPendingDestructiveAction, destructiveActionBusy, destructiveActionError, setDestructiveActionError, approvalResponseAction,
     approvalBusy, approvalError, permissionLabel, admissionSubmitting, primaryAction, imagePickerAvailable,
     transitionQueueAction, refreshSessionHistory, pendingAgentApproval, pendingQuestion, currentSessionEvents, visibleQueued,
-    agentTodos, completedTodoCount, ongoingGoal, goalSessionReady, retryPrompt, currentSubmittedPrompt,
-    livePrompt, sessionRetryAvailable, recoveryState, recoveryMessage, retryPending, quickActionOptions, runPrompt, submit, stopAgent,
+    agentTodos, completedTodoCount, ongoingGoal, goalSessionReady, currentSubmittedPrompt,
+    livePrompt, runConnectionIssue, sessionRetryAvailable, recoveryState, recoveryMessage, retryPending, quickActionOptions, retrySession, submit, stopAgent,
     forkSession, convertQueuedMessageToSteer, resolveAgentApproval, answerQuestion, setAgentPlanMode, mutateGoal,
     confirmDestructiveAction, dismissDestructiveAction, destructiveActionCopy, openQuickAction, selectQuickAction, openCredentialSettings,
     composer,
@@ -168,7 +168,7 @@ export function AgentPanel(props: AgentPanelProps) {
       header={<>
       {sessionHistoryState === 'loading' && <View accessible accessibilityRole="progressbar" accessibilityLabel={t('restoringSessionHistory')} accessibilityLiveRegion="polite" style={styles.historyLoading}><Spinner size="sm" color={colors.accent} /><Text style={styles.historyLoadingText}>{t('restoringSessionHistory')}</Text></View>}
       {sessionHistoryState === 'failed' && <View style={styles.historyError}>
-        <Alert accessibilityRole="alert" accessibilityLiveRegion="assertive" status="danger"><Alert.Indicator iconProps={{ size: 17 }} /><Alert.Content><Alert.Description>{t('sessionHistoryLoadFailed')}</Alert.Description></Alert.Content></Alert>
+        <InlineError message={t('sessionHistoryLoadFailed')} />
         <Button size="sm" variant="secondary" onPress={() => { void refreshSessionHistory(sessionId).catch(() => undefined) }} style={styles.historyRetry}><Button.Label>{t('retry')}</Button.Label></Button>
       </View>}
       {showAgentEmptyState(sessionHistoryState, currentSessionEvents.length, running, currentSubmittedPrompt?.text ?? '') && <View
@@ -184,8 +184,8 @@ export function AgentPanel(props: AgentPanelProps) {
       {pendingQuestion && <QuestionCard key={pendingQuestion.sequence} event={pendingQuestion} busy={approvalBusy} pendingAction={approvalResponseAction} onInputFocus={() => { setQuestionInputFocused(true) }} onInputBlur={() => { setQuestionInputFocused(false) }} onAnswer={(answers) => { void answerQuestion(answers) }} />}
       {pendingQuestion && keyboardVisible && questionInputFocused ? <View style={styles.questionKeyboardClearance} /> : null}
       {approvalError && !pendingAgentApproval ? <InlineError message={approvalError} /> : null}
-      {sessionRetryAvailable && recoveryState
-        ? <SessionRecoveryCard state={recoveryState} message={recoveryMessage} pending={retryPending} onRetry={() => { void runPrompt(recoveryState === 'paused' ? '' : retryPrompt, undefined, undefined, recoveryState === 'paused') }} />
+      {runConnectionIssue ? <AgentNotice connection message={t('agentConnectionInterrupted')} /> : sessionRetryAvailable && recoveryState
+        ? <SessionRecoveryCard state={recoveryState} message={recoveryMessage} pending={retryPending} onOpenSettings={openCredentialSettings} onRetry={() => { void retrySession() }} />
         : error ? <InlineError message={error} /> : null}
     </>}
     />
@@ -328,10 +328,7 @@ function InlineProgress({ label, emphasized = false }: { label: string; emphasiz
 }
 
 function InlineError({ message }: { message: string }) {
-  return <Alert accessibilityRole="alert" accessibilityLiveRegion="assertive" status="danger">
-    <Alert.Indicator iconProps={{ size: 17 }} />
-    <Alert.Content><Alert.Description>{message}</Alert.Description></Alert.Content>
-  </Alert>
+  return <AgentNotice message={message} />
 }
 
 function AgentToolApprovalPopover({ event, busy, pendingAction, error, onApprove, onReject }: { event: HostEvent; busy: boolean; pendingAction?: ApprovalResponseAction; error?: string; onApprove(): void; onReject(): void }) {

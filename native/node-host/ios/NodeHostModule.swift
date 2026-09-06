@@ -232,7 +232,6 @@ private final class NodeRuntime: @unchecked Sendable {
     }
   }
 
-  private let queue = DispatchQueue(label: "com.runwhale.nodehost.24.19", qos: .userInitiated)
   private let lock = NSLock()
   private let bundleLock = NSLock()
   private var current = Snapshot(state: "stopped", nodeVersion: nil, lastError: nil)
@@ -272,7 +271,7 @@ private final class NodeRuntime: @unchecked Sendable {
     let listener = stateListener?.callback
     lock.unlock()
     listener?(starting)
-    queue.async { [weak self] in
+    NodeRuntimeThread.start { [weak self] in
       guard let self else { return }
       self.publish(Snapshot(state: "running", nodeVersion: "24.19.0", lastError: nil))
       FileManager.default.changeCurrentDirectoryPath(projectRoot)

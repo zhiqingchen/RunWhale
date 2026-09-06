@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { RUNTIME_BOOT_PROBE_TIMEOUT_MS, RUNTIME_BOOT_TIMEOUT_MS, RUNTIME_CREDENTIAL_READ_TIMEOUT_MS, RUNTIME_REQUEST_TIMEOUT_GRACE_MS, runtimeBootStepTimeoutMs, runtimeRequestTimeoutMs, withClientDeadline } from '../src/utils/runtime-request'
+import { RUNTIME_BOOT_PROBE_TIMEOUT_MS, RUNTIME_BOOT_TIMEOUT_MS, RUNTIME_CREDENTIAL_READ_TIMEOUT_MS, RUNTIME_REQUEST_TIMEOUT_GRACE_MS, runtimeBootStepTimeoutMs, runtimeRequestTimeoutMs, withAbortSignal, withClientDeadline } from '../src/utils/runtime-request'
 import { retireEndedAgentRun } from '../src/utils/agent-recovery'
 import { latestAgentLifecycleState } from '../src/utils/agent-lifecycle'
 import { MOBILE_HOST_PROTOCOL_VERSION, type HostEvent } from '@runwhale/mobile-protocol'
@@ -7,6 +7,53 @@ import { runExclusiveAction } from '../src/utils/action-progress'
 
 afterEach(() => {
   vi.useRealTimers()
+})
+
+describe('abort-aware Agent submission', () => {
+  it('releases the submission guard while a completed run is stuck refreshing its files', async () => {
+    const controller = new AbortController()
+    const guard = { current: false }
+    let finishRefresh: (() => void) | undefined
+    const refresh = new Promise<void>((resolve) => { finishRefresh = resolve })
+    const operation = vi.fn(async () => { await refresh })
+    const submission = runExclusiveAction(guard, () => withAbortSignal(controller.signal, operation))
+    await Promise.resolve()
+    expect(operation).toHaveBeenCalledOnce()
+    expect(guard.current).toBe(true)
+    const rejection = expect(submission).rejects.toMatchObject({ code: 'ABORTED' })
+
+    retireEndedAgentRun(controller, 'completed')
+
+    await rejection
+    expect(guard.current).toBe(false)
+    const retry = vi.fn(async () => 'started')
+    await expect(runExclusiveAction(guard, retry)).resolves.toBe('started')
+    finishRefresh!()
+    await refresh
+    expect(retry).toHaveBeenCalledOnce()
+  })
+
+  it.each(['before scheduling', 'before execution'])('does not start a run cancelled %s', async (timing) => {
+    const controller = new AbortController()
+    const reason = Object.assign(new Error('Agent run ended'), { code: 'ABORTED' })
+    const operation = vi.fn(async () => 'started')
+    if (timing === 'before scheduling') controller.abort(reason)
+    const submission = withAbortSignal(controller.signal, operation)
+    if (timing === 'before execution') controller.abort(reason)
+    await expect(submission).rejects.toBe(reason)
+    expect(operation).not.toHaveBeenCalled()
+  })
+
+  it('settles cancellation for React Native signals without a reason and removes its listener', async () => {
+    const controller = new AbortController()
+    Object.defineProperty(controller.signal, 'reason', { get: () => undefined })
+    const removeListener = vi.spyOn(controller.signal, 'removeEventListener')
+    const submission = withAbortSignal(controller.signal, () => new Promise<void>(() => undefined))
+    const rejection = expect(submission).rejects.toMatchObject({ code: 'ABORTED', message: 'Request cancelled' })
+    controller.abort()
+    await rejection
+    expect(removeListener).toHaveBeenCalledOnce()
+  })
 })
 
 describe('runtime client request deadlines', () => {

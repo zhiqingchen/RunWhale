@@ -12,7 +12,8 @@ import { isMobileModelProvider } from '@/utils/agent-model-selection'
 import { parseAgentPlanCommand, projectAgentPlanMode, type AgentPlanCommand } from '@/utils/agent-plan'
 import { insertAgentReference } from '@/utils/agent-references'
 import { projectAgentTodos } from '@/utils/agent-todo'
-import { agentRecoveryState, agentSessionFailureMessage, retireEndedAgentRun } from '@/utils/agent-recovery'
+import { agentRecoveryState, agentRunTransportRecovered, agentSessionFailureMessage, retireEndedAgentRun, type AgentRecoveryState } from '@/utils/agent-recovery'
+import { isRuntimeTransportError, withAbortSignal } from '@/utils/runtime-request'
 import { permissionModeChangeRequiresConfirmation, permissionModeDescriptionKeys } from '@/utils/permission-mode'
 import { sessionRefreshPresentationStatus } from '@/utils/session-actions'
 import { createMobileSessionId } from '@/utils/session-id'
@@ -36,13 +37,16 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   const submittedPromptRevision = useRef(0)
   const [localRunActive, setLocalRunActive] = useState(false)
   const [runSubmitting, setRunSubmitting] = useState(false)
+  const [recoveryAttempt, setRecoveryAttempt] = useState<AgentRecoveryState>()
   const runSubmissionGuard = useRef(false)
   const activeRunController = useRef<AbortController | undefined>(undefined)
+  const activeRunPreviousTaskId = useRef<string | undefined>(undefined)
   const activeRunCompletion = useRef<Promise<void> | undefined>(undefined)
   const [stopping, setStopping] = useState(false)
   const stoppingRef = useRef(false)
   const directStopGuard = useRef(false)
   const [error, setError] = useState<string>()
+  const [runConnectionIssue, setRunConnectionIssue] = useState<{ sessionId: string; previousTaskId?: string; afterSequence: number }>()
   const [credentialSetup, setCredentialSetup] = useState<MobileModelProvider>()
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId)
   const [activeTaskId, setActiveTaskId] = useState<string>()
@@ -50,10 +54,11 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   const latestEventSequence = useRef(0)
   latestEventSequence.current = events.at(-1)?.sequence ?? 0
   const [sessionRecord, setSessionRecord] = useState<AgentSessionRecord>()
+  const [historyEventFloor, setHistoryEventFloor] = useState(-1)
   const historyRequest = useRef<{ sessionId: string; info: typeof runtime.info; eventFloor: number; pending: boolean; promise: Promise<AgentSessionRecord | undefined> } | undefined>(undefined)
   const [sessionHistoryState, setSessionHistoryState] = useState<AgentSessionHistoryState>(initialSessionId ? 'loading' : 'ready')
   const hydratedSessionHistory = useRef<string | undefined>(undefined)
-  const initialSessionHistoryStarted = useRef(false)
+  const historyRuntime = useRef<{ info: typeof runtime.info } | undefined>(undefined)
   const [forkingBranch, setForkingBranch] = useState<TranscriptBranchInFlight>()
   const forkSessionGuard = useRef(false)
   const [planChoice, setPlanChoice] = useState<{ sessionId: string | undefined; version: string; active: boolean }>()
@@ -89,7 +94,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   const [approvalResponseAction, setApprovalResponseAction] = useState<ApprovalResponseAction>()
   const approvalBusy = approvalResponseState === 'busy'
   const [approvalError, setApprovalError] = useState<string>()
-  const lifecycleState = useMemo(() => latestAgentLifecycleState(events, projectId, sessionId), [events, projectId, sessionId])
+  const lifecycleState = useMemo(() => latestAgentLifecycleState(events, projectId, sessionId, historyEventFloor), [events, historyEventFloor, projectId, sessionId])
   const submittedLifecycleState = useMemo(() => liveEventFloor === undefined ? undefined
     : latestAgentLifecycleState(events, projectId, sessionId, liveEventFloor), [events, liveEventFloor, projectId, sessionId])
   const running = localRunActive || (lifecycleState ?? sessionRecord?.state) === 'running'
@@ -124,6 +129,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
     const selected = preferredSessionId ?? sessionId
     const hydrated = !selected || hydratedSessionHistory.current === selected
     const eventFloor = latestEventSequence.current
+    const observedRun = activeRunController.current
     if (selected) setSessionHistoryState(sessionRefreshPresentationStatus(hydrated, 'start'))
     if (!runtime.info) {
       if (selected && runtime.lastError) setSessionHistoryState(sessionRefreshPresentationStatus(hydrated, 'failure'))
@@ -151,7 +157,14 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
           return historyRequest.current?.sessionId === selected ? historyRequest.current.promise : undefined
         }
         hydratedSessionHistory.current = selected
+        // A fresh snapshot supersedes events already received before this read.
+        // In particular, an old pause must not override a restarted host's state.
+        setHistoryEventFloor(eventFloor)
         setSessionRecord(record)
+        if (observedRun && observedRun === activeRunController.current && record.taskId && record.taskId !== activeRunPreviousTaskId.current) {
+          retireEndedAgentRun(observedRun, record.state)
+        }
+        setRunConnectionIssue((current) => current?.sessionId === selected && agentRunTransportRecovered(record, current.previousTaskId) ? undefined : current)
         setQueued(pending.messages.map((message) => ({ messageId: message.messageId, text: message.text, mode: message.mode })))
         setSessionHistoryState('ready')
         reconcileSubmittedPrompt(selected, record, settleRevision)
@@ -161,7 +174,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
           if (historyRequest.current?.sessionId === selected) return historyRequest.current.promise
           throw cause
         }
-        if (selected && sessionSummaryStatus === 'ready' && !sessionSummariesRefreshing && !sessionSummaries.some((item) => item.sessionId === selected)) {
+        if (selected && !hydrated && sessionSummaryStatus === 'ready' && !sessionSummariesRefreshing && !sessionSummaries.some((item) => item.sessionId === selected)) {
           hydratedSessionHistory.current = selected
           setSessionRecord(undefined)
           setQueued([])
@@ -181,8 +194,17 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   }, [projectId, reconcileSubmittedPrompt, runtime.info, runtime.lastError, runtime.request, sessionId, sessionSummaries, sessionSummariesRefreshing, sessionSummaryStatus])
   const refreshHistoryFromEvent = useEffectEvent((selected?: string) => { void refreshSessionHistory(selected).catch(() => undefined) })
   useEffect(() => {
-    if (initialSessionHistoryStarted.current || sessionSummaryStatus === 'loading' || sessionSummariesRefreshing) return
-    initialSessionHistoryStarted.current = true
+    if (!runConnectionIssue) return
+    if (runConnectionIssue.sessionId !== sessionId || latestAgentLifecycleState(events, projectId, sessionId, runConnectionIssue.afterSequence)) {
+      setRunConnectionIssue(undefined)
+    }
+  }, [events, projectId, runConnectionIssue, sessionId])
+  useEffect(() => {
+    if (runConnectionIssue && runtime.info) refreshHistoryFromEvent(runConnectionIssue.sessionId)
+  }, [runConnectionIssue, runtime.info])
+  useEffect(() => {
+    if ((historyRuntime.current && historyRuntime.current.info === runtime.info) || sessionSummaryStatus === 'loading' || sessionSummariesRefreshing) return
+    historyRuntime.current = { info: runtime.info }
     refreshHistoryFromEvent()
   }, [runtime.info, sessionId, sessionSummariesRefreshing, sessionSummaryStatus])
   useEffect(() => {
@@ -240,12 +262,16 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   useEffect(() => {
     if (transcript.repair && sessionId) refreshHistoryFromEvent(sessionId)
   }, [sessionId, transcript.repair])
-  const consumedMessageIds = useMemo(() => liveAgentMessageIds(currentLiveEvents, {
+  // Queued messages belong to the session, including runs resumed after backgrounding.
+  const consumedMessageIds = useMemo(() => liveAgentMessageIds(liveEvents, {
     projectId,
     ...(sessionId === undefined ? {} : { sessionId }),
-    ...(activeTaskId === undefined ? {} : { taskId: activeTaskId }),
-  }), [activeTaskId, currentLiveEvents, projectId, sessionId])
+  }), [liveEvents, projectId, sessionId])
   const visibleQueued = useMemo(() => queuedMessagesAwaitingConsumption(queued, consumedMessageIds), [consumedMessageIds, queued])
+  useEffect(() => {
+    // Retire consumed rows before their events leave the live event window.
+    if (visibleQueued.length !== queued.length) setQueued(visibleQueued)
+  }, [queued, visibleQueued])
   useEffect(() => {
     if (!pendingDestructiveAction || !shouldDismissConsumedQueuedMessage(pendingDestructiveAction, destructiveActionBusy, consumedMessageIds)) return
     transitionQueueAction({ type: 'finish', messageId: pendingDestructiveAction.messageId, action: 'delete' })
@@ -313,9 +339,9 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   useEffect(() => {
     setSubmittedPrompt((current) => current && current.sessionId !== sessionId ? undefined : current)
   }, [sessionId])
-  const recoveryState = agentRecoveryState(lifecycleState ?? sessionRecord?.state)
+  const recoveryState = agentRecoveryState(lifecycleState ?? sessionRecord?.state) ?? recoveryAttempt
   const recoveryMessage = error ?? (recoveryState === 'failed' ? agentSessionFailureMessage(currentSessionEvents, sessionRecord?.failure) : undefined)
-  const sessionRetryAvailable = !running && (Boolean(retryPrompt) || recoveryState === 'paused') && Boolean(recoveryState)
+  const sessionRetryAvailable = (!running || Boolean(recoveryAttempt) && submittedLifecycleState !== 'running') && (Boolean(retryPrompt) || recoveryState === 'paused') && Boolean(recoveryState)
   const retryPending = runSubmitting || stopping
   const configuredModels = useMemo(() => Array.from(new Set([
     sessionModel,
@@ -369,23 +395,30 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
     ]
     return []
   }, [configuredModels, goalMutationAction, ongoingGoal, planMode, planModeSubmitting, projectPaths, quickAction, sessionAgentPreset, sessionModel, sessionPermissionMode, sessionProvider, sessionSummaries, t])
-  const runPrompt = async (value: string, requestedPlanMode = planMode, draftToConsume = value, resume = false) => {
+  const runPrompt = async (value: string, requestedPlanMode = planMode, draftToConsume = value, recover = false) => {
     if (runSubmissionGuard.current) return
-    const nextPrompt = resume ? '' : value.trim() || (attachments.length > 0 ? t('imageOnlyPrompt') : '')
-    if (!nextPrompt && !resume) return
-    const submittedAttachments = resume ? [] : attachments
+    let resume = false
+    let nextPrompt = value.trim() || (attachments.length > 0 ? t('imageOnlyPrompt') : '')
+    if (!nextPrompt && !recover) return
+    const submittedAttachments = recover ? [] : attachments
     const targetSessionId = sessionId ?? createMobileSessionId()
     const submission = runExclusiveAction(runSubmissionGuard, async () => {
       setRunSubmitting(true)
+      if (recover) setRecoveryAttempt(recoveryState)
       setError(undefined)
+      setRunConnectionIssue(undefined)
       try {
-        let credential: { configured: boolean }
-        try {
-          credential = await runtime.request('credential.status', { provider: sessionProvider })
-        } catch (cause) {
-          setError(cause instanceof Error ? cause.message : String(cause))
-          return
+        let previousTaskId = sessionRecord?.taskId
+        if (recover) {
+          const latest = await refreshSessionHistory(targetSessionId)
+          if (!latest) throw new Error(t('sessionRecoveryUnavailable'))
+          previousTaskId = latest.taskId
+          if (latest.state === 'running' || latest.state === 'completed') return
+          resume = latest.state === 'paused'
+          nextPrompt = resume ? '' : lastHumanUserPrompt(latest.events)
+          if (!resume && !nextPrompt) throw new Error(t('sessionRetryPromptMissing'))
         }
+        const credential = await runtime.request('credential.status', { provider: sessionProvider })
         if (!credential.configured) {
           setCredentialSetup(sessionProvider)
           return
@@ -396,6 +429,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
         }
         const runController = new AbortController()
         activeRunController.current = runController
+        activeRunPreviousTaskId.current = previousTaskId
         setLocalRunActive(true)
         setError(undefined)
         const submissionRevision = submittedPromptRevision.current + 1
@@ -405,26 +439,32 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
         // terminal event from the previous run cannot cancel this retry.
         setLiveEventFloor(latestEventSequence.current)
         setActiveTaskId(undefined)
-        if (!resume) {
+        if (!recover) {
           updatePrompt((current) => current.trim() === draftToConsume.trim() ? '' : current)
           // onRun resolves after the full Agent turn, so consume images with the text now.
           setAttachments((current) => current.filter((attachment) => !submittedAttachments.includes(attachment)))
         }
         await performAgentRun({
-          clearPersistedDraft: () => resume ? Promise.resolve() : draftCoordinator.clear(draftKey),
+          clearPersistedDraft: () => recover ? Promise.resolve() : withAbortSignal(runController.signal, () => draftCoordinator.clear(draftKey)),
           run: async () => {
-            const result = await onRun({ prompt: nextPrompt, resume, sessionId: targetSessionId, planMode: requestedPlanMode, provider: sessionProvider, model: sessionModel, agentPreset: sessionAgentPreset, permissionMode: sessionPermissionMode, attachments: submittedAttachments, signal: runController.signal, modelProfile: modelProfiles[sessionProvider] })
+            const result = await withAbortSignal(runController.signal, () => onRun({ prompt: nextPrompt, resume, sessionId: targetSessionId, planMode: requestedPlanMode, provider: sessionProvider, model: sessionModel, agentPreset: sessionAgentPreset, permissionMode: sessionPermissionMode, attachments: submittedAttachments, signal: runController.signal, modelProfile: modelProfiles[sessionProvider] }))
             setSessionId(result.sessionId)
             onSessionChange?.(result.sessionId)
             setActiveTaskId(result.taskId)
             void refreshSessionHistory(result.sessionId, submissionRevision).catch(() => undefined)
           },
           recover: async (cause) => {
+            if (!runController.signal.aborted && isRuntimeTransportError(cause) && (cause.method === 'agent.run' || cause.method === 'agent.resume')) {
+              // Losing the long-lived RPC does not mean the host stopped its
+              // task. Reconcile through history/events without resubmitting it.
+              setRunConnectionIssue({ sessionId: targetSessionId, previousTaskId, afterSequence: latestEventSequence.current })
+              return
+            }
             if (!runController.signal.aborted && (cause as { code?: unknown })?.code !== 'ABORTED' && submittedAttachments.length > 0) {
               setAttachments((current) => [...submittedAttachments, ...current])
             }
             if (isMissingCredentialFailure(cause)) {
-              if (!resume) updatePrompt(nextPrompt)
+              if (!recover) updatePrompt(nextPrompt)
               setCredentialSetup(sessionProvider)
             } else if ((cause as { code?: unknown })?.code !== 'ABORTED') setError(cause instanceof Error ? cause.message : String(cause))
             void refreshSessionHistory(targetSessionId, submissionRevision).catch(() => undefined)
@@ -435,8 +475,11 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
             setStopping(false)
           },
         })
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : String(cause))
       } finally {
         setRunSubmitting(false)
+        setRecoveryAttempt(undefined)
       }
     }).then(() => undefined)
     activeRunCompletion.current = submission
@@ -446,6 +489,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
       if (activeRunCompletion.current === submission) activeRunCompletion.current = undefined
     }
   }
+  const retrySession = () => runPrompt('', planMode, '', true)
   const queueMessage = async (value: string, mode: 'followup' | 'steer' = 'followup') => {
     if (!sessionId || stoppingRef.current) return false
     const submissionRevision = queueSubmissionRevision.current
@@ -781,8 +825,8 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
     if (currentAction === 'permission' && (option.id === 'review' || option.id === 'read-only' || option.id === 'danger-full-access')) changePermissionMode(option.id)
   }
   const openCredentialSettings = () => {
-    if (!credentialSetup) return
-    if (credentialSetup !== modelProvider) setModelProvider(credentialSetup)
+    const provider = credentialSetup ?? sessionProvider
+    if (provider !== modelProvider) setModelProvider(provider)
     setCredentialSetup(undefined)
     router.push(settingsDetailRoutes.models)
   }
@@ -796,7 +840,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
     approvalBusy, approvalError, permissionLabel, admissionSubmitting, primaryAction, imagePickerAvailable,
     transitionQueueAction, refreshSessionHistory, pendingAgentApproval, pendingQuestion, currentSessionEvents, visibleQueued,
     agentTodos, completedTodoCount, ongoingGoal, goalSessionReady, retryPrompt, currentSubmittedPrompt,
-    livePrompt, sessionRetryAvailable, recoveryState, recoveryMessage, retryPending, quickActionOptions, runPrompt, submit, stopAgent,
+    livePrompt, runConnectionIssue, sessionRetryAvailable, recoveryState, recoveryMessage, retryPending, quickActionOptions, runPrompt, retrySession, submit, stopAgent,
     forkSession, convertQueuedMessageToSteer, resolveAgentApproval, answerQuestion, setAgentPlanMode, mutateGoal,
     confirmDestructiveAction, dismissDestructiveAction, destructiveActionCopy, openQuickAction, selectQuickAction, openCredentialSettings,
     composer,

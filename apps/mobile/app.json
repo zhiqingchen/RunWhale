@@ -147,6 +147,7 @@
         }
       ],
       "./plugins/with-node-ndk",
+      "./plugins/with-ios-runtime-dependencies",
       "expo-status-bar"
     ],
     "experiments": {

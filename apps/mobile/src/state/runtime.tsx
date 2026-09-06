@@ -8,7 +8,7 @@ import { projectCloneProgressFromEvent } from '@/utils/clone-progress'
 import { synchronizeRuntimeCredentials } from '@/utils/runtime-credential-sync'
 import { parseRuntimeHostInfo, type RuntimeHostInfo } from '@/utils/runtime-host-info'
 import { nativeRuntimeRecoveryAction, publishRuntimeHost, runtimeBootPollingAction, runtimeConnectionRecoveryAllowed, runtimeHostPublicationReady, runtimeLifecycleAttemptActive } from '@/utils/runtime-startup'
-import { RUNTIME_BOOT_PROBE_TIMEOUT_MS, RUNTIME_BOOT_TIMEOUT_MS, RUNTIME_RECONNECT_TIMEOUT_MS, RUNTIME_CREDENTIAL_READ_TIMEOUT_MS, RUNTIME_REQUEST_TIMEOUT_GRACE_MS, runtimeBootStepTimeoutMs, runtimeRequestTimeoutMs, withClientDeadline } from '@/utils/runtime-request'
+import { RUNTIME_BOOT_PROBE_TIMEOUT_MS, RUNTIME_BOOT_TIMEOUT_MS, RUNTIME_RECONNECT_TIMEOUT_MS, RUNTIME_CREDENTIAL_READ_TIMEOUT_MS, RUNTIME_REQUEST_TIMEOUT_GRACE_MS, RuntimeTransportError, runtimeBootStepTimeoutMs, runtimeRequestTimeoutMs, withClientDeadline } from '@/utils/runtime-request'
 import { appendLiveTranscriptEvent, compactLiveTranscriptEvents } from '@/utils/live-transcript-events'
 import { runtimeProjectFileContent, type StudioProject } from './project-data'
 
@@ -608,6 +608,9 @@ async function rpc<M extends MobileHostMethod>(info: HostInfo, method: M, params
         timeoutMs,
       }),
       signal,
+    }).catch((cause: unknown) => {
+      if (signal.aborted) throw cause
+      throw new RuntimeTransportError(cause, method)
     })
     const envelope = await response.json() as { ok?: boolean; result?: MobileHostRequestMap[M]['result']; error?: { code?: string; message?: string } }
     if (!response.ok || !envelope.ok || envelope.result === undefined) throw new RuntimeRpcError(envelope.error?.message ?? `runtime RPC ${method} failed`, envelope.error?.code)

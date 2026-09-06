@@ -97,14 +97,10 @@ export function createSessionAgentDriver(options: SessionAgentDriverOptions) {
       const hasCredential = Boolean(await secrets.get(providerCredentialRef(provider)))
       const testReplayEnabled = options.deterministicReplay === true
       if (!hasCredential && !testReplayEnabled) {
-        return {
-          text: '',
-          events: [],
-          failure: {
-            code: 'MISSING_CREDENTIAL',
-            message: `Configure a ${provider} API key in Settings before running the Agent.`,
-          },
-        }
+        // Admission failed before a harness could restore the durable seed.
+        // Let the host retain that transcript instead of replacing it with an
+        // empty session snapshot during Retry after a runtime restart.
+        throw Object.assign(new Error(`Configure a ${provider} API key in Settings before running the Agent.`), { code: 'MISSING_CREDENTIAL' })
       }
       const desired = hasCredential ? 'deepseek' : 'deterministic'
       const harness = await configureSession({ sessionId, projectRoot, provider, model: selectedModel, modelProfile, agentPreset }, desired)

@@ -1,5 +1,16 @@
 import type { MobileHostMethod } from '@runwhale/mobile-protocol'
 
+export class RuntimeTransportError extends Error {
+  readonly code = 'TRANSPORT_LOST'
+  constructor(cause: unknown, readonly method: MobileHostMethod) {
+    super('Connection to the on-device runtime was interrupted.', { cause })
+  }
+}
+
+export function isRuntimeTransportError(cause: unknown): cause is RuntimeTransportError {
+  return cause instanceof RuntimeTransportError
+}
+
 export const RUNTIME_BOOT_TIMEOUT_MS = 3 * 60_000
 export const RUNTIME_RECONNECT_TIMEOUT_MS = 30_000
 export const RUNTIME_BOOT_PROBE_TIMEOUT_MS = 2_000
@@ -14,6 +25,26 @@ export function runtimeRequestTimeoutMs(method: MobileHostMethod): number {
   if (method === 'host.suspend' || method === 'agent.run' || method === 'agent.resume' || method === 'agent.cancel' || method === 'project.clone' || method === 'project.import.githubSnapshot' || method === 'git.share.publish') return 10 * 60_000
   if (method === 'preview.open' || method === 'preview.run' || method === 'package.install' || method === 'project.delete' || method === 'session.export') return 5 * 60_000
   return 30_000
+}
+
+export async function withAbortSignal<T>(signal: AbortSignal | undefined, operation: () => Promise<T>): Promise<T> {
+  if (!signal) return operation()
+  let abort: (() => void) | undefined
+  const abortReason = () => signal.reason ?? Object.assign(new Error('Request cancelled'), { code: 'ABORTED' })
+  const pending = new Promise<T>((resolve, reject) => {
+    abort = () => reject(abortReason())
+    if (signal.aborted) { abort(); return }
+    signal.addEventListener('abort', abort, { once: true })
+    void Promise.resolve().then(() => {
+      if (signal.aborted) throw abortReason()
+      return operation()
+    }).then(resolve, reject)
+  })
+  try {
+    return await pending
+  } finally {
+    if (abort) signal.removeEventListener('abort', abort)
+  }
 }
 
 export async function withClientDeadline<T>(

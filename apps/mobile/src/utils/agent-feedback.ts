@@ -129,8 +129,9 @@ export async function performAgentDestructiveMutation({
   onError(undefined)
   try {
     if (!sessionId) throw new Error(queueNoLongerPendingMessage)
-    const result = await deleteQueuedMessage({ projectId, sessionId, messageId: action.messageId })
-    if (!result.deleted) throw new Error(queueNoLongerPendingMessage)
+    // An already-consumed message is also absent from the queue. Retire the
+    // local row in either case; transport failures still keep it retryable.
+    await deleteQueuedMessage({ projectId, sessionId, messageId: action.messageId })
     return true
   } catch (cause) {
     onError(cause instanceof Error ? cause.message : String(cause))

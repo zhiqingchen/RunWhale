@@ -208,3 +208,39 @@ it('preserves host-only failure details across reload and clears them when Retry
   expect(retried.state).toBe('completed')
   expect(retried.failure).toBeUndefined()
 })
+
+it('preserves the durable transcript when Retry is rejected before credentials are synced after restart', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'runwhale-retry-credentials-'))
+  cleanup.push(() => rm(root, { recursive: true, force: true }))
+  const secrets = { get: async () => undefined, set: async () => {}, delete: async () => {} }
+  const createHarness = vi.fn(createMobileHarness)
+  const start = async (deterministicReplay: boolean) => {
+    const driver = createSessionAgentDriver({
+      secrets, deterministicReplay, createHarness,
+      harnessOptions: (mode) => ({ mode, secrets, deterministicReply: 'Saved work.' }),
+    })
+    const host = new RunWhaleRuntimeHost({ root, moduleStore: join(root, 'modules'), platform: 'ios', agent: driver })
+    cleanup.push(() => host.stop())
+    const info = await host.start()
+    const rpc = async (method: string, params: object) => fetch(`${info.origin}/rpc`, {
+      method: 'POST', headers: { authorization: `Bearer ${info.token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ v: 1, type: 'request', id: crypto.randomUUID(), method, params }),
+    }).then(response => response.json()) as Promise<any>
+    return { host, rpc }
+  }
+  const scope = { projectId: 'recovery', sessionId: 'saved-session' }
+  const first = await start(true)
+  await first.rpc('project.create', { id: scope.projectId, name: 'Retry audit' })
+  expect(await first.rpc('agent.run', { ...scope, prompt: 'Preserve this request' })).toMatchObject({ ok: true })
+  const saved = (await first.rpc('session.read', scope)).result
+  expect(saved.events.some((event: any) => event.type === 'assistant/message')).toBe(true)
+  await first.host.stop()
+  createHarness.mockClear()
+
+  const restarted = await start(false)
+  expect(await restarted.rpc('agent.run', { ...scope, prompt: 'Retry the last request', provider: 'openai' })).toMatchObject({ error: { message: 'MISSING_CREDENTIAL: Configure a openai API key in Settings before running the Agent.' } })
+  const failed = (await restarted.rpc('session.read', scope)).result
+  expect(failed).toMatchObject({ state: 'failed', failure: { code: 'MISSING_CREDENTIAL' } })
+  expect(failed.events).toEqual(saved.events)
+  expect(createHarness).not.toHaveBeenCalled()
+})

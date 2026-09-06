@@ -53,11 +53,12 @@ describe('User transcript projection', () => {
     const ids = liveAgentMessageIds([
       event(1, 'session', 'task', 'consumed'),
       event(2, 'other-session', 'task', 'other-session'),
-      event(3, 'session', 'other-task', 'other-task'),
-    ], { projectId: 'project', sessionId: 'session', taskId: 'task' })
-    const queued = [{ messageId: 'pending' }, { messageId: 'consumed' }]
+      event(3, 'session', 'resumed-task', 'consumed-after-resume'),
+      { ...event(4, 'session', 'task', 'other-project'), data: { projectId: 'other-project', sessionId: 'session', messageId: 'other-project' } },
+    ], { projectId: 'project', sessionId: 'session' })
+    const queued = [{ messageId: 'pending' }, { messageId: 'consumed' }, { messageId: 'consumed-after-resume' }]
 
-    expect([...ids]).toEqual(['consumed'])
+    expect([...ids]).toEqual(['consumed', 'consumed-after-resume'])
     expect(queuedMessagesAwaitingConsumption(queued, ids)).toEqual([{ messageId: 'pending' }])
   })
 

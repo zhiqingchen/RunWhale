@@ -37,14 +37,13 @@ export function projectTranscriptUserMessages(events: readonly unknown[]): Trans
   return messages
 }
 
-export function liveAgentMessageIds(events: readonly HostEvent[], scope: { projectId: string; sessionId?: string; taskId?: string }): Set<string> {
+export function liveAgentMessageIds(events: readonly HostEvent[], scope: { projectId: string; sessionId?: string }): Set<string> {
   const ids = new Set<string>()
   for (const event of events) {
     if (event.name !== 'agent.message') continue
     const data = asRecord(event.data)
     if (!data || data.projectId !== scope.projectId) continue
     if (scope.sessionId !== undefined && data.sessionId !== scope.sessionId) continue
-    if (scope.taskId !== undefined && data.taskId !== scope.taskId) continue
     if (typeof data.messageId === 'string' && data.messageId) ids.add(data.messageId)
   }
   return ids
