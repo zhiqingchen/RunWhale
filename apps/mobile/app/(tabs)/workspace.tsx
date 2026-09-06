@@ -5,7 +5,7 @@ import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
 import { Spinner } from 'heroui-native/spinner'
 import { ChevronDown, ChevronRight, CircleEllipsis, Code2, FolderGit2, FolderInput, Pencil, Play, Plus, Share2, Smartphone, Trash2 } from '@/components/icons'
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { isGitHubImportedProject, projectFilePaths, useProjects } from '@/state/projects'
@@ -25,6 +25,7 @@ import { closedProjectRenameState, isProjectRenameDraftValid, persistProjectRena
 import { actionErrorPresentation, runExclusiveAction } from '@/utils/action-progress'
 import { clearAgentDraftsForProject } from '@/utils/agent-draft'
 import { closedProjectActionState, omitProjectRecordEntry, performProjectDeletion, projectActionReducer } from '@/utils/project-actions'
+import { removeProjectShortcutAppearance } from '@/utils/project-shortcut-storage'
 
 export default function WorkspaceScreen() {
   const { projects, loadStatus: projectLoadStatus, retryLoad: retryProjectLoad, renameProject, removeProject } = useProjects()
@@ -156,7 +157,10 @@ export default function WorkspaceScreen() {
             await runtime.deleteProject(projectId)
             clearProjectSessionState(projectId)
           },
-          removeLocal: removeProject,
+          removeLocal: async (projectId) => {
+            if (Platform.OS !== 'web') await removeProjectShortcutAppearance(projectId)
+            await removeProject(projectId)
+          },
           clearDrafts: (projectId) => clearAgentDraftsForProject(AsyncStorage, projectId),
         })
         dispatchProjectAction({ type: 'delete-succeeded' })
@@ -409,6 +413,21 @@ export default function WorkspaceScreen() {
       testID="workspace-project-actions-dialog"
     >
       {selectedProjectActionTarget ? <View style={styles.projectActionList}>
+        <Button
+          variant="ghost"
+          feedbackVariant="scale-highlight"
+          testID="workspace-add-to-home-screen"
+          accessibilityLabel={t('addToHomeScreen')}
+          accessibilityHint={t('shortcutDescription')}
+          onPress={() => { const target = selectedProjectActionTarget; setSelectedProjectActionTarget(undefined); router.push({ pathname: '/shortcut/[projectId]', params: { projectId: target.projectId } }) }}
+          style={[styles.projectActionRow, styles.projectActionRowPrimary]}
+        >
+          <View style={styles.projectActionRowContent}>
+            <View style={[styles.projectActionRowIcon, styles.projectActionRowPrimaryIcon]}><AppIcon icon={Smartphone} color={colors.accent} size={20} /></View>
+            <View style={styles.projectActionRowCopy}><Button.Label style={styles.projectActionRowTitle}>{t('addToHomeScreen')}</Button.Label><Text numberOfLines={2} style={styles.projectActionRowDescription}>{t('shortcutDescription')}</Text></View>
+            <AppIcon icon={ChevronRight} color={colors.accent} size={18} />
+          </View>
+        </Button>
         <Button
           variant="ghost"
           feedbackVariant="scale-highlight"

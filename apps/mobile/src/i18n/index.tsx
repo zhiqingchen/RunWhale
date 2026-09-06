@@ -2,10 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AGENT_WORKING_TEXT } from '@/constants/product-copy'
 import { createPreferenceStorageCoordinator } from '@/utils/preference-storage'
+import { shortcutChinese, shortcutEnglish } from './project-shortcuts'
 
 export type AppLanguage = 'zh-CN' | 'en'
 
 const english = {
+  ...shortcutEnglish,
   savingFile: 'Saving file…',
   fileDraftKept: 'This edit is kept as a Studio draft.',
   fileDraftDescription: 'Agent and Preview use the saved file. Apply saves the text shown below; discard keeps the saved file.',
@@ -433,6 +435,7 @@ const english = {
 type MessageKey = keyof typeof english
 
 const chinese: Record<MessageKey, string> = {
+  ...shortcutChinese,
   projectLoadFailedTitle: '暂时无法加载项目',
   projectLoadFailedDescription: '未能读取已保存的项目，请重试。',
   savingFile: '正在保存文件…',

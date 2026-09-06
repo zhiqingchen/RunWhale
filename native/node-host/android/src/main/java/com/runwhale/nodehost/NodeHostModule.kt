@@ -50,6 +50,12 @@ class NodeHostModule : Module() {
 
     Function("snapshot") { nodeRuntime.snapshot().toMap() }
     Function("runtimeRoot") { nodeRuntime.runtimeRoot() }
+    Function("supportsProjectShortcuts") {
+      appContext.reactContext?.let(ProjectShortcuts::supported) ?: false
+    }
+    AsyncFunction("pinProjectShortcut") { projectId: String, name: String, iconUri: String ->
+      ProjectShortcuts.pin(requireNotNull(appContext.reactContext), projectId, name, iconUri)
+    }
     Function("readHostInfo") { nodeRuntime.readHostInfo() }
     Function("takeNativePreviewDiagnostic") {
       val context = requireNotNull(appContext.reactContext) { "React context is unavailable" }

@@ -39,6 +39,8 @@ declare class NodeHostNativeModule extends NativeModule<{
   stop(port?: number, token?: string): Promise<NativeNodeSnapshot>
   snapshot(): NativeNodeSnapshot
   runtimeRoot(): string
+  supportsProjectShortcuts?(): boolean
+  pinProjectShortcut?(projectId: string, name: string, iconUri: string): Promise<'requested' | 'updated' | 'unsupported'>
   readHostInfo(): string | null
   takeNativePreviewDiagnostic(): string | null
   openNativePreview(bundleUrl: string, requestId: string, projectId: string): Promise<{ opened: boolean }>

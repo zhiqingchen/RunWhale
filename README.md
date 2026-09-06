@@ -22,6 +22,8 @@ https://github.com/user-attachments/assets/b8b7d184-8d6b-4fc0-b954-c159c02aa1b4
 
 User projects never invoke Xcode, Gradle, EAS, or IPA/APK builds. RunWhale bundles and previews them locally on the phone.
 
+For apps you use often, choose **Workspace → project more actions → Add to Home Screen**. Set a name and icon, then confirm the Android launcher prompt or follow the iPhone Shortcuts steps. The shortcut opens the project's latest successful Preview directly; keep RunWhale and the project installed. The setup page also lets you try the launch and export the icon.
+
 ## What Runs Where
 
 | On the phone | Remote |

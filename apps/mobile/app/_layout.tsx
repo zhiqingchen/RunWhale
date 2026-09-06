@@ -137,6 +137,8 @@ function AppNavigator() {
         <Stack.Screen name="new" options={{ title: t('newProjectTitle'), presentation: 'modal' }} />
         <Stack.Screen name="g/[owner]/[repo]/[sha]" options={{ title: t('githubImportHeaderTitle'), presentation: 'modal', headerLeft: modalHeaderLeft }} />
         <Stack.Screen name="share/[projectId]" options={{ title: t('shareProject'), presentation: 'modal', headerLeft: modalHeaderLeft }} />
+        <Stack.Screen name="shortcut/[projectId]" options={{ title: t('addToHomeScreen'), presentation: 'modal', headerLeft: modalHeaderLeft }} />
+        <Stack.Screen name="run/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="workspace/[id]/index" options={{ headerShown: false }} />
       </Stack>
     </>
