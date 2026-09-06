@@ -15,7 +15,9 @@ cleanup() {
 trap cleanup EXIT
 
 cd "$REPOSITORY_DIR"
-pnpm --config.node-linker=hoisted --config.inject-workspace-packages=true --filter @runwhale/runtime-module-store deploy --prod --frozen-lockfile "$STAGE_DIR/deploy"
+# Precompilation rewrites staged files. Copy them so pnpm hard links cannot
+# propagate those changes into the host build dependencies or package store.
+pnpm --config.node-linker=hoisted --config.inject-workspace-packages=true --config.package-import-method=copy --filter @runwhale/runtime-module-store deploy --prod --frozen-lockfile "$STAGE_DIR/deploy"
 if [[ -f "$MODULES_BACKUP" ]]; then cp "$MODULES_BACKUP" "$MODULES_STATE"; fi
 MODULE_STORE="$STAGE_DIR/deploy/node_modules"
 test -f "$MODULE_STORE/expo/package.json"

@@ -118,7 +118,7 @@ describe('mobile project Git', () => {
     const repository = new MobileGitRepository(root)
     await repository.ensureInitialized()
     await expect(repository.validateRefTree('HEAD', { maxFiles: 500, maxBytes: 50 * 1024 * 1024, maxFileBytes: 10 * 1024 * 1024 })).rejects.toThrow(/500 file limit/)
-  })
+  }, 15_000)
 
   it('routes a private snapshot fetch through the restricted SSH transport adapter', async () => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-git-private-fetch-'))

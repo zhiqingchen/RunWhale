@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, rm, symlink } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
@@ -13,6 +14,23 @@ const moduleStore = resolve(externalModuleStore ?? join(repository, 'packages/ru
 const additionalWatchRoots = externalModuleStore ? [] : [resolve(repository, 'node_modules/.pnpm')]
 
 describe('embedded module store', () => {
+  it('preserves host source-map composition after runtime packaging', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'runwhale-host-source-map-'))
+    const hostRequire = createRequire(join(repository, 'apps/mobile/package.json'))
+    const compose = hostRequire.resolve('react-native/scripts/compose-source-maps.js')
+    const packager = join(root, 'packager.map')
+    const compiler = join(root, 'compiler.map')
+    const output = join(root, 'composed.map')
+    try {
+      await writeFile(packager, JSON.stringify({ version: 3, sources: ['original.js'], names: [], mappings: 'AAAA' }))
+      await writeFile(compiler, JSON.stringify({ version: 3, sources: ['index.android.bundle'], names: [], mappings: 'AAAA' }))
+      await execute(process.execPath, [compose, packager, compiler, '-o', output])
+      expect(JSON.parse(await readFile(output, 'utf8')).sources).toEqual(['original.js'])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('bundles every exposed Native Preview module using only the isolated store', async () => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-module-store-runner-'))
     const runner = join(root, 'smoke.mjs')

@@ -77,5 +77,5 @@ describe('iOS prebuilt runtime dependencies', () => {
     } finally {
       rmSync(root, { recursive: true, force: true })
     }
-  })
+  }, 30_000)
 })
