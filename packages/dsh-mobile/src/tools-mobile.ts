@@ -142,7 +142,7 @@ export function registerMobileWorkspaceTools(
 
   ctx.tools.register(defineTool({
     name: 'typescript_program',
-    description: 'Run a bounded TypeScript program in a fresh worker against the workspace-scoped API. The program has no ambient Node.js environment, filesystem, network, process, or credentials.',
+    description: 'Run bounded TypeScript in a fresh worker with top-level await/return. Await all async work; return JSON. Async workspace API: readFile({path}) -> {content, version}; writeFile({path, content, expectedVersion?}); listFiles({}); typescriptDiagnostics({path}); gitDiff({path?}).',
     parameters: { program: { type: 'string', required: true } },
     output: { schema: { type: 'json' }, render: renderJson },
     timeoutMs: 5 * 60_000,

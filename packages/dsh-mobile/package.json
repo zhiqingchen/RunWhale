@@ -50,11 +50,11 @@
     "@deepseek-ai/dsh-typert-protocol": "0.1.2-rc.1",
     "@deepseek-ai/dsh-user-approval": "0.1.2-rc.1",
     "@deepseek-ai/dsh-user-questions": "0.1.2-rc.1",
-    "@deepseek-ai/dsh-util-values": "0.1.2-rc.1"
+    "@deepseek-ai/dsh-util-values": "0.1.2-rc.1",
+    "typescript": "6.0.3"
   },
   "devDependencies": {
     "@types/node": "24.13.3",
-    "typescript": "6.0.3",
     "vitest": "4.1.11"
   }
 }

@@ -8,7 +8,7 @@ import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { createMobileHarness } from '../src/index.js'
 
 describe('TypeScript tool preparation', () => {
-  it.each(['typescript_diagnostics', 'typescript_program'])('prepares libraries before %s without opening Preview', async (name) => {
+  it.each(['typescript_diagnostics', 'typescript_program'])('prepares libraries before %s without WebAssembly or Preview', async (name) => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-typescript-preparation-'))
     const moduleStore = join(root, 'modules')
     const projectRoot = join(root, 'project')
@@ -24,6 +24,7 @@ describe('TypeScript tool preparation', () => {
       workspaceServices: { moduleStore, ensureModuleStore, permissionModeFor: () => 'danger-full-access' },
     })
     try {
+      vi.stubGlobal('WebAssembly', undefined)
       await harness.run({ sessionId: 'typescript-preparation', prompt: 'Inspect', projectRoot })
       expect(ensureModuleStore).not.toHaveBeenCalled()
       const agent = harness.context.agents.get(SessionId('typescript-preparation'))!
@@ -38,6 +39,7 @@ describe('TypeScript tool preparation', () => {
       expect(JSON.stringify(result.content)).not.toContain('shared standard library is missing')
       expect(ensureModuleStore).toHaveBeenCalledTimes(1)
     } finally {
+      vi.unstubAllGlobals()
       await harness.dispose()
       await rm(root, { recursive: true, force: true })
     }

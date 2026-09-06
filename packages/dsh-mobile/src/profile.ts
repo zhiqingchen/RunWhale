@@ -2,7 +2,7 @@ import { Context } from '@deepseek-ai/cordis'
 import type { ImageMediaType } from '@deepseek-ai/dsh-attachment'
 import AgentRegistry, { type Agent } from '@deepseek-ai/dsh-agent'
 import AgentLoop from '@deepseek-ai/dsh-agent-loop'
-import WorkerThreadCodeRuntime from '@deepseek-ai/dsh-code-runtime-worker-thread'
+import { MobileCodeRuntime } from './code-runtime-mobile.js'
 import CommandRuntime from '@deepseek-ai/dsh-commands'
 import BasicCompactionEngine from '@deepseek-ai/dsh-compaction-basic'
 import ToolResultPruner from '@deepseek-ai/dsh-compaction-tool-result-pruner'
@@ -510,7 +510,7 @@ export async function createMobileHarness(options: MobileHarnessOptions): Promis
       return outcome ?? next()
     })
   }
-  await ctx.plugin(WorkerThreadCodeRuntime, {
+  await ctx.plugin(MobileCodeRuntime, {
     computeMs: 5_000,
     maxWallMs: 30_000,
     maxOutputBytes: 256 * 1024,

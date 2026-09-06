@@ -1,0 +1,39 @@
+diff --git a/lib/index.js b/lib/index.js
+index 25c3a74138206d9089d2c9f65196eb24ac38b683..a569e2f19a7768bdd75f89793c3b6e3983f72907 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -696,8 +696,7 @@ var WorkerThreadCodeRuntime = class extends CodeRuntime {
+ 		});
+ 		let code;
+ 		try {
+-			const stripped = stripTypeScriptTypes(STRIP_WRAP.prefix + request.program + STRIP_WRAP.suffix);
+-			code = stripped.slice(STRIP_WRAP.prefix.length, stripped.length - STRIP_WRAP.suffix.length);
++			code = this.compile(request.program);
+ 		} catch (error) {
+ 			return this.failureBeforeWorker({
+ 				kind: "exception",
+@@ -706,6 +705,11 @@ var WorkerThreadCodeRuntime = class extends CodeRuntime {
+ 		}
+ 		return await this.execute(request, code, bindings);
+ 	}
++	/** Compile a program body; embedders may provide a parser without WebAssembly. */
++	compile(program) {
++		const stripped = stripTypeScriptTypes(STRIP_WRAP.prefix + program + STRIP_WRAP.suffix);
++		return stripped.slice(STRIP_WRAP.prefix.length, stripped.length - STRIP_WRAP.suffix.length);
++	}
+ 	/** Apply the outer-output ledger to failures that occur before a worker owns one. */
+ 	failureBeforeWorker(error) {
+ 		return new OutputLedger(this.config.maxOutputBytes).failure([], error);
+diff --git a/lib/types/index.d.ts b/lib/types/index.d.ts
+index 81e3d0b6a3fd0519ea2dcc1b0e36b32a367b7c92..173dd6839df733bbad0e6bc02e026e7b3d25330d 100644
+--- a/lib/types/index.d.ts
++++ b/lib/types/index.d.ts
+@@ -67,6 +67,8 @@ export declare class WorkerThreadCodeRuntime extends CodeRuntime {
+      * @returns the run's outcome per the seam contract.
+      */
+     run(request: CodeRunRequest): Promise<CodeRunResult>;
++    /** Compile a program body; embedders may provide a parser without WebAssembly. */
++    protected compile(program: string): string;
+     /** Apply the outer-output ledger to failures that occur before a worker owns one. */
+     private failureBeforeWorker;
+     /** Reject malformed binding globals or typed-error declarations as Service Definition contract misuse. */
