@@ -19,6 +19,7 @@ https://github.com/user-attachments/assets/b8b7d184-8d6b-4fc0-b954-c159c02aa1b4
 - Edit files, run bounded Node.js and TypeScript tasks, and install supported pure-JavaScript dependencies.
 - Review Git changes and continue work in durable sessions.
 - Preview the same Expo project on Web, iOS, and Android.
+- Ask the Agent to inspect Preview logs and nodes, exercise supported controls, and check screenshots with a vision-capable model.
 
 User projects never invoke Xcode, Gradle, EAS, or IPA/APK builds. RunWhale bundles and previews them locally on the phone.
 

@@ -20,6 +20,7 @@ import android.view.WindowInsets
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
+import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
 import com.facebook.react.bridge.JSBundleLoader
 import com.facebook.react.common.annotations.FrameworkAPI
@@ -39,6 +40,8 @@ import kotlin.math.max
 
 @OptIn(UnstableReactNativeAPI::class, FrameworkAPI::class)
 class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
+  internal val testing = NativePreviewTesting()
+  private val closeCallbacks = mutableListOf<(Boolean) -> Unit>()
   private data class SafeWindowInsets(val top: Int, val right: Int, val bottom: Int, val left: Int)
 
   private val mainHandler = Handler(Looper.getMainLooper())
@@ -103,6 +106,8 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
       bundleFile = expectedBundle
       sourceIdentifier = sourceId
       projectIdentifier = projectId
+      testing.projectId = projectId
+      testing.sourceId = sourceId
       startPreview(root, expectedBundle.absolutePath, projectId)
     } catch (error: Throwable) {
       failStartup(
@@ -119,7 +124,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
     val delegate = DefaultReactHostDelegate(
       jsMainModulePath = "index",
       jsBundleLoader = JSBundleLoader.createFileLoader(bundlePath, PREVIEW_SCRIPT_URL, false),
-      reactPackages = NativePreviewReactPackages.create(application, projectId),
+      reactPackages = NativePreviewReactPackages.create(application, projectId) + NativePreviewConsolePackage(testing),
       turboModuleManagerDelegateBuilder = DefaultTurboModuleManagerDelegate.Builder(),
       exceptionHandler = { error ->
         runOnUiThread { handleRuntimeFailure(error.message) }
@@ -139,6 +144,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
     host = previewHost
     surface = previewSurface
     previewView = preview
+    testing.root = preview
     root.addView(
       preview,
       0,
@@ -239,7 +245,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
   }
 
   private fun completeIfReady() {
-    if (contentReady || startupFailed || crashed || !surfaceStarted || !firstContentDrawn) return
+    if (startupFailed || crashed || !surfaceStarted || !firstContentDrawn || previewView?.hasWindowFocus() != true) return
     contentReady = true
     cancelReadinessObservers()
     completePendingRequests(NativePreviewLaunchResult(opened = true))
@@ -357,7 +363,10 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
       discardUnusedBundle(nextBundle)
       intent.putExtra(EXTRA_BUNDLE_PATH, requireNotNull(bundleFile).absolutePath)
       setIntent(intent)
-      NativePreviewLaunchCoordinator.complete(requestId, NativePreviewLaunchResult(opened = true))
+      // A retained Activity receives this intent before regaining window focus.
+      // Do not let Agent inspection race ahead of the visible Preview.
+      pendingRequestIds.add(requestId)
+      completeIfReady()
       return
     }
     if (
@@ -414,17 +423,27 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
 
   override fun onResume() {
     super.onResume()
+    // Studio owns Agent RPC and test dispatch. Its host must keep processing
+    // events and timers while this in-app Preview is the foreground activity.
+    (application as ReactApplication).reactHost?.onHostResume(this, this)
+    NativePreviewTesting.activate(this)
     host?.onHostResume(this, this)
   }
 
   override fun onPause() {
+    NativePreviewTesting.deactivate(this)
     host?.onHostPause(this)
+    (application as ReactApplication).reactHost?.onHostPause(this)
     super.onPause()
+    val callbacks = closeCallbacks.toList()
+    closeCallbacks.clear()
+    callbacks.forEach { it(true) }
   }
 
   override fun onWindowFocusChanged(hasFocus: Boolean) {
     super.onWindowFocusChanged(hasFocus)
     host?.onWindowFocusChange(hasFocus)
+    if (hasFocus) completeIfReady()
   }
 
   override fun onConfigurationChanged(newConfig: Configuration) {
@@ -675,6 +694,12 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
           View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
           View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
     }
+  }
+
+  internal fun closeForTesting(complete: (Boolean) -> Unit) {
+    closeCallbacks.add(complete)
+    testing.invalidateSnapshot()
+    minimizeToStudio()
   }
 
   private fun minimizeToStudio() {

@@ -48,6 +48,7 @@ const harnessOptions = (mode: 'deepseek' | 'deterministic', provider: MobileMode
     reloadPreview: (projectRoot, sessionId, signal) => requireHost().reloadAgentPreview(projectRoot, sessionId, signal),
     stopPreview: (projectRoot) => requireHost().stopAgentPreview(projectRoot),
     previewLogs: async (projectRoot, afterSequence) => JSON.parse(JSON.stringify(requireHost().agentPreviewLogs(projectRoot, afterSequence))),
+    testPreview: (projectRoot, command, signal) => requireHost().testAgentPreview(projectRoot, command, signal),
     permissionModeFor: (sessionId) => requireHost().agentPermissionMode(sessionId),
     fullAccessRootsFor: (sessionId) => requireHost().agentFullAccessRoots(sessionId),
     runGitNetwork: (projectRoot, operation, remote, branch, signal) => requireHost().runAgentGitNetwork(projectRoot, operation, remote, branch, signal),

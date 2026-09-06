@@ -25,6 +25,8 @@ export type PreviewLifecycleAction =
   | { type: 'content-opened'; bundleUrl: string }
   | { type: 'content-failed'; bundleUrl?: string; message: string }
   | { type: 'dismiss-error' }
+  | { type: 'launch-cancelled' }
+  | { type: 'preview-closed' }
   | { type: 'minimize-web' }
   | { type: 'stop-started' }
   | { type: 'stopped' }
@@ -84,6 +86,10 @@ export function previewLifecycleReducer(state: PreviewLifecycleState, action: Pr
     case 'dismiss-error':
       if (state.error === undefined) return state
       return { ...state, error: undefined }
+    case 'launch-cancelled':
+      return { ...state, operation: undefined, error: undefined }
+    case 'preview-closed':
+      return { ...state, webVisible: false, operation: undefined, error: undefined }
     case 'minimize-web':
       return { ...state, webVisible: false, operation: state.operation === 'open' ? undefined : state.operation }
     case 'stop-started':

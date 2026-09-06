@@ -10,6 +10,7 @@ import { parseRuntimeHostInfo, type RuntimeHostInfo } from '@/utils/runtime-host
 import { nativeRuntimeRecoveryAction, publishRuntimeHost, runtimeBootPollingAction, runtimeConnectionRecoveryAllowed, runtimeHostPublicationReady, runtimeLifecycleAttemptActive } from '@/utils/runtime-startup'
 import { RUNTIME_BOOT_PROBE_TIMEOUT_MS, RUNTIME_BOOT_TIMEOUT_MS, RUNTIME_RECONNECT_TIMEOUT_MS, RUNTIME_CREDENTIAL_READ_TIMEOUT_MS, RUNTIME_REQUEST_TIMEOUT_GRACE_MS, RuntimeTransportError, runtimeBootStepTimeoutMs, runtimeRequestTimeoutMs, withClientDeadline } from '@/utils/runtime-request'
 import { appendLiveTranscriptEvent, compactLiveTranscriptEvents } from '@/utils/live-transcript-events'
+import { NativePreviewLauncher, NativePreviewLaunchCancelled } from '@/utils/native-preview-launch'
 import { runtimeProjectFileContent, type StudioProject } from './project-data'
 
 export type HostInfo = RuntimeHostInfo
@@ -54,6 +55,8 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   const activeAgentRequest = useRef<{ requestId: string; projectId: string; sessionId?: string } | undefined>(undefined)
   const cloneProgressListeners = useRef(new Map<string, (progress: ProjectCloneProgress) => void>())
   const cancelledPreviewLaunches = useRef(new Set<string>())
+  const [nativePreviewLauncher] = useState(() => new NativePreviewLauncher(NodeHost))
+  useEffect(() => () => nativePreviewLauncher.dispose(), [nativePreviewLauncher])
   const activeProjectId = useRef<string | undefined>(undefined)
   const infoRef = useRef<HostInfo | undefined>(undefined)
   const retryBootRef = useRef<() => Promise<void>>(async () => undefined)
@@ -559,13 +562,13 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   const openNativePreview = useCallback(async (bundleUrl: string, requestId: string, projectId: string): Promise<{ opened: true }> => {
     if (cancelledPreviewLaunches.current.has(requestId)) {
       cancelledPreviewLaunches.current.delete(requestId)
-      throw new Error('Preview launch cancelled')
+      throw new NativePreviewLaunchCancelled()
     }
     let result: { opened: boolean }
     try {
-      result = await NodeHost.openNativePreview(bundleUrl, requestId, projectId)
+      result = await nativePreviewLauncher.open(bundleUrl, requestId, projectId)
     } catch (error) {
-      if (!cancelledPreviewLaunches.current.has(requestId)) {
+      if (!(error instanceof NativePreviewLaunchCancelled) && !cancelledPreviewLaunches.current.has(requestId)) {
         const diagnostic = NodeHost.takeNativePreviewDiagnostic()
         if (diagnostic) setNativePreviewDiagnostic(diagnostic)
       }
@@ -580,14 +583,14 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     }
     setNativePreviewDiagnostic(undefined)
     return { opened: true }
-  }, [])
+  }, [nativePreviewLauncher])
 
   const cancelPreviewLaunch = useCallback((requestId: string): void => {
     cancelledPreviewLaunches.current.add(requestId)
-    NodeHost.cancelNativePreviewOpen(requestId)
+    nativePreviewLauncher.cancel(requestId)
     const hostInfo = infoRef.current
     if (hostInfo) void cancelRpc(hostInfo, requestId, 'Preview route changed').catch(() => undefined)
-  }, [])
+  }, [nativePreviewLauncher])
 
   const value = useMemo<RuntimeContextValue>(() => ({ snapshot, info, lastError, credentialSyncWarning, dismissCredentialSyncWarning, nativePreviewDiagnostic, events, liveTranscriptEvents, retryRuntime, request, registerFileFlush, initializeProject, cloneProject, importGithubSnapshot, deleteProject, runAgent, cancelAgent, openPreview, runPreview, openNativePreview, cancelPreviewLaunch }), [snapshot, info, lastError, credentialSyncWarning, dismissCredentialSyncWarning, nativePreviewDiagnostic, events, liveTranscriptEvents, retryRuntime, request, registerFileFlush, initializeProject, cloneProject, importGithubSnapshot, deleteProject, runAgent, cancelAgent, openPreview, runPreview, openNativePreview, cancelPreviewLaunch])
   return <RuntimeContext.Provider value={value}>{children}</RuntimeContext.Provider>
