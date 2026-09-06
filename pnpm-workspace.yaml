@@ -5,6 +5,9 @@ packages:
 
 strictDepBuilds: true
 
+overrides:
+  '@earendil-works/pi-ai': '0.85.1'
+
 allowBuilds:
   '@google/genai': false
   '@shopify/react-native-skia': true
