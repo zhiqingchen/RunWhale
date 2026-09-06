@@ -54,3 +54,5 @@ native/node-host/runtime/runwhale-package-worker.mjs
 native/node-host/runtime/worker.cjs
 native/node-host/runtime/runwhale-module-store.tgz
 examples/*/.runwhale/
+packages/node-runtime/test/fixtures/native-preview/.runwhale/metro-*-entry.tsx
+packages/node-runtime/test/fixtures/native-preview/.runwhale/preview-testing.js
