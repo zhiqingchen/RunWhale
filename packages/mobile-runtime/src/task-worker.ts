@@ -45,9 +45,4 @@ console.warn = write
 console.error = write
 process.argv = ['node', data.entry, ...data.args]
 
-try {
-  await import(`${pathToFileURL(data.entry).href}?task=${Date.now().toString(36)}`)
-  port.postMessage({ type: 'done' })
-} catch (error) {
-  port.postMessage({ type: 'done', error: error instanceof Error ? `${error.name}: ${error.message}` : String(error) })
-}
+await import(`${pathToFileURL(data.entry).href}?task=${Date.now().toString(36)}`)

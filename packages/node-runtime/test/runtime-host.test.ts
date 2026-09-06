@@ -437,7 +437,7 @@ describe('RunWhaleRuntimeHost', () => {
       moduleStore: join(root, 'modules'),
       platform: 'android',
       agent: { run: async () => { markAgentStarted(); await agentFinished; return { text: 'Done', events: [{ type: 'turn/end' }] } } },
-      taskWorkerUrl: new URL('../src/task-worker.ts', import.meta.url),
+      taskWorkerUrl: new URL('../../mobile-runtime/src/task-worker.ts', import.meta.url),
       packageInstaller,
     })
     hosts.push(host)
@@ -454,8 +454,10 @@ describe('RunWhaleRuntimeHost', () => {
     expect(await runningAgent).toMatchObject({ ok: true })
     expect(await rpc('project.delete', { projectId: 'agent-project' })).toMatchObject({ result: { deleted: true } })
 
-    await writeFile(join(root, 'projects', 'task-project', 'hold.ts'), 'setInterval(() => undefined, 1_000)\n')
+    await writeFile(join(root, 'projects', 'task-project', 'hold.ts'), 'setTimeout(() => console.log("ready"), 25)\nsetTimeout(() => undefined, 5_000)\n')
+    const taskReady = new Promise<void>(resolve => { (host as any).tasks.once('output', resolve) })
     const task = await rpc('task.run', { projectId: 'task-project', entry: 'hold.ts' })
+    await taskReady
     expect(await rpc('project.delete', { projectId: 'task-project' })).toMatchObject({ error: { message: expect.stringMatching(/busy/i) } })
     expect(await rpc('task.cancel', { taskId: task.result.taskId })).toMatchObject({ result: { cancelled: true } })
     await waitForCondition(() => !((host as any).tasks.hasRunningTaskForRoot(join(root, 'projects', 'task-project'))), 'Node task cancellation')

@@ -18,6 +18,25 @@ function versionOf(content: Uint8Array): string {
   return createHash('sha256').update(content).digest('hex')
 }
 
+// The host and Agent bundle separate copies of this module in the same isolate.
+const writesKey = Symbol.for('@runwhale/mobile-runtime/file-writes')
+const shared = globalThis as typeof globalThis & { [writesKey]?: Map<string, Promise<void>> }
+const writes = shared[writesKey] ??= new Map<string, Promise<void>>()
+
+async function withFileWrite<T>(target: string, operation: () => Promise<T>): Promise<T> {
+  const previous = writes.get(target)
+  let release!: () => void
+  const next = new Promise<void>(resolve => { release = resolve })
+  writes.set(target, next)
+  await previous
+  try {
+    return await operation()
+  } finally {
+    release()
+    if (writes.get(target) === next) writes.delete(target)
+  }
+}
+
 export class MobileProjectFileSystem {
   private canonicalRoots: string[] | undefined
 
@@ -39,37 +58,39 @@ export class MobileProjectFileSystem {
   async writeText(path: string, content: string, expectedVersion?: string): Promise<{ version: string }> {
     const bytes = Buffer.from(content, 'utf8')
     let target = await this.resolveForWrite(path)
-    let current: Buffer | undefined
-    try {
-      const info = await lstat(target)
-      if (info.isSymbolicLink()) throw new SandboxViolation('writes through symlinks are forbidden', 'SYMLINK')
-      if (!info.isFile()) throw new SandboxViolation('target is not a regular file', 'OUTSIDE_ROOT')
-      current = await readFile(target)
-    } catch (error) {
-      if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
-    }
-    if (expectedVersion !== undefined && (current === undefined || versionOf(current) !== expectedVersion)) {
-      throw new SandboxViolation('file changed since it was read', 'CONFLICT')
-    }
-    await mkdir(dirname(target), { recursive: true })
-    const canonicalParent = await realpath(dirname(target))
-    await this.assertWithinRoot(canonicalParent)
-    target = resolve(canonicalParent, basename(target))
-    const temporary = `${target}.runwhale-${randomBytes(8).toString('hex')}.tmp`
-    const handle = await open(temporary, 'wx', 0o600)
-    try {
-      await handle.writeFile(bytes)
-      await handle.sync()
-    } finally {
-      await handle.close()
-    }
-    try {
-      await rename(temporary, target)
-    } catch (error) {
-      await unlink(temporary).catch(() => undefined)
-      throw error
-    }
-    return { version: versionOf(bytes) }
+    return withFileWrite(target, async () => {
+      let current: Buffer | undefined
+      try {
+        const info = await lstat(target)
+        if (info.isSymbolicLink()) throw new SandboxViolation('writes through symlinks are forbidden', 'SYMLINK')
+        if (!info.isFile()) throw new SandboxViolation('target is not a regular file', 'OUTSIDE_ROOT')
+        current = await readFile(target)
+      } catch (error) {
+        if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
+      }
+      if (expectedVersion !== undefined && (current === undefined || versionOf(current) !== expectedVersion)) {
+        throw new SandboxViolation('file changed since it was read', 'CONFLICT')
+      }
+      await mkdir(dirname(target), { recursive: true })
+      const canonicalParent = await realpath(dirname(target))
+      await this.assertWithinRoot(canonicalParent)
+      target = resolve(canonicalParent, basename(target))
+      const temporary = `${target}.runwhale-${randomBytes(8).toString('hex')}.tmp`
+      const handle = await open(temporary, 'wx', 0o600)
+      try {
+        await handle.writeFile(bytes)
+        await handle.sync()
+      } finally {
+        await handle.close()
+      }
+      try {
+        await rename(temporary, target)
+      } catch (error) {
+        await unlink(temporary).catch(() => undefined)
+        throw error
+      }
+      return { version: versionOf(bytes) }
+    })
   }
 
   private async getRoots(): Promise<string[]> {

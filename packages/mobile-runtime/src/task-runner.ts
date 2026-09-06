@@ -30,8 +30,7 @@ interface TaskEvents {
 }
 
 export class MobileTaskRunner extends EventEmitter<TaskEvents> {
-  private readonly workers = new Map<string, { worker: Worker; roots: readonly string[] }>()
-  private readonly cancelled = new Set<string>()
+  private readonly workers = new Map<string, { worker: Worker; roots: readonly string[]; cancel: () => Promise<number> }>()
   private sequence = 0
 
   constructor(private readonly workerUrl: URL = new URL('./task-worker.js', import.meta.url)) {
@@ -59,30 +58,28 @@ export class MobileTaskRunner extends EventEmitter<TaskEvents> {
     const maxOutputBytes = request.maxOutputBytes ?? 256 * 1024
     let output = ''
     let outputBytes = 0
-    this.emit('state', id, 'running')
-
     const worker = new Worker(this.workerUrl, {
       workerData: { entry, args: request.args ?? [] },
       env: {},
       resourceLimits: { maxOldGenerationSizeMb: 128, stackSizeMb: 4 },
     })
-    this.workers.set(id, { worker, roots: requestedRoot === root ? [root] : [requestedRoot, root] })
+    let failure: { exitCode: number; error: string; state: 'failed' | 'cancelled' } | undefined
+    let termination: Promise<number> | undefined
+    const stop = (exitCode: number, error: string, state: 'failed' | 'cancelled' = 'failed'): Promise<number> => {
+      failure ??= { exitCode, error, state }
+      return termination ??= worker.terminate()
+    }
+    this.workers.set(id, {
+      worker,
+      roots: requestedRoot === root ? [root] : [requestedRoot, root],
+      cancel: () => stop(130, 'task cancelled', 'cancelled'),
+    })
     const result = new Promise<TaskResult>(resolveResult => {
-      let settled = false
-      const finish = (result: Omit<TaskResult, 'id' | 'durationMs'>, state: 'completed' | 'failed' | 'cancelled'): void => {
-        if (settled) return
-        settled = true
-        clearTimeout(timer)
-        this.workers.delete(id)
-        this.emit('state', id, state)
-        resolveResult({ id, durationMs: Date.now() - startedAt, ...result })
-      }
       const timer = setTimeout(() => {
-        void worker.terminate()
-        finish({ exitCode: 124, output, error: `task timed out after ${timeoutMs}ms` }, 'failed')
+        void stop(124, `task timed out after ${timeoutMs}ms`)
       }, timeoutMs)
       worker.on('message', (message: unknown) => {
-        if (typeof message !== 'object' || message === null) return
+        if (failure || typeof message !== 'object' || message === null) return
         const record = message as Record<string, unknown>
         if (record.type === 'output' && typeof record.chunk === 'string') {
           const bytes = Buffer.byteLength(record.chunk)
@@ -91,32 +88,28 @@ export class MobileTaskRunner extends EventEmitter<TaskEvents> {
             outputBytes += bytes
             this.emit('output', id, record.chunk)
           } else {
-            void worker.terminate()
-            finish({ exitCode: 1, output, error: `task output exceeded ${maxOutputBytes} bytes` }, 'failed')
+            void stop(1, `task output exceeded ${maxOutputBytes} bytes`)
           }
         }
-        if (record.type === 'done') {
-          const error = typeof record.error === 'string' ? record.error : undefined
-          finish({ exitCode: error ? 1 : 0, output, ...(error ? { error } : {}) }, error ? 'failed' : 'completed')
-        }
       })
-      worker.once('error', error => finish({ exitCode: 1, output, error: error.message }, 'failed'))
+      worker.once('error', error => { void stop(1, String(error)) })
       worker.once('exit', code => {
-        if (this.cancelled.delete(id)) {
-          finish({ exitCode: 130, output, error: 'task cancelled' }, 'cancelled')
-          return
-        }
-        if (!settled) finish({ exitCode: code ?? 1, output, ...(code === 0 ? {} : { error: `worker exited with code ${code}` }) }, code === 0 ? 'completed' : 'failed')
+        clearTimeout(timer)
+        this.workers.delete(id)
+        const exitCode = failure?.exitCode ?? code
+        const error = failure?.error ?? (code === 0 ? undefined : `worker exited with code ${code}`)
+        this.emit('state', id, failure?.state ?? (code === 0 ? 'completed' : 'failed'))
+        resolveResult({ id, durationMs: Date.now() - startedAt, exitCode, output, ...(error ? { error } : {}) })
       })
     })
+    this.emit('state', id, 'running')
     return { id, result }
   }
 
   async cancel(id: string): Promise<boolean> {
     const active = this.workers.get(id)
     if (!active) return false
-    this.cancelled.add(id)
-    await active.worker.terminate()
+    await active.cancel()
     return true
   }
 }
