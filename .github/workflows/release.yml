@@ -274,9 +274,9 @@ jobs:
           test -x "$apksigner_path" && test -x "$aapt_path"
           signer_report="$RUNNER_TEMP/android-release-signers.txt"
           "$apksigner_path" verify --verbose --print-certs "$source_apk" > "$signer_report"
-          # APK v3.1 reports SDK-scoped signer labels instead of numbered ones.
+          # apksigner uses numbered, SDK-scoped, or signature-scheme-prefixed labels.
           # The same certificate can appear for more than one SDK range.
-          mapfile -t signing_digests < <(sed -nE 's/^Signer .* certificate SHA-256 digest: ([[:xdigit:]]{64})[[:space:]]*$/\1/p' "$signer_report" | tr '[:lower:]' '[:upper:]' | sort -u)
+          mapfile -t signing_digests < <(sed -nE 's/^(V[0-9]+(\.[0-9]+)? )?Signer.* certificate SHA-256 digest: ([[:xdigit:]]{64})[[:space:]]*$/\3/p' "$signer_report" | tr '[:lower:]' '[:upper:]' | sort -u)
           if [[ "${#signing_digests[@]}" -ne 1 ]]; then
             cat "$signer_report" >&2
             echo "Expected exactly one APK signing identity, found ${#signing_digests[@]}" >&2
@@ -316,6 +316,15 @@ jobs:
       - name: Remove signing material
         if: always()
         run: rm -f "$RUNNER_TEMP/runwhale-release.keystore"
+
+      - name: Retain APK after failed verification
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runwhale-android-unverified-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Upload short-lived Android release artifact
         uses: actions/upload-artifact@v4
