@@ -10,6 +10,7 @@ import GoalService, { type GoalRef, type GoalView } from '@deepseek-ai/dsh-goal'
 import * as GoalRoundDriver from '@deepseek-ai/dsh-goal-round-driver'
 import LlmRuntime, { createUserMessage, LlmAdapter, MessageId, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
 import * as LlmPiAi from '@deepseek-ai/dsh-llm-pi-ai'
+import * as LlmRetry from '@deepseek-ai/dsh-llm-retry'
 import PlanModeController from '@deepseek-ai/dsh-plan-mode'
 import SessionStore, { interruptedTurnClosers, SessionId, SessionLogOffset, type SessionEvent } from '@deepseek-ai/dsh-session'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
@@ -521,6 +522,7 @@ export async function createMobileHarness(options: MobileHarnessOptions): Promis
     ...(options.requestPackageInstall ? { requestPackageInstall: options.requestPackageInstall } : {}),
   })
   await ctx.plugin(AgentRegistry)
+  await ctx.plugin(LlmRetry)
   await ctx.plugin(GoalService, { defaultMaxGoalRounds: 64 })
   await ctx.plugin(GoalRoundDriver)
   await ctx.plugin(ToolGoal)

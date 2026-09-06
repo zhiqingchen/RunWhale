@@ -32,6 +32,33 @@ class HangingAdapter extends LlmAdapter {
 }
 
 describe('DSH mobile profile', () => {
+  it('recovers a prematurely closed model stream within the same turn', async () => {
+    const harness = await createMobileHarness({ mode: 'deterministic', secrets: new MemorySecrets() })
+    let attempts = 0
+    class InterruptedAdapter extends LlmAdapter {
+      async *stream(): AsyncIterable<StreamChunk> {
+        if (++attempts === 1) {
+          yield { type: 'finish', reason: { kind: 'error', failure: { code: 'TRANSPORT', message: 'Premature close' } } }
+          return
+        }
+        yield { type: 'block-start', index: 0, blockType: 'text' }
+        yield { type: 'block-end', index: 0, block: { type: 'text', text: 'Recovered.' } }
+        yield { type: 'finish', reason: { kind: 'stop' } }
+      }
+    }
+    harness.context.llm.registerAdapter(['retry-test'], new InterruptedAdapter())
+    const recovering = new MobileHarness(harness.context, 'retry-test', 'test', new Map(), () => 'review')
+    try {
+      const result = await recovering.run({ sessionId: 'transport-retry', prompt: 'Continue the task' })
+      expect(result.failure).toBeUndefined()
+      expect(result.text).toBe('Recovered.')
+      expect(attempts).toBe(2)
+      expect(result.events.filter((event) => event.type === 'llm/retry')).toHaveLength(1)
+      expect(result.events.filter((event) => event.type === 'turn/start')).toHaveLength(1)
+      expect(result.events.filter((event) => event.type === 'step/start')).toHaveLength(1)
+    } finally { await harness.dispose() }
+  })
+
   it('delivers Preview results as plugin notices without creating user input or waking an idle session', async () => {
     const harness = await createMobileHarness({ mode: 'deterministic', secrets: new MemorySecrets() })
     try {
