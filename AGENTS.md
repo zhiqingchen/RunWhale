@@ -22,10 +22,11 @@
 
 ## Documentation and Temporary Artifacts
 
-- Commit documentation with lasting value: maintained product behavior, architecture, setup, development procedures, and licensing. Update the relevant existing document when possible.
+- Keep repository documentation minimal. Update existing documents only when needed to explain maintained usage, setup, development procedures, or licensing.
+- Do not create standalone architecture, state ownership, implementation summary, or task documents unless explicitly requested. Explain routine implementation details in the task response or PR description.
 - Do not commit temporary test, acceptance, or audit reports; task plans, progress logs, or handoff notes; device state dumps; validation screenshots or recordings; or generated build outputs.
 - Summarize run results and remaining validation limits in the task response or PR description. Use ignored `.cache/` paths only for temporary artifacts needed during the work, and delete them when no longer needed.
-- Before committing, review staged changes and tracked and untracked working files for temporary artifacts. Remove stale references when deleting reports, and keep any lasting behavior or procedure in the appropriate maintained document.
+- Before committing, review staged changes and tracked and untracked working files for temporary artifacts and unnecessary documents. Remove stale references when deleting documents; do not archive or repackage unwanted documents.
 
 ## Scope and Safety
 
