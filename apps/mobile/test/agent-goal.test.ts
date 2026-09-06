@@ -131,6 +131,18 @@ describe('Goal session readiness', () => {
     expect(isAgentGoalSessionReady(saved)).toBe(true)
     expect(isAgentGoalSessionReady({ ...saved, connected: false })).toBe(false)
     expect(isAgentGoalSessionReady({ ...saved, sessionId: 'other' })).toBe(false)
-    expect(isAgentGoalSessionReady({ ...saved, localRunActive: true })).toBe(false)
+    expect(isAgentGoalSessionReady({ ...saved, localRunActive: true })).toBe(true)
+  })
+
+  it('keeps a saved Goal session ready while a local run changes rounds', () => {
+    const saved = {
+      sessionId: 'session-1', connected: true, localRunActive: true,
+      record: { sessionId: 'session-1', projectId: 'project-1', title: 'Goal', updatedAt: 1, state: 'running' as const, events: [] },
+    }
+    for (const submittedLifecycleState of [undefined, 'running', 'completed', 'paused', 'running']) {
+      expect(isAgentGoalSessionReady({ ...saved, submittedLifecycleState })).toBe(true)
+    }
+    expect(isAgentGoalSessionReady({ ...saved, connected: false })).toBe(false)
+    expect(isAgentGoalSessionReady({ ...saved, sessionId: 'new-session' })).toBe(false)
   })
 })

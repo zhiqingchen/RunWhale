@@ -61,6 +61,7 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   const colors = useAppColors()
   const styles = useTranscriptStyles()
   const [visibleLimit, setVisibleLimit] = useState(120)
+  const [preserveVisiblePosition, setPreserveVisiblePosition] = useState(false)
   const fallbackListRef = useRef<FlatList<TranscriptRow>>(null)
   const resolvedListRef = listRef ?? fallbackListRef
   const positionCoordinator = useRef(createTranscriptPositionCoordinator())
@@ -98,6 +99,7 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   const loadEarlier = useCallback(() => {
     if (historyLoadPending.current || historyWindow.hidden === 0) return
     positionCoordinator.current.stopFollowing()
+    setPreserveVisiblePosition(true)
     cancelScheduledScrollToLatest()
     historyLoadPending.current = true
     setVisibleLimit((value) => value + HISTORY_PAGE_SIZE)
@@ -117,10 +119,12 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
 
   useImperativeHandle(ref, () => ({
     scrollToBottom() {
+      setPreserveVisiblePosition(false)
       const offset = positionCoordinator.current.startFollowing()
       if (offset !== undefined) resolvedListRef.current?.scrollToOffset({ offset, animated: false })
     },
     scrollToTop() {
+      setPreserveVisiblePosition(true)
       positionCoordinator.current.stopFollowing()
       cancelScheduledScrollToLatest()
       resolvedListRef.current?.scrollToOffset({ offset: 0, animated: false })
@@ -158,6 +162,7 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
 
   const beginUserScroll = useCallback(() => {
     positionCoordinator.current.userScrollBegan()
+    setPreserveVisiblePosition(true)
     cancelScheduledScrollToLatest()
   }, [cancelScheduledScrollToLatest])
 
@@ -166,12 +171,16 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
     const targetOffsetY = event.nativeEvent.targetContentOffset?.y
     const continuesWithMomentum = Math.abs(event.nativeEvent.velocity?.y ?? 0) > 0
       || (targetOffsetY !== undefined && Math.abs(targetOffsetY - event.nativeEvent.contentOffset.y) > 1)
-    if (positionCoordinator.current.userScrollEnded(continuesWithMomentum) !== undefined) scheduleScrollToLatest()
+    const offset = positionCoordinator.current.userScrollEnded(continuesWithMomentum)
+    setPreserveVisiblePosition(offset === undefined)
+    if (offset !== undefined) scheduleScrollToLatest()
   }, [scheduleScrollToLatest])
 
   const endMomentumScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     positionCoordinator.current.scrolled(event.nativeEvent.contentOffset.y)
-    if (positionCoordinator.current.momentumScrollEnded() !== undefined) scheduleScrollToLatest()
+    const offset = positionCoordinator.current.momentumScrollEnded()
+    setPreserveVisiblePosition(offset === undefined)
+    if (offset !== undefined) scheduleScrollToLatest()
   }, [scheduleScrollToLatest])
 
   return <><FlatList
@@ -186,7 +195,8 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
     updateCellsBatchingPeriod={TRANSCRIPT_BATCHING_PERIOD}
     windowSize={TRANSCRIPT_WINDOW_SIZE}
     removeClippedSubviews={false}
-    maintainVisibleContentPosition={shouldMaintainTranscriptVisiblePosition(rows.length) ? TRANSCRIPT_MAINTAIN_VISIBLE_POSITION : undefined}
+    // Native anchoring must not move the list away from the edge JS is following.
+    maintainVisibleContentPosition={shouldMaintainTranscriptVisiblePosition(rows.length) && preserveVisiblePosition ? TRANSCRIPT_MAINTAIN_VISIBLE_POSITION : undefined}
     ListHeaderComponent={<>{header}{historyWindow.hidden > 0 && <Pressable
       accessibilityRole="button"
       accessibilityLabel={loadEarlierLabel}

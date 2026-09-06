@@ -10,8 +10,11 @@ export function isAgentGoalSessionReady({ sessionId, connected, localRunActive, 
   record?: AgentSessionRecord
 }): boolean {
   if (!sessionId || !connected) return false
+  // A saved session remains available while its next run is being admitted or
+  // a goal moves between rounds. Only a new session needs a running event.
+  if (record?.sessionId === sessionId) return true
   if (localRunActive) return submittedLifecycleState === 'running'
-  return lifecycleState === 'running' || record?.sessionId === sessionId
+  return lifecycleState === 'running'
 }
 
 export interface AgentGoalProjectionOptions {
