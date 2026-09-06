@@ -27,6 +27,7 @@ export interface MobilePackageInstallOutcome {
 
 export interface MobileWorkspaceServices {
   moduleStore?: string
+  ensureModuleStore?: () => Promise<void>
   requestPackageInstall?: (sessionId: string, projectRoot: string, dependencies: Record<string, string>, offline: boolean | undefined, signal: AbortSignal) => Promise<MobilePackageInstallOutcome>
   runNodeTask?: (projectRoot: string, entry: string, args: string[] | undefined, timeoutMs: number | undefined, signal: AbortSignal) => Promise<{ id: string; exitCode: number; output: string; durationMs: number; error?: string }>
   runPreview?: (projectRoot: string, sessionId: string, signal: AbortSignal) => Promise<PreviewEndpoint>
@@ -144,7 +145,7 @@ export function registerMobileWorkspaceTools(
     description: 'Run a bounded TypeScript program in a fresh worker against the workspace-scoped API. The program has no ambient Node.js environment, filesystem, network, process, or credentials.',
     parameters: { program: { type: 'string', required: true } },
     output: { schema: { type: 'json' }, render: renderJson },
-    timeoutMs: 35_000,
+    timeoutMs: 5 * 60_000,
     async execute({ program }, exec) {
       if (!exec.agent) throw new Error('typescript_program requires an agent session')
       assertWriteAllowed(exec.agent)
@@ -162,6 +163,8 @@ export function registerMobileWorkspaceTools(
         if (outcome !== 'allowed-once') throw new Error(`run_code permission ${outcome}`)
       }
       const fileSystem = fileSystemFor(exec.agent)
+      // Cold extraction must finish before the worker's bounded execution starts.
+      await services.ensureModuleStore?.()
       const result = await ctx.codeRuntime.run({
         program,
         signal: exec.signal,
@@ -391,9 +394,11 @@ export function registerMobileWorkspaceTools(
     description: 'Run the on-device TypeScript language service diagnostics for one workspace source file.',
     parameters: { path: { type: 'string', required: true } },
     output: { schema: { type: 'json' }, render: renderJson },
+    timeoutMs: 5 * 60_000,
     isConcurrencySafe: () => true,
     async execute({ path }, exec) {
       const source = await fileSystemFor(exec.agent).readText(path)
+      await services.ensureModuleStore?.()
       const service = new MobileTypeScriptService([{ path, content: source.content }], { root: executionRoot(exec.agent), moduleStore: services.moduleStore })
       try { return { path, diagnostics: service.diagnostics(path).map((diagnostic) => ({ ...diagnostic })) } } finally { service.dispose() }
     },

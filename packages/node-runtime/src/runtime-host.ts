@@ -720,7 +720,7 @@ export class RunWhaleRuntimeHost {
     }
   }
 
-  private ensureModuleStore(): Promise<void> {
+  ensureModuleStore(): Promise<void> {
     return this.ensureRuntimePreparation('module-store', this.options.prepareModuleStore)
   }
 

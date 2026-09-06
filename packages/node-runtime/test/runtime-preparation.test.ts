@@ -9,7 +9,7 @@ const cleanups: Array<() => Promise<void>> = []
 afterEach(async () => { await Promise.all(cleanups.splice(0).map((cleanup) => cleanup())) })
 
 describe('lazy runtime preparation', () => {
-  it('starts the host before preparing modules and retries a failed Preview preparation', async () => {
+  it('starts before preparing modules and shares retried tool preparation with Preview', async () => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-lazy-modules-'))
     const prepareModuleStore = vi.fn()
       .mockRejectedValueOnce(new Error('module preparation failed'))
@@ -39,7 +39,9 @@ describe('lazy runtime preparation', () => {
     await expect(rpc('preview.open', { projectId, platform: 'ios' })).resolves.toMatchObject({ ok: true, result: { status: 'missing' } })
     expect(prepareModuleStore).not.toHaveBeenCalled()
 
-    await expect(rpc('preview.run', { projectId, platform: 'ios' })).resolves.toMatchObject({ error: { message: 'module preparation failed' } })
+    // TypeScript tools use the same preparation gate before any Preview runs.
+    await expect(host.ensureModuleStore()).rejects.toThrow('module preparation failed')
+    await Promise.all([host.ensureModuleStore(), host.ensureModuleStore()])
     await expect(rpc('preview.run', { projectId, platform: 'ios' })).resolves.toMatchObject({ ok: true, result: { projectId, platform: 'ios' } })
     expect(prepareModuleStore).toHaveBeenCalledTimes(2)
 
