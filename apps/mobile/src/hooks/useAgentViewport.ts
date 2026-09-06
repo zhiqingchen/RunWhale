@@ -32,7 +32,7 @@ export function useAgentViewport(sessionId: string | undefined) {
   }, [])
   useEffect(() => {
     if (!keyboardVisible || !questionInputFocused) return
-    const timer = setTimeout(() => feedRef.current?.scrollToOffset({ offset: agentQuestionKeyboardRevealOffset(scrollOffset.current, Platform.OS), animated: true }), AGENT_QUESTION_KEYBOARD_REVEAL_DELAY_MS)
+    const timer = setTimeout(() => feedRef.current?.scrollToOffset({ offset: agentQuestionKeyboardRevealOffset(Platform.OS), animated: true }), AGENT_QUESTION_KEYBOARD_REVEAL_DELAY_MS)
     return () => clearTimeout(timer)
   }, [keyboardVisible, questionInputFocused])
   useEffect(() => {

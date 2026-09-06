@@ -22,7 +22,7 @@ import type { TranscriptBranchInFlight } from '@/utils/transcript-feedback'
 import { liveAgentMessageIds, projectTranscriptUserMessages, queuedMessagesAwaitingConsumption, reconcileSubmittedTranscriptPrompt, transcriptUserMessageId, unresolvedTranscriptPrompt, type SubmittedTranscriptPrompt } from '@/utils/transcript-user'
 import type { AgentGoal, AgentQuestion, AgentQuestionAnswer, AgentSessionRecord, MobileModelProvider, MobilePermissionMode } from '@runwhale/mobile-protocol'
 import { useRouter } from 'expo-router'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { Keyboard } from 'react-native'
 import { QUICK_ACTION_DISMISS_DELAY_MS, providerLabel, type AgentAttachmentSource, type AgentPanelProps, type ApprovalResponseAction, type GoalMutationAction, type PendingAgentMessage } from './agent-panel-types'
 import { useAgentComposer } from './useAgentComposer'
@@ -50,6 +50,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   const latestEventSequence = useRef(0)
   latestEventSequence.current = events.at(-1)?.sequence ?? 0
   const [sessionRecord, setSessionRecord] = useState<AgentSessionRecord>()
+  const historyRequest = useRef<{ sessionId: string; info: typeof runtime.info; eventFloor: number; pending: boolean; promise: Promise<AgentSessionRecord | undefined> } | undefined>(undefined)
   const [sessionHistoryState, setSessionHistoryState] = useState<AgentSessionHistoryState>(initialSessionId ? 'loading' : 'ready')
   const hydratedSessionHistory = useRef<string | undefined>(undefined)
   const initialSessionHistoryStarted = useRef(false)
@@ -122,45 +123,68 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   const refreshSessionHistory = useCallback(async (preferredSessionId?: string, settleRevision?: number) => {
     const selected = preferredSessionId ?? sessionId
     const hydrated = !selected || hydratedSessionHistory.current === selected
+    const eventFloor = latestEventSequence.current
     if (selected) setSessionHistoryState(sessionRefreshPresentationStatus(hydrated, 'start'))
     if (!runtime.info) {
       if (selected && runtime.lastError) setSessionHistoryState(sessionRefreshPresentationStatus(hydrated, 'failure'))
       return
     }
-    try {
-      if (!selected) {
-        setSessionRecord(undefined)
-        setQueued([])
-        setSessionHistoryState('ready')
-        return
-      }
-      const [record, pending] = await Promise.all([
-        runtime.request('session.read', { projectId, sessionId: selected, surfaceOnly: true }),
-        runtime.request('agent.message.list', { projectId, sessionId: selected }),
-      ])
-      hydratedSessionHistory.current = selected
-      setSessionRecord(record)
-      setQueued(pending.messages.map((message) => ({ messageId: message.messageId, text: message.text, mode: message.mode })))
+    if (!selected) {
+      setSessionRecord(undefined)
+      setQueued([])
       setSessionHistoryState('ready')
-      reconcileSubmittedPrompt(selected, record, settleRevision)
-    } catch (cause) {
-      if (selected && sessionSummaryStatus === 'ready' && !sessionSummariesRefreshing && !sessionSummaries.some((item) => item.sessionId === selected)) {
-        hydratedSessionHistory.current = selected
-        setSessionRecord(undefined)
-        setQueued([])
-        setSessionHistoryState('ready')
-        reconcileSubmittedPrompt(selected, undefined, settleRevision)
-        return
-      }
-      if (selected) setSessionHistoryState(sessionRefreshPresentationStatus(hydratedSessionHistory.current === selected, 'failure'))
-      throw cause
+      return
     }
+    const current = historyRequest.current
+    if (current?.pending && current.sessionId === selected && current.info === runtime.info && current.eventFloor === eventFloor) {
+      const record = await current.promise
+      reconcileSubmittedPrompt(selected, record, settleRevision)
+      return record
+    }
+    const read = async (): Promise<AgentSessionRecord | undefined> => {
+      try {
+        const [record, pending] = await Promise.all([
+          runtime.request('session.read', { projectId, sessionId: selected, surfaceOnly: true }),
+          runtime.request('agent.message.list', { projectId, sessionId: selected }),
+        ])
+        if (historyRequest.current?.promise !== reading) {
+          return historyRequest.current?.sessionId === selected ? historyRequest.current.promise : undefined
+        }
+        hydratedSessionHistory.current = selected
+        setSessionRecord(record)
+        setQueued(pending.messages.map((message) => ({ messageId: message.messageId, text: message.text, mode: message.mode })))
+        setSessionHistoryState('ready')
+        reconcileSubmittedPrompt(selected, record, settleRevision)
+        return record
+      } catch (cause) {
+        if (historyRequest.current?.promise !== reading) {
+          if (historyRequest.current?.sessionId === selected) return historyRequest.current.promise
+          throw cause
+        }
+        if (selected && sessionSummaryStatus === 'ready' && !sessionSummariesRefreshing && !sessionSummaries.some((item) => item.sessionId === selected)) {
+          hydratedSessionHistory.current = selected
+          setSessionRecord(undefined)
+          setQueued([])
+          setSessionHistoryState('ready')
+          reconcileSubmittedPrompt(selected, undefined, settleRevision)
+          return
+        }
+        if (selected) setSessionHistoryState(sessionRefreshPresentationStatus(hydratedSessionHistory.current === selected, 'failure'))
+        throw cause
+      }
+    }
+    const reading = read().finally(() => {
+      if (historyRequest.current?.promise === reading) historyRequest.current.pending = false
+    })
+    historyRequest.current = { sessionId: selected, info: runtime.info, eventFloor, pending: true, promise: reading }
+    return reading
   }, [projectId, reconcileSubmittedPrompt, runtime.info, runtime.lastError, runtime.request, sessionId, sessionSummaries, sessionSummariesRefreshing, sessionSummaryStatus])
+  const refreshHistoryFromEvent = useEffectEvent((selected?: string) => { void refreshSessionHistory(selected).catch(() => undefined) })
   useEffect(() => {
     if (initialSessionHistoryStarted.current || sessionSummaryStatus === 'loading' || sessionSummariesRefreshing) return
     initialSessionHistoryStarted.current = true
-    void refreshSessionHistory().catch(() => undefined)
-  }, [refreshSessionHistory, sessionId, sessionSummaries, sessionSummariesRefreshing, sessionSummaryStatus])
+    refreshHistoryFromEvent()
+  }, [runtime.info, sessionId, sessionSummariesRefreshing, sessionSummaryStatus])
   useEffect(() => {
     if (sessionRecord?.state !== 'running' || liveEventFloor !== undefined) return
     setLiveEventFloor(0)
@@ -168,9 +192,9 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   }, [liveEventFloor, sessionRecord?.state, sessionRecord?.taskId])
   useEffect(() => {
     if (lifecycleState === 'completed' || lifecycleState === 'failed' || lifecycleState === 'aborted' || lifecycleState === 'paused') {
-      void refreshSessionHistory(sessionId).catch(() => undefined)
+      refreshHistoryFromEvent(sessionId)
     }
-  }, [lifecycleState, refreshSessionHistory, sessionId, sessionRecord?.state])
+  }, [lifecycleState, sessionId])
   useEffect(() => {
     // The host may finish while iOS leaves the original fetch suspended. Retire
     // that transport so its submission guard cannot keep Retry locked. Events
@@ -214,8 +238,8 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   ), [currentLiveEvents, projectId, sessionId, sessionRecord])
   const currentSessionEvents = transcript.events
   useEffect(() => {
-    if (transcript.repair && sessionId) void refreshSessionHistory(sessionId).catch(() => undefined)
-  }, [refreshSessionHistory, sessionId, transcript.repair])
+    if (transcript.repair && sessionId) refreshHistoryFromEvent(sessionId)
+  }, [sessionId, transcript.repair])
   const consumedMessageIds = useMemo(() => liveAgentMessageIds(currentLiveEvents, {
     projectId,
     ...(sessionId === undefined ? {} : { sessionId }),

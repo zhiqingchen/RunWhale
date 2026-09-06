@@ -21,7 +21,7 @@ import { agentComposerBottomPadding, agentQuestionKeyboardClearance } from '@/ut
 import { agentModelSelectorWidth } from '@/utils/agent-model-selection'
 import { agentPanelInteractionContract } from '@/utils/agent-panel-layout'
 import { latestSessionSystemPrompt } from '@/utils/session-transcript'
-import { TRANSCRIPT_USER_END_THRESHOLD, isTranscriptNearEnd } from '@/utils/transcript-position'
+import { isTranscriptAtBottom } from '@/utils/transcript-position'
 import type { AgentQuestion, AgentQuestionAnswer, HostEvent } from '@runwhale/mobile-protocol'
 import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
@@ -155,14 +155,15 @@ export function AgentPanel(props: AgentPanelProps) {
       events={currentSessionEvents}
       livePrompt={livePrompt}
       liveWorkingLabel={running ? t('agentWorking') : undefined}
+      followPaused={keyboardVisible && questionInputFocused}
       onBranch={sessionRecord ? (sequence) => { void forkSession(sequence) } : undefined}
       branching={forkingBranch}
       branchAvailable={!running}
       listRef={feedRef}
       onScroll={(event) => {
-        const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent
+        const { contentOffset } = event.nativeEvent
         scrollOffset.current = contentOffset.y
-        setTranscriptAtBottom(isTranscriptNearEnd(contentSize.height, layoutMeasurement.height, contentOffset.y, TRANSCRIPT_USER_END_THRESHOLD))
+        setTranscriptAtBottom(isTranscriptAtBottom(contentOffset.y))
       }}
       header={<>
       {sessionHistoryState === 'loading' && <View accessible accessibilityRole="progressbar" accessibilityLabel={t('restoringSessionHistory')} accessibilityLiveRegion="polite" style={styles.historyLoading}><Spinner size="sm" color={colors.accent} /><Text style={styles.historyLoadingText}>{t('restoringSessionHistory')}</Text></View>}

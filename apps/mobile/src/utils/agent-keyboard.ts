@@ -23,7 +23,7 @@ export function agentQuestionKeyboardClearance(platform: string): number {
   return platform === 'ios' ? AGENT_IOS_QUESTION_KEYBOARD_CLEARANCE : AGENT_QUESTION_KEYBOARD_CLEARANCE
 }
 
-export function agentQuestionKeyboardRevealOffset(currentOffset: number, platform: string): number {
-  const delta = platform === 'ios' ? AGENT_IOS_QUESTION_KEYBOARD_REVEAL_DELTA : AGENT_QUESTION_KEYBOARD_REVEAL_DELTA
-  return Math.max(0, currentOffset) + delta
+export function agentQuestionKeyboardRevealOffset(platform: string): number {
+  // The question footer is measured from the inverted list's fixed bottom edge.
+  return platform === 'ios' ? AGENT_IOS_QUESTION_KEYBOARD_REVEAL_DELTA : AGENT_QUESTION_KEYBOARD_REVEAL_DELTA
 }

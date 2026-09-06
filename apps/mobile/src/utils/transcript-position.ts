@@ -1,14 +1,12 @@
-export const TRANSCRIPT_END_THRESHOLD = 80
-export const TRANSCRIPT_USER_END_THRESHOLD = 1
-
 export interface TranscriptPositionCoordinator {
-  contentSizeChanged(height: number): number | undefined
-  viewportSizeChanged(height: number): number | undefined
+  contentSizeChanged(height: number): void
+  viewportSizeChanged(height: number): void
   scrolled(offsetY: number): void
   userScrollBegan(): void
   userScrollEnded(continuesWithMomentum: boolean): number | undefined
   momentumScrollEnded(): number | undefined
   startFollowing(): number | undefined
+  startFollowingOldest(): number | undefined
   stopFollowing(): void
   targetOffset(): number | undefined
 }
@@ -20,51 +18,35 @@ export function transcriptHistoryWindow(totalRows: number, visibleLimit: number)
   return { start, hidden: start }
 }
 
-export function isTranscriptNearEnd(contentHeight: number, viewportHeight: number, offsetY: number, threshold = TRANSCRIPT_END_THRESHOLD): boolean {
-  return Math.max(0, contentHeight - viewportHeight - offsetY) <= threshold
-}
-
-export function shouldFollowTranscriptAfterUserScroll(contentHeight: number, viewportHeight: number, offsetY: number): boolean {
-  return isTranscriptNearEnd(contentHeight, viewportHeight, offsetY, TRANSCRIPT_USER_END_THRESHOLD)
-}
-
-export function transcriptEndOffset(contentHeight: number, viewportHeight: number): number {
-  return Math.max(0, contentHeight - viewportHeight)
+export function isTranscriptAtBottom(offsetY: number): boolean {
+  return offsetY <= 1
 }
 
 export function createTranscriptPositionCoordinator(): TranscriptPositionCoordinator {
-  let contentHeight: number | undefined
-  let viewportHeight: number | undefined
-  let offsetY: number | undefined
-  let followingLatest = true
+  let offsetY = 0
+  let contentHeight = 0
+  let viewportHeight = 0
+  let followingEdge: 'latest' | 'oldest' | undefined = 'latest'
   let userScrollPhase: 'idle' | 'dragging' | 'momentum' = 'idle'
 
   const targetOffset = (): number | undefined => {
-    if (!followingLatest || userScrollPhase !== 'idle' || contentHeight === undefined || viewportHeight === undefined || viewportHeight <= 0) return undefined
-    return transcriptEndOffset(contentHeight, viewportHeight)
+    // The newest end is always zero, independent of row measurement or keyboard size.
+    if (!followingEdge || userScrollPhase !== 'idle') return undefined
+    return followingEdge === 'latest' ? 0 : Math.max(0, contentHeight - viewportHeight)
   }
 
   const settleUserScroll = () => {
-    followingLatest = contentHeight !== undefined
-      && viewportHeight !== undefined
-      && offsetY !== undefined
-      && shouldFollowTranscriptAfterUserScroll(contentHeight, viewportHeight, offsetY)
+    followingEdge = isTranscriptAtBottom(offsetY) ? 'latest' : undefined
   }
 
   return {
-    contentSizeChanged(height) {
-      contentHeight = height
-      return targetOffset()
-    },
-    viewportSizeChanged(height) {
-      viewportHeight = height
-      return targetOffset()
-    },
+    contentSizeChanged(height) { contentHeight = height },
+    viewportSizeChanged(height) { viewportHeight = height },
     scrolled(nextOffsetY) {
       offsetY = nextOffsetY
     },
     userScrollBegan() {
-      followingLatest = false
+      followingEdge = undefined
       userScrollPhase = 'dragging'
     },
     userScrollEnded(continuesWithMomentum) {
@@ -85,18 +67,19 @@ export function createTranscriptPositionCoordinator(): TranscriptPositionCoordin
       return targetOffset()
     },
     startFollowing() {
-      followingLatest = true
+      followingEdge = 'latest'
+      userScrollPhase = 'idle'
+      return targetOffset()
+    },
+    startFollowingOldest() {
+      followingEdge = 'oldest'
       userScrollPhase = 'idle'
       return targetOffset()
     },
     stopFollowing() {
-      followingLatest = false
+      followingEdge = undefined
       userScrollPhase = 'idle'
     },
     targetOffset,
   }
-}
-
-export function shouldMaintainTranscriptVisiblePosition(rowCount: number): boolean {
-  return rowCount > 0
 }

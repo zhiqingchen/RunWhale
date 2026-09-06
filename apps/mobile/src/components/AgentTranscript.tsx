@@ -16,7 +16,7 @@ import { ImageLightbox } from '@/components/ImageLightbox'
 import { storedAgentImageUri } from '@/utils/agent-image'
 import { agentKeyboardDismissMode } from '@/utils/agent-keyboard'
 import { actionErrorPresentation } from '@/utils/action-progress'
-import { createTranscriptPositionCoordinator, shouldMaintainTranscriptVisiblePosition, transcriptHistoryWindow } from '@/utils/transcript-position'
+import { createTranscriptPositionCoordinator, transcriptHistoryWindow } from '@/utils/transcript-position'
 import { assistantMessageCopyText, transcriptBranchActionState, type AssistantMessageBlock, transcriptInteractionContract, transcriptLayoutContract, type TranscriptBranchInFlight } from '@/utils/transcript-feedback'
 import { type ToolActivityGroup, type ToolActivitySessionEvent, type ToolActivityState } from '@/utils/tool-activity'
 import { contextDetailSummary, type TranscriptContextRecord } from '@/utils/transcript-context'
@@ -29,7 +29,7 @@ export type TranscriptRow = SessionTranscriptRow
   | { kind: 'live-prompt'; id: string; text: string }
   | { kind: 'live-working'; id: string; label: string }
 
-// Keep a page inside FlatList's initial 18-cell render window while older rows prepend.
+// Older pages append to the inverted list, preserving the visible messages.
 const HISTORY_PAGE_SIZE = 16
 const TRANSCRIPT_MAINTAIN_VISIBLE_POSITION = { minIndexForVisible: 0 } as const
 const TRANSCRIPT_WINDOW_SIZE = 15
@@ -41,7 +41,7 @@ export interface AgentTranscriptHandle {
   scrollToTop(): void
 }
 
-export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onBranch, branching, branchAvailable = true, header, footer, listRef, onScroll, onScrollEndDrag, onMomentumScrollEnd, onContentSizeChange }: {
+export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onBranch, branching, branchAvailable = true, followPaused = false, header, footer, listRef, onScroll, onScrollEndDrag, onMomentumScrollEnd, onContentSizeChange }: {
   ref?: Ref<AgentTranscriptHandle>
   events: readonly unknown[]
   livePrompt?: PendingTranscriptPrompt
@@ -49,6 +49,7 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   onBranch?(sequence?: number): void
   branching?: TranscriptBranchInFlight
   branchAvailable?: boolean
+  followPaused?: boolean
   header?: ReactNode
   footer?: ReactNode
   listRef?: RefObject<FlatList<TranscriptRow> | null>
@@ -67,7 +68,7 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   const positionCoordinator = useRef(createTranscriptPositionCoordinator())
   const hasRows = useRef(false)
   const historyLoadPending = useRef(false)
-  const scrollToLatestFrame = useRef<number | undefined>(undefined)
+  const scrollToEdgeFrame = useRef<number | undefined>(undefined)
   const onBranchRef = useRef(onBranch)
   const [selectedActivityId, setSelectedActivityId] = useState<string>()
   const [selectedDetailId, setSelectedDetailId] = useState<string>()
@@ -82,7 +83,7 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   const historyWindow = transcriptHistoryWindow(historyRows.length, visibleLimit)
   const loadEarlierLabel = t(historyWindow.hidden === 1 ? 'loadEarlierSingular' : 'loadEarlier', { count: historyWindow.hidden })
   const visibleHistoryRows = useMemo(() => historyRows.slice(historyWindow.start), [historyRows, historyWindow.start])
-  const rows = useMemo(() => [...visibleHistoryRows, ...liveRows], [liveRows, visibleHistoryRows])
+  const rows = useMemo(() => [...visibleHistoryRows, ...liveRows].reverse(), [liveRows, visibleHistoryRows])
   hasRows.current = rows.length > 0
   const selectedActivity = useMemo(() => rows.find((row): row is Extract<TranscriptRow, { kind: 'activity' }> => row.kind === 'activity' && row.activity.id === selectedActivityId)?.activity, [rows, selectedActivityId])
   const selectedDetail = useMemo(() => rows.find(row => (row.kind === 'context' || row.kind === 'notice') && row.id === selectedDetailId), [rows, selectedDetailId])
@@ -90,32 +91,36 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
 
   useEffect(() => { historyLoadPending.current = false }, [historyWindow.start])
 
-  const cancelScheduledScrollToLatest = useCallback(() => {
-    if (scrollToLatestFrame.current === undefined) return
-    cancelAnimationFrame(scrollToLatestFrame.current)
-    scrollToLatestFrame.current = undefined
+  const cancelScheduledScroll = useCallback(() => {
+    if (scrollToEdgeFrame.current === undefined) return
+    cancelAnimationFrame(scrollToEdgeFrame.current)
+    scrollToEdgeFrame.current = undefined
   }, [])
 
   const loadEarlier = useCallback(() => {
     if (historyLoadPending.current || historyWindow.hidden === 0) return
     positionCoordinator.current.stopFollowing()
     setPreserveVisiblePosition(true)
-    cancelScheduledScrollToLatest()
+    cancelScheduledScroll()
     historyLoadPending.current = true
     setVisibleLimit((value) => value + HISTORY_PAGE_SIZE)
-  }, [cancelScheduledScrollToLatest, historyWindow.hidden])
+  }, [cancelScheduledScroll, historyWindow.hidden])
 
-  const scheduleScrollToLatest = useCallback(() => {
-    if (scrollToLatestFrame.current !== undefined) return
-    scrollToLatestFrame.current = requestAnimationFrame(() => {
-      scrollToLatestFrame.current = undefined
+  const scheduleScrollToEdge = useCallback(() => {
+    if (followPaused || scrollToEdgeFrame.current !== undefined) return
+    scrollToEdgeFrame.current = requestAnimationFrame(() => {
+      scrollToEdgeFrame.current = undefined
       if (!hasRows.current) return
       const offset = positionCoordinator.current.targetOffset()
       if (offset !== undefined) resolvedListRef.current?.scrollToOffset({ offset, animated: false })
     })
-  }, [resolvedListRef])
+  }, [followPaused, resolvedListRef])
 
-  useEffect(() => cancelScheduledScrollToLatest, [cancelScheduledScrollToLatest])
+  useEffect(() => cancelScheduledScroll, [cancelScheduledScroll])
+  useEffect(() => {
+    if (followPaused) cancelScheduledScroll()
+    else scheduleScrollToEdge()
+  }, [cancelScheduledScroll, followPaused, scheduleScrollToEdge])
 
   useImperativeHandle(ref, () => ({
     scrollToBottom() {
@@ -124,21 +129,23 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
       if (offset !== undefined) resolvedListRef.current?.scrollToOffset({ offset, animated: false })
     },
     scrollToTop() {
-      setPreserveVisiblePosition(true)
-      positionCoordinator.current.stopFollowing()
-      cancelScheduledScrollToLatest()
-      resolvedListRef.current?.scrollToOffset({ offset: 0, animated: false })
+      setPreserveVisiblePosition(false)
+      cancelScheduledScroll()
+      const offset = positionCoordinator.current.startFollowingOldest()
+      if (offset !== undefined) resolvedListRef.current?.scrollToOffset({ offset, animated: false })
     },
-  }), [cancelScheduledScrollToLatest, resolvedListRef])
+  }), [cancelScheduledScroll, resolvedListRef])
 
   const handleContentSizeChange = useCallback((width: number, height: number) => {
-    if (positionCoordinator.current.contentSizeChanged(height) !== undefined && rows.length > 0) scheduleScrollToLatest()
+    positionCoordinator.current.contentSizeChanged(height)
+    if (rows.length > 0) scheduleScrollToEdge()
     onContentSizeChange?.(width, height)
-  }, [onContentSizeChange, rows.length, scheduleScrollToLatest])
+  }, [onContentSizeChange, rows.length, scheduleScrollToEdge])
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
-    if (positionCoordinator.current.viewportSizeChanged(event.nativeEvent.layout.height) !== undefined && rows.length > 0) scheduleScrollToLatest()
-  }, [rows.length, scheduleScrollToLatest])
+    positionCoordinator.current.viewportSizeChanged(event.nativeEvent.layout.height)
+    if (rows.length > 0) scheduleScrollToEdge()
+  }, [rows.length, scheduleScrollToEdge])
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     positionCoordinator.current.scrolled(event.nativeEvent.contentOffset.y)
@@ -163,8 +170,8 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   const beginUserScroll = useCallback(() => {
     positionCoordinator.current.userScrollBegan()
     setPreserveVisiblePosition(true)
-    cancelScheduledScrollToLatest()
-  }, [cancelScheduledScrollToLatest])
+    cancelScheduledScroll()
+  }, [cancelScheduledScroll])
 
   const endUserDrag = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     positionCoordinator.current.scrolled(event.nativeEvent.contentOffset.y)
@@ -173,21 +180,32 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
       || (targetOffsetY !== undefined && Math.abs(targetOffsetY - event.nativeEvent.contentOffset.y) > 1)
     const offset = positionCoordinator.current.userScrollEnded(continuesWithMomentum)
     setPreserveVisiblePosition(offset === undefined)
-    if (offset !== undefined) scheduleScrollToLatest()
-  }, [scheduleScrollToLatest])
+    if (offset !== undefined) scheduleScrollToEdge()
+  }, [scheduleScrollToEdge])
 
   const endMomentumScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     positionCoordinator.current.scrolled(event.nativeEvent.contentOffset.y)
     const offset = positionCoordinator.current.momentumScrollEnded()
     setPreserveVisiblePosition(offset === undefined)
-    if (offset !== undefined) scheduleScrollToLatest()
-  }, [scheduleScrollToLatest])
+    if (offset !== undefined) scheduleScrollToEdge()
+  }, [scheduleScrollToEdge])
+
+  const historyHeader = <>{header}{historyWindow.hidden > 0 && <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={loadEarlierLabel}
+      onPress={loadEarlier}
+      style={({ pressed }) => [styles.loadEarlier, pressed && styles.loadEarlierPressed]}
+    >
+      <View style={styles.loadEarlierIcon}><AppIcon icon={History} color={colors.blue} size={15} strokeWidth={2.25} /></View>
+      <Text numberOfLines={1} style={styles.loadEarlierText}>{loadEarlierLabel}</Text>
+    </Pressable>}</>
 
   return <><FlatList
     ref={resolvedListRef}
     style={styles.virtualList}
     contentContainerStyle={styles.list}
     data={rows}
+    inverted={rows.length > 0}
     renderItem={renderRow}
     keyExtractor={transcriptRowKey}
     initialNumToRender={18}
@@ -196,18 +214,10 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
     windowSize={TRANSCRIPT_WINDOW_SIZE}
     removeClippedSubviews={false}
     // Native anchoring must not move the list away from the edge JS is following.
-    maintainVisibleContentPosition={shouldMaintainTranscriptVisiblePosition(rows.length) && preserveVisiblePosition ? TRANSCRIPT_MAINTAIN_VISIBLE_POSITION : undefined}
-    ListHeaderComponent={<>{header}{historyWindow.hidden > 0 && <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={loadEarlierLabel}
-      onPress={loadEarlier}
-      style={({ pressed }) => [styles.loadEarlier, pressed && styles.loadEarlierPressed]}
-    >
-      <View style={styles.loadEarlierIcon}><AppIcon icon={History} color={colors.blue} size={15} strokeWidth={2.25} /></View>
-      <Text numberOfLines={1} style={styles.loadEarlierText}>{loadEarlierLabel}</Text>
-    </Pressable>}</>}
+    maintainVisibleContentPosition={rows.length > 0 && (preserveVisiblePosition || followPaused) ? TRANSCRIPT_MAINTAIN_VISIBLE_POSITION : undefined}
     ListEmptyComponent={header || footer ? null : <Text style={styles.empty}>{t('sessionNoMessages')}</Text>}
-    ListFooterComponent={<>{footer}</>}
+    ListHeaderComponent={rows.length > 0 ? <>{footer}</> : historyHeader}
+    ListFooterComponent={rows.length > 0 ? historyHeader : <>{footer}</>}
     scrollEventThrottle={120}
     onLayout={handleLayout}
     onScroll={handleScroll}
