@@ -54,7 +54,8 @@ export function AppDialog({
     <Dialog.Portal unstable_accessibilityContainerViewIsModal style={[styles.portal, { paddingTop: insets.top + appDialogVisualContract.viewportVerticalPadding, paddingBottom: insets.bottom + appDialogVisualContract.viewportVerticalPadding }]}>
       <Dialog.Overlay variant="blur" isCloseOnPress={dismissible} style={styles.overlay} />
       <KeyboardAvoidingView behavior="padding" pointerEvents="box-none" style={styles.keyboardAvoiding}>
-        <Dialog.Content key={contentIdentity} testID={testID} isSwipeable={dismissible} style={[styles.content, { maxHeight: maximumHeight }]}>
+        {/* The dialog pan gesture intercepts the body's native scrolling on Android. */}
+        <Dialog.Content key={contentIdentity} testID={testID} isSwipeable={false} style={[styles.content, { maxHeight: maximumHeight }]}>
           <View style={[styles.contentBody, compact && styles.compactSpacing]}>
             <ScrollView
               bounces={false}
