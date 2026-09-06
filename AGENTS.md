@@ -18,7 +18,14 @@
 - Batch related discovery and UI states. Reuse Metro, devices, routes, and disposable audit projects.
 - Run the smallest focused check during implementation. Run `pnpm check` once for a cohesive source change; documentation changes need formatting, language, links, and diff review instead.
 - Place temporary fixtures at an existing boundary, exercise related states together, and remove them before committing. Never retain credentials, private keys, runtime events, or project mutations.
-- If a device, host unlock, or owner fact is unavailable, record the exact NYV boundary and continue with an independent TODO instead of retrying the blocked path.
+- If a device, host unlock, or owner fact is unavailable, record the exact NYV boundary in the task response or PR validation notes and continue with an independent TODO instead of retrying the blocked path.
+
+## Documentation and Temporary Artifacts
+
+- Commit documentation with lasting value: maintained product behavior, architecture, setup, development procedures, and licensing. Update the relevant existing document when possible.
+- Do not commit temporary test, acceptance, or audit reports; task plans, progress logs, or handoff notes; device state dumps; validation screenshots or recordings; or generated build outputs.
+- Summarize run results and remaining validation limits in the task response or PR description. Use ignored `.cache/` paths only for temporary artifacts needed during the work, and delete them when no longer needed.
+- Before committing, review staged changes and tracked and untracked working files for temporary artifacts. Remove stale references when deleting reports, and keep any lasting behavior or procedure in the appropriate maintained document.
 
 ## Scope and Safety
 

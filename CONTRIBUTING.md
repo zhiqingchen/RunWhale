@@ -27,7 +27,7 @@ Follow the setup and validation guidance in [DEVELOPMENT.md](DEVELOPMENT.md). A 
 - Sanitized screenshots or recordings for visible UI changes when they materially help review.
 - Any remaining limitation or external prerequisite that could not be validated.
 
-Do not commit build outputs, credentials, device-specific logs, or unrelated changes. Keep test coverage proportional to the confirmed risk.
+Do not commit build outputs, credentials, device-specific logs, temporary test or audit reports, task progress notes, validation screenshots or recordings, or unrelated changes. Put validation evidence and remaining limitations in the pull request description; delete temporary local artifacts when no longer needed. Keep test coverage proportional to the confirmed risk.
 
 ## License and Name
 

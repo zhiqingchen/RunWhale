@@ -11,5 +11,3 @@ Native Studio persists version 3 project metadata and unresolved editor drafts i
 Migration journals legacy-only project restoration before creating runtime directories. An unchanged scaffold created by migration can be replaced with the legacy project; existing runtime content is retained and differing or missing legacy files become recovered drafts. New chunk generations are read back before their manifest is published and verified. An interruption retries migration from the retained legacy snapshot. Legacy storage is retained as a recovery backup and is no longer updated on native. Recovered drafts never enter user project directories or Preview bundles unless explicitly applied.
 
 Browser Studio retains its local snapshot provider. Templates are seeded during project creation, and routine Agent or Preview operations do not upload or download complete projects.
-
-Validation and device limitations are recorded in [GOAL_TEST_REPORT.md](GOAL_TEST_REPORT.md).

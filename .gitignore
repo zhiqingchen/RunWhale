@@ -1,6 +1,9 @@
 node_modules/
 .pnpm-store/
 .cache/
+# Temporary validation summaries belong in task or PR notes.
+*_TEST_REPORT.md
+*_AUDIT_REPORT.md
 .turbo/
 .idea/
 .fleet/
