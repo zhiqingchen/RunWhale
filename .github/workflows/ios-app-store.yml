@@ -9,6 +9,12 @@ on:
         description: Existing vX.Y.Z release tag to rebuild and upload
         required: true
         type: string
+      source:
+        description: Rebuild the original tag or main at dispatch time (same app version)
+        required: true
+        default: tag
+        type: choice
+        options: [tag, main]
 
 concurrency:
   group: ios-app-store
@@ -38,6 +44,7 @@ jobs:
       tag: ${{ steps.release.outputs.tag }}
       version: ${{ steps.release.outputs.version }}
       commit: ${{ steps.source.outputs.commit }}
+      tag_commit: ${{ steps.source.outputs.tag_commit }}
     steps:
       - name: Resolve immutable release tag
         id: release
@@ -72,7 +79,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ steps.release.outputs.tag }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.source == 'main' && github.sha || steps.release.outputs.tag }}
           fetch-depth: 0
           fetch-tags: true
 
@@ -90,8 +97,8 @@ jobs:
 
           tag_commit=$(git rev-list -n 1 "refs/tags/$RELEASE_TAG")
           checkout_commit=$(git rev-parse HEAD)
-          if [[ "$tag_commit" != "$checkout_commit" ]]; then
-            echo "Checked-out commit $checkout_commit does not match $RELEASE_TAG at $tag_commit" >&2
+          if [[ "$EVENT_NAME" == push && "$tag_commit" != "$checkout_commit" ]]; then
+            echo "Automatic release source $checkout_commit does not match $RELEASE_TAG at $tag_commit" >&2
             exit 1
           fi
           if [[ "$EVENT_NAME" == push ]]; then
@@ -107,8 +114,13 @@ jobs:
             echo "$RELEASE_TAG must point to a commit reachable from origin/main" >&2
             exit 1
           fi
+          if ! git merge-base --is-ancestor "$checkout_commit" refs/remotes/origin/main || ! git merge-base --is-ancestor "$tag_commit" "$checkout_commit"; then
+            echo 'Release source must be on main and descend from the original release tag.' >&2
+            exit 1
+          fi
 
-          echo "commit=$tag_commit" >>"$GITHUB_OUTPUT"
+          echo "commit=$checkout_commit" >>"$GITHUB_OUTPUT"
+          echo "tag_commit=$tag_commit" >>"$GITHUB_OUTPUT"
 
       - name: Verify existing GitHub Release provenance
         env:
@@ -116,7 +128,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
-          RELEASE_COMMIT: ${{ steps.source.outputs.commit }}
+          TAG_COMMIT: ${{ steps.source.outputs.tag_commit }}
         run: |
           set -euo pipefail
           provenance_dir="$RUNNER_TEMP/release-provenance"
@@ -124,22 +136,25 @@ jobs:
           release_error="$RUNNER_TEMP/release-lookup-error.txt"
           mkdir -p "$provenance_dir"
           if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" >"$release_json" 2>"$release_error"; then
-            metadata_asset_id=$(jq -r '[.assets[] | select(.name == "RELEASE_METADATA.txt")][0].id // empty' "$release_json")
+            metadata_asset_id=$(jq -r '([.assets[] | select(.name == "RELEASE_METADATA.txt")][0] // [.assets[] | select(.name == "RELEASE_METADATA-ios.txt")][0]).id // empty' "$release_json")
             if [[ -z "$metadata_asset_id" ]]; then
               if [[ "$EVENT_NAME" == push ]]; then
                 echo "::warning title=Release provenance pending::Existing release $RELEASE_TAG has no RELEASE_METADATA.txt yet; Android may still be publishing it."
                 exit 0
               fi
-              echo "Existing release $RELEASE_TAG has no RELEASE_METADATA.txt provenance. Repair the Android release before manually recovering iOS." >&2
+              echo "Existing release $RELEASE_TAG has no source metadata. Repair release provenance before manually rebuilding iOS." >&2
               exit 1
             fi
             gh api \
               -H 'Accept: application/octet-stream' \
               "repos/$GITHUB_REPOSITORY/releases/assets/$metadata_asset_id" \
               >"$provenance_dir/RELEASE_METADATA.txt"
-            published_commit=$(sed -n 's/^commit=//p' "$provenance_dir/RELEASE_METADATA.txt")
-            if [[ -z "$published_commit" || "$published_commit" != "$RELEASE_COMMIT" ]]; then
-              echo "Existing release $RELEASE_TAG records $published_commit, not $RELEASE_COMMIT" >&2
+            published_commit=$(sed -n 's/^tag_commit=//p' "$provenance_dir/RELEASE_METADATA.txt")
+            if [[ -z "$published_commit" ]]; then
+              published_commit=$(sed -n 's/^commit=//p' "$provenance_dir/RELEASE_METADATA.txt")
+            fi
+            if [[ -z "$published_commit" || "$published_commit" != "$TAG_COMMIT" ]]; then
+              echo "Existing release $RELEASE_TAG records tag commit $published_commit, not $TAG_COMMIT" >&2
               exit 1
             fi
           elif ! grep -q 'HTTP 404' "$release_error"; then
@@ -219,10 +234,14 @@ jobs:
     runs-on: macos-26
     environment:
       name: app-store
+    outputs:
+      artifact_name: ${{ steps.build-number.outputs.artifact-name }}
+      build_number: ${{ steps.build-number.outputs.value }}
     env:
       RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
       RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
       RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
+      TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
       ARCHIVE_PATH: ${{ github.workspace }}/build/ios-release/RunWhale.xcarchive
       EXPORT_PATH: ${{ github.workspace }}/release/ios
       DIAGNOSTICS_PATH: ${{ github.workspace }}/release/diagnostics
@@ -242,6 +261,7 @@ jobs:
           echo "IPA_PATH=$ipa_path" >>"$GITHUB_ENV"
           echo "value=$build_number" >>"$GITHUB_OUTPUT"
           echo "ipa-path=$ipa_path" >>"$GITHUB_OUTPUT"
+          echo "artifact-name=runwhale-$RELEASE_VERSION-$build_number-ios" >>"$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v4
         with:
@@ -471,6 +491,15 @@ jobs:
             cd "$EXPORT_PATH"
             shasum -a 256 "$(basename "$IPA_PATH")" >SHA256SUMS
           )
+          {
+            echo "tag=$RELEASE_TAG"
+            echo "version=$RELEASE_VERSION"
+            echo "commit=$RELEASE_COMMIT"
+            echo "tag_commit=$TAG_COMMIT"
+            echo "build=$BUILD_NUMBER"
+            echo 'distribution=app-store-connect'
+            echo "workflow_run=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } >"$EXPORT_PATH/RELEASE_METADATA-ios.txt"
           cat "$DIAGNOSTICS_PATH/archive-validation.md" "$DIAGNOSTICS_PATH/ipa-validation.md" >>"$GITHUB_STEP_SUMMARY"
           ipa_sha256=$(awk '{print $1}' "$EXPORT_PATH/SHA256SUMS")
           {
@@ -483,10 +512,11 @@ jobs:
       - name: Upload signed IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: runwhale-${{ env.RELEASE_VERSION }}-${{ steps.build-number.outputs.value }}-ios
+          name: ${{ steps.build-number.outputs.artifact-name }}
           path: |
             ${{ steps.build-number.outputs.ipa-path }}
             ${{ env.EXPORT_PATH }}/SHA256SUMS
+            ${{ env.EXPORT_PATH }}/RELEASE_METADATA-ios.txt
           if-no-files-found: error
           retention-days: 7
 
@@ -542,8 +572,8 @@ jobs:
             object_type=$(jq -r '.object.type' <<<"$tag_object")
             object_sha=$(jq -r '.object.sha' <<<"$tag_object")
           done
-          if [[ "$object_type" != commit || "$object_sha" != "$RELEASE_COMMIT" ]]; then
-            echo "Tag $RELEASE_TAG no longer resolves to validated commit $RELEASE_COMMIT" >&2
+          if [[ "$object_type" != commit || "$object_sha" != "$TAG_COMMIT" ]]; then
+            echo "Tag $RELEASE_TAG no longer resolves to validated commit $TAG_COMMIT" >&2
             exit 1
           fi
 
@@ -597,4 +627,83 @@ jobs:
             echo "- App Store upload step: \`${{ steps.app-store-upload.outcome || 'not-run' }}\`"
             echo "- Result: \`${{ job.status }}\`"
             echo '- App Store processing, testing, review, and release were not automated.'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish iOS GitHub Release artifact
+    needs: [preflight, build-and-upload]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+      RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
+      TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+      BUILD_NUMBER: ${{ needs.build-and-upload.outputs.build_number }}
+    steps:
+      - name: Download verified iOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-and-upload.outputs.artifact_name }}
+          path: release/ios
+
+      - name: Validate iOS release files
+        run: |
+          set -euo pipefail
+          cd release/ios
+          test -f "RunWhale-$RELEASE_VERSION-$BUILD_NUMBER.ipa"
+          sha256sum --check SHA256SUMS
+          test "$(sed -n 's/^tag=//p' RELEASE_METADATA-ios.txt)" = "$RELEASE_TAG"
+          test "$(sed -n 's/^version=//p' RELEASE_METADATA-ios.txt)" = "$RELEASE_VERSION"
+          test "$(sed -n 's/^commit=//p' RELEASE_METADATA-ios.txt)" = "$RELEASE_COMMIT"
+          test "$(sed -n 's/^tag_commit=//p' RELEASE_METADATA-ios.txt)" = "$TAG_COMMIT"
+          test "$(sed -n 's/^build=//p' RELEASE_METADATA-ios.txt)" = "$BUILD_NUMBER"
+          test "$(sed -n 's/^distribution=//p' RELEASE_METADATA-ios.txt)" = app-store-connect
+          mv SHA256SUMS SHA256SUMS-ios
+
+      - name: Attach IPA to the matching GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          object_type=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.type')
+          object_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')
+          while [[ "$object_type" == tag ]]; do
+            tag_object=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha")
+            object_type=$(jq -r '.object.type' <<<"$tag_object")
+            object_sha=$(jq -r '.object.sha' <<<"$tag_object")
+          done
+          if [[ "$object_type" != commit || "$object_sha" != "$TAG_COMMIT" ]]; then
+            echo "Tag $RELEASE_TAG no longer resolves to validated commit $TAG_COMMIT" >&2
+            exit 1
+          fi
+
+          release_error="$RUNNER_TEMP/release-lookup-error.txt"
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" >/dev/null 2>"$release_error"; then
+            :
+          elif grep -q 'HTTP 404' "$release_error"; then
+            # Android may create the same release while this job is publishing.
+            gh release create "$RELEASE_TAG" --verify-tag --title "RunWhale $RELEASE_VERSION" --generate-notes || gh release view "$RELEASE_TAG" >/dev/null
+          else
+            cat "$release_error" >&2
+            exit 1
+          fi
+          gh release upload "$RELEASE_TAG" \
+            "release/ios/RunWhale-$RELEASE_VERSION-$BUILD_NUMBER.ipa#iOS App Store distribution archive ($BUILD_NUMBER)" \
+            release/ios/SHA256SUMS-ios \
+            release/ios/RELEASE_METADATA-ios.txt \
+            --clobber
+
+      - name: Write iOS publish summary
+        if: always()
+        run: |
+          {
+            echo '## iOS GitHub Release'
+            echo
+            echo "- Version / build: \`$RELEASE_VERSION ($BUILD_NUMBER)\`"
+            echo "- Source commit: \`$RELEASE_COMMIT\`"
+            echo '- IPA distribution: App Store Connect; use TestFlight or the App Store for normal installation.'
+            echo "- Result: \`${{ job.status }}\`"
           } >>"$GITHUB_STEP_SUMMARY"

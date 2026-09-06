@@ -9,6 +9,12 @@ on:
         description: Existing immutable release tag (vX.Y.Z)
         required: true
         type: string
+      source:
+        description: Rebuild the original tag or main at dispatch time (same app version)
+        required: true
+        default: tag
+        type: choice
+        options: [tag, main]
 
 concurrency:
   group: android-release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
@@ -32,11 +38,12 @@ jobs:
       tag: ${{ steps.release.outputs.tag }}
       version: ${{ steps.release.outputs.version }}
       commit: ${{ steps.release.outputs.commit }}
+      tag_commit: ${{ steps.release.outputs.tag_commit }}
     steps:
-      - name: Check out the tagged source
+      - name: Check out the selected release source
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.source == 'main' && github.sha || env.RELEASE_TAG }}
           fetch-depth: 0
 
       - name: Set up pnpm
@@ -82,6 +89,7 @@ jobs:
           git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
 
           tag_commit="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          source_commit="$(git rev-parse HEAD)"
           if [[ "$EVENT_NAME" == 'push' ]]; then
             event_commit="$(git rev-parse "$EVENT_SHA^{commit}")"
             if [[ "$event_commit" != "$tag_commit" ]]; then
@@ -94,6 +102,14 @@ jobs:
             echo "Tag commit $tag_commit is not reachable from main" >&2
             exit 1
           fi
+          if ! git merge-base --is-ancestor "$source_commit" refs/remotes/origin/main || ! git merge-base --is-ancestor "$tag_commit" "$source_commit"; then
+            echo 'Release source must be on main and descend from the original release tag.' >&2
+            exit 1
+          fi
+          if [[ "$EVENT_NAME" == push && "$source_commit" != "$tag_commit" ]]; then
+            echo 'Automatic releases must build the tagged source.' >&2
+            exit 1
+          fi
 
           version="${RELEASE_TAG#v}"
           app_version="$(node --input-type=module -e "import config from './apps/mobile/app.json' with { type: 'json' }; process.stdout.write(config.expo.version)")"
@@ -104,7 +120,8 @@ jobs:
 
           echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "commit=$tag_commit" >> "$GITHUB_OUTPUT"
+          echo "commit=$source_commit" >> "$GITHUB_OUTPUT"
+          echo "tag_commit=$tag_commit" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -123,7 +140,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ steps.release.outputs.tag }}
-          TAG_COMMIT: ${{ steps.release.outputs.commit }}
+          TAG_COMMIT: ${{ steps.release.outputs.tag_commit }}
         run: |
           set -euo pipefail
           metadata_dir="$RUNNER_TEMP/published-release"
@@ -140,7 +157,10 @@ jobs:
               -H 'Accept: application/octet-stream' \
               "repos/$GITHUB_REPOSITORY/releases/assets/$metadata_asset_id" \
               >"$metadata_dir/RELEASE_METADATA.txt"
-            published_commit="$(sed -n 's/^commit=//p' "$metadata_dir/RELEASE_METADATA.txt")"
+            published_commit="$(sed -n 's/^tag_commit=//p' "$metadata_dir/RELEASE_METADATA.txt")"
+            if [[ -z "$published_commit" ]]; then
+              published_commit="$(sed -n 's/^commit=//p' "$metadata_dir/RELEASE_METADATA.txt")"
+            fi
             if [[ -z "$published_commit" || "$published_commit" != "$TAG_COMMIT" ]]; then
               echo "Tag $TAG moved after its GitHub Release was published" >&2
               exit 1
@@ -173,7 +193,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Check out the tagged source
+      - name: Check out the validated release source
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.validate.outputs.commit }}
@@ -210,17 +230,24 @@ jobs:
       - name: Generate the Android project
         run: pnpm --filter @runwhale/mobile exec expo prebuild --no-install --platform android
 
-      - name: Validate generated Android version
+      - name: Set Android rebuild number and validate version
+        id: build-number
         env:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
           node --input-type=module <<'NODE'
-          import { readFileSync } from 'node:fs'
+          import { appendFileSync, readFileSync, writeFileSync } from 'node:fs'
 
           const expected = process.env.VERSION
           const gradle = readFileSync('apps/mobile/android/app/build.gradle', 'utf8')
           const generated = gradle.match(/versionName\s+["']([^"']+)["']/u)?.[1]
           if (generated !== expected) throw new Error(`Generated Android version ${generated ?? '<missing>'} does not match ${expected}`)
+          // Seconds since 2020 keep rebuilds increasing within Android's integer limit.
+          const versionCode = Math.floor(Date.now() / 1000) - 1577836800
+          if (versionCode < 1 || versionCode > 2100000000) throw new Error('Android versionCode is out of range')
+          if ([...gradle.matchAll(/\bversionCode\s+\d+/gu)].length !== 1) throw new Error('Expected exactly one generated Android versionCode')
+          writeFileSync('apps/mobile/android/app/build.gradle', gradle.replace(/\bversionCode\s+\d+/u, `versionCode ${versionCode}`))
+          appendFileSync(process.env.GITHUB_OUTPUT, `value=${versionCode}\n`)
           NODE
 
       - name: Install pinned Android NDK
@@ -263,7 +290,9 @@ jobs:
         env:
           TAG: ${{ needs.validate.outputs.tag }}
           VERSION: ${{ needs.validate.outputs.version }}
-          TAG_COMMIT: ${{ needs.validate.outputs.commit }}
+          SOURCE_COMMIT: ${{ needs.validate.outputs.commit }}
+          TAG_COMMIT: ${{ needs.validate.outputs.tag_commit }}
+          BUILD_NUMBER: ${{ steps.build-number.outputs.value }}
         run: |
           set -euo pipefail
           source_apk='apps/mobile/android/app/build/outputs/apk/release/app-release.apk'
@@ -291,6 +320,7 @@ jobs:
           badging="$($aapt_path dump badging "$source_apk" | sed -n '1p')"
           [[ "$badging" == *"name='app.runwhale.mobile'"* ]]
           [[ "$badging" == *"versionName='$VERSION'"* ]]
+          [[ "$badging" == *"versionCode='$BUILD_NUMBER'"* ]]
           unzip -Z1 "$source_apk" >"$RUNNER_TEMP/android-release-apk-entries.txt"
           grep -q '^lib/arm64-v8a/' "$RUNNER_TEMP/android-release-apk-entries.txt"
 
@@ -304,7 +334,10 @@ jobs:
           {
             echo "tag=$TAG"
             echo "version=$VERSION"
-            echo "commit=$TAG_COMMIT"
+            echo "commit=$SOURCE_COMMIT"
+            echo "tag_commit=$TAG_COMMIT"
+            echo "build=$BUILD_NUMBER"
+            echo "workflow_run=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo 'source=apps/mobile/app.json'
             echo "signing_certificate_sha256=$actual_signing_fingerprint"
           } > release/android/RELEASE_METADATA.txt
@@ -366,7 +399,8 @@ jobs:
       - name: Validate release provenance and files
         env:
           TAG: ${{ needs.validate.outputs.tag }}
-          TAG_COMMIT: ${{ needs.validate.outputs.commit }}
+          SOURCE_COMMIT: ${{ needs.validate.outputs.commit }}
+          TAG_COMMIT: ${{ needs.validate.outputs.tag_commit }}
           VERSION: ${{ needs.validate.outputs.version }}
           EXPECTED_SHA256: ${{ needs.build.outputs.sha256 }}
           EXPECTED_SIGNING_CERT_SHA256: ${{ needs.build.outputs.signing_cert_sha256 }}
@@ -383,7 +417,8 @@ jobs:
           test "$(sha256sum "$apk" | cut -d ' ' -f 1)" = "$EXPECTED_SHA256"
           test "$(sed -n 's/^tag=//p' release/android/RELEASE_METADATA.txt)" = "$TAG"
           test "$(sed -n 's/^version=//p' release/android/RELEASE_METADATA.txt)" = "$VERSION"
-          test "$(sed -n 's/^commit=//p' release/android/RELEASE_METADATA.txt)" = "$TAG_COMMIT"
+          test "$(sed -n 's/^commit=//p' release/android/RELEASE_METADATA.txt)" = "$SOURCE_COMMIT"
+          test "$(sed -n 's/^tag_commit=//p' release/android/RELEASE_METADATA.txt)" = "$TAG_COMMIT"
           test "$(sed -n 's/^signing_certificate_sha256=//p' release/android/RELEASE_METADATA.txt)" = "$EXPECTED_SIGNING_CERT_SHA256"
 
       - name: Create or repair the GitHub Release
@@ -391,7 +426,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.validate.outputs.tag }}
-          TAG_COMMIT: ${{ needs.validate.outputs.commit }}
+          TAG_COMMIT: ${{ needs.validate.outputs.tag_commit }}
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
           set -euo pipefail
@@ -411,7 +446,8 @@ jobs:
           if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" >/dev/null 2>"$release_error"; then
             :
           elif grep -q 'HTTP 404' "$release_error"; then
-            gh release create "$TAG" --verify-tag --title "RunWhale $VERSION" --generate-notes
+            # iOS may create the same release while this job is publishing.
+            gh release create "$TAG" --verify-tag --title "RunWhale $VERSION" --generate-notes || gh release view "$TAG" >/dev/null
           else
             cat "$release_error" >&2
             exit 1
