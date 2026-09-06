@@ -1,7 +1,7 @@
 import { AppDialog } from '@/components/AppDialog'
 import { AppIcon } from '@/components/AppIcon'
 import { PendingButton } from '@/components/PendingButton'
-import { ArrowLeft, Bot, Cpu, Database, KeyRound, PlugZap, SlidersHorizontal, type LucideIcon } from '@/components/icons'
+import { ArrowLeft, Bot, Cpu, Database, ExternalLink, Info, KeyRound, PlugZap, SlidersHorizontal, type LucideIcon } from '@/components/icons'
 import { useI18n } from '@/i18n'
 import { usePreferences } from '@/state/preferences'
 import { useRuntime } from '@/state/runtime'
@@ -14,13 +14,16 @@ import { settingsUseStackedRows } from '@/utils/settings-layout'
 import { returnToSettingsHome, type SettingsDetail } from '@/utils/settings-routes'
 import { loadRuntimeEnvironment, runtimeSettingsPresentation, shouldLoadRuntimeEnvironment, type RuntimeEnvironmentLoadState } from '@/utils/settings-runtime'
 import type { MobilePermissionMode } from '@runwhale/mobile-protocol'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { Image } from 'expo-image'
+import * as Application from 'expo-application'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
 import { Card } from 'heroui-native/card'
 import { Spinner } from 'heroui-native/spinner'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BackHandler, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, UIManager, View, findNodeHandle, useWindowDimensions } from 'react-native'
+import { BackHandler, Linking, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, UIManager, View, findNodeHandle, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ModelSettings } from './ModelSettings'
 import { SshSettings } from './SshSettings'
@@ -91,13 +94,14 @@ export function SettingsDetailScreen({ detail }: { detail: SettingsDetail }) {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
-        <SettingsDetailIntroduction detail={detail} />
+        {detail !== 'about' ? <SettingsDetailIntroduction detail={detail} /> : null}
         {detail === 'models' ? <ModelSettings onInputBlur={forgetFocusedInput} onInputFocus={rememberFocusedInput} /> : null}
         {detail === 'runtime' ? <RuntimeSettings /> : null}
         {detail === 'general' ? <GeneralSettings /> : null}
         {detail === 'presets' ? <PresetSettings /> : null}
         {detail === 'plugins' ? <PluginSettings /> : null}
         {detail === 'ssh' ? <SshSettings /> : null}
+        {detail === 'about' ? <AboutSettings /> : null}
       </ScrollView>
     </KeyboardAvoidingView>
   </SafeAreaView>
@@ -182,6 +186,44 @@ function RuntimeSettings() {
       </PendingButton>
     </> : null}
   </Card.Body></Card>
+}
+
+function AboutSettings() {
+  const { t } = useI18n()
+  const colors = useAppColors()
+  const styles = useSettingsStyles()
+  const [linkFailed, setLinkFailed] = useState(false)
+  const sourceUrl = 'https://github.com/zhiqingchen/RunWhale'
+  const openSource = async () => {
+    setLinkFailed(false)
+    try {
+      await Linking.openURL(sourceUrl)
+    } catch {
+      setLinkFailed(true)
+    }
+  }
+  return <View style={styles.aboutContent}>
+    <View style={styles.aboutHero}>
+      <View style={styles.aboutIconFrame}>
+        <Image source={require('../../../assets/images/runwhale-icon.png')} style={styles.aboutIcon} contentFit="cover" />
+      </View>
+      <Text accessibilityRole="header" style={styles.aboutName}>RunWhale</Text>
+      <Text style={styles.aboutTagline}>{t('heroTitle')}</Text>
+    </View>
+    <View style={styles.aboutVersionCard}>
+      <Row label={t('appVersion')} value={Application.nativeApplicationVersion ?? t('appMetadataUnavailable')} />
+      <Row label={t('appBuildNumber')} value={Application.nativeBuildVersion ?? t('appMetadataUnavailable')} last />
+    </View>
+    <Button variant="ghost" accessibilityRole="link" accessibilityLabel={`${t('githubSourceCode')}, ${sourceUrl}`} onPress={() => { void openSource() }} style={styles.sourceLink}>
+      <View style={styles.sourceIcon}><FontAwesome name="github" size={28} color={colors.text} /></View>
+      <View style={styles.sourceCopy}>
+        <Text style={styles.sourceTitle}>{t('githubSourceCode')}</Text>
+        <Text style={styles.sourceUrl}>github.com/zhiqingchen/RunWhale</Text>
+      </View>
+      <AppIcon icon={ExternalLink} size={18} color={colors.muted} />
+    </Button>
+    {linkFailed ? <Text accessibilityRole="alert" style={styles.feedbackText}>{t('sourceLinkFailed')}</Text> : null}
+  </View>
 }
 
 function GeneralSettings() {
@@ -277,6 +319,7 @@ function Row({ label, value, last = false }: { label: string; value: string; las
 }
 
 function detailTitle(detail: SettingsDetail, t: ReturnType<typeof useI18n>['t']): string {
+  if (detail === 'about') return t('about')
   if (detail === 'models') return t('models')
   if (detail === 'runtime') return t('runtime')
   if (detail === 'ssh') return t('githubSshKey')
@@ -286,6 +329,7 @@ function detailTitle(detail: SettingsDetail, t: ReturnType<typeof useI18n>['t'])
 }
 
 function detailIcon(detail: SettingsDetail): LucideIcon {
+  if (detail === 'about') return Info
   if (detail === 'models') return Database
   if (detail === 'runtime') return Cpu
   if (detail === 'ssh') return KeyRound
@@ -295,6 +339,7 @@ function detailIcon(detail: SettingsDetail): LucideIcon {
 }
 
 function detailDescription(detail: SettingsDetail, t: ReturnType<typeof useI18n>['t']): string {
+  if (detail === 'about') return t('aboutSettingsSummary')
   if (detail === 'models') return t('modelsSettingsDescription')
   if (detail === 'runtime') return t('runtimeSettingsDescription')
   if (detail === 'ssh') return t('sshSettingsDescription')

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as SecureStore from 'expo-secure-store'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useMemo, useState } from 'react'
-import { Bot, ChevronRight, Cpu, Database, KeyRound, PlugZap, SlidersHorizontal, type LucideIcon } from '@/components/icons'
+import { Bot, ChevronRight, Cpu, Database, Info, KeyRound, PlugZap, SlidersHorizontal, type LucideIcon } from '@/components/icons'
 import { Button } from 'heroui-native/button'
 import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -60,7 +60,8 @@ export default function SettingsScreen() {
       <SectionTitle>{t('runWhale')}</SectionTitle>
       <View style={styles.settingsGroup}>
         <SettingsLink icon={Cpu} label={t('runtime')} description={t('runtimeSettingsSummary')} value={localizedRuntimeState(runtimeSettingsSummaryState(runtime.snapshot.state, Boolean(runtime.info), Boolean(runtime.lastError)), t)} onPress={() => router.push(settingsDetailRoutes.runtime)} />
-        <SettingsLink icon={KeyRound} label={t('githubSshKey')} description={t('sshSettingsSummary')} value={sshStatus.value} valueDanger={sshStatusFailed} accessibilityHint={sshStatus.hint} onPress={() => router.push(settingsDetailRoutes.ssh)} last />
+        <SettingsLink icon={KeyRound} label={t('githubSshKey')} description={t('sshSettingsSummary')} value={sshStatus.value} valueDanger={sshStatusFailed} accessibilityHint={sshStatus.hint} onPress={() => router.push(settingsDetailRoutes.ssh)} />
+        <SettingsLink icon={Info} label={t('about')} description={t('aboutSettingsSummary')} onPress={() => router.push(settingsDetailRoutes.about)} last />
       </View>
     </ScrollView>
   </SafeAreaView>

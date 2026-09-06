@@ -1,4 +1,4 @@
-export const SETTINGS_DETAILS = ['general', 'models', 'presets', 'plugins', 'runtime', 'ssh'] as const
+export const SETTINGS_DETAILS = ['general', 'models', 'presets', 'plugins', 'runtime', 'ssh', 'about'] as const
 
 export type SettingsDetail = (typeof SETTINGS_DETAILS)[number]
 
@@ -20,6 +20,7 @@ export const settingsDetailRoutes: Record<SettingsDetail, `/settings/${SettingsD
   plugins: '/settings/plugins',
   runtime: '/settings/runtime',
   ssh: '/settings/ssh',
+  about: '/settings/about',
 }
 
 export function isSettingsDetail(value: unknown): value is SettingsDetail {

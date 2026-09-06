@@ -37,6 +37,7 @@
     "@runwhale/node-host": "workspace:*",
     "@shopify/react-native-skia": "2.6.2",
     "expo": "57.0.19",
+    "expo-application": "57.0.2",
     "expo-asset": "57.0.16",
     "expo-audio": "57.0.4",
     "expo-battery": "57.0.2",

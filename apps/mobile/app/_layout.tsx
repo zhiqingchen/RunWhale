@@ -133,7 +133,7 @@ function AppNavigator() {
         headerShadowVisible: false,
       }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="settings/[detail]" options={{ headerShown: false }} />
+        <Stack.Screen name="settings/[detail]" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="new" options={{ title: t('newProjectTitle'), presentation: 'modal' }} />
         <Stack.Screen name="g/[owner]/[repo]/[sha]" options={{ title: t('githubImportHeaderTitle'), presentation: 'modal', headerLeft: modalHeaderLeft }} />
         <Stack.Screen name="share/[projectId]" options={{ title: t('shareProject'), presentation: 'modal', headerLeft: modalHeaderLeft }} />

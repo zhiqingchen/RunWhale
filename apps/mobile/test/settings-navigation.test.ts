@@ -4,7 +4,7 @@ import { SETTINGS_DETAILS, isSettingsDetail, returnToSettingsHome, settingsDetai
 describe('Settings detail navigation', () => {
   it('places every detail outside the tab route', () => {
     expect(settingsHomeRoute).toBe('/(tabs)/settings')
-    expect(SETTINGS_DETAILS).toEqual(['general', 'models', 'presets', 'plugins', 'runtime', 'ssh'])
+    expect(SETTINGS_DETAILS).toEqual(['general', 'models', 'presets', 'plugins', 'runtime', 'ssh', 'about'])
     expect(Object.values(settingsDetailRoutes)).toEqual([
       '/settings/general',
       '/settings/models',
@@ -12,6 +12,7 @@ describe('Settings detail navigation', () => {
       '/settings/plugins',
       '/settings/runtime',
       '/settings/ssh',
+      '/settings/about',
     ])
     expect(Object.values(settingsDetailRoutes).every((route) => route.startsWith('/settings/'))).toBe(true)
   })
