@@ -142,7 +142,7 @@ function ShortcutSetup({ projectId }: { projectId: string }) {
     directory.create()
     const file = new File(directory, 'App icon.png')
     try {
-      new File(saved.iconUri).copy(file)
+      await new File(saved.iconUri).copy(file)
       await sharing.shareAsync(file.uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: t('shortcutExportIcon') })
     } finally { directory.delete() }
   })

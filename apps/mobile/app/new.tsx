@@ -28,7 +28,7 @@ export default function NewProjectScreen() {
   const styles = useMemo(() => createStyles(colors), [colors])
   const [name, setName] = useState('')
   const [repositoryUrl, setRepositoryUrl] = useState('')
-  const [template, setTemplate] = useState<ProjectTemplate>('web')
+  const [template, setTemplate] = useState<ProjectTemplate>('expo')
   const [submissionUi, dispatchSubmissionUi] = useReducer(newProjectSubmissionUiReducer, idleNewProjectSubmissionUiState)
   const submitting = submissionUi.submitting
   const submitInFlight = useRef(false)
@@ -168,18 +168,18 @@ export default function NewProjectScreen() {
         {!repositoryUrl.trim() && <>
           <Text style={styles.label}>{t('projectTemplate')}</Text>
           <View style={styles.templates}>
-            <Button size="lg" variant={template === 'web' ? 'primary' : 'secondary'} accessibilityRole="radio" accessibilityState={{ disabled: availability.controlsDisabled, checked: template === 'web' }} isDisabled={availability.controlsDisabled} onPress={() => setTemplate('web')} style={[styles.template, template === 'web' && styles.templateActive]}>
-              <AppIcon icon={Code2} color={template === 'web' ? '#FFFFFF' : colors.blue} size={20} />
-              <View style={styles.templateCopy}>
-                <Text style={[styles.templateTitle, template === 'web' && styles.templateTitleActive]}>{t('webTemplate')}</Text>
-                <Text style={[styles.templateDescription, template === 'web' && styles.templateDescriptionActive]}>{t('webTemplateDescription')}</Text>
-              </View>
-            </Button>
             <Button size="lg" variant={template === 'expo' ? 'primary' : 'secondary'} accessibilityRole="radio" accessibilityState={{ disabled: availability.controlsDisabled, checked: template === 'expo' }} isDisabled={availability.controlsDisabled} onPress={() => setTemplate('expo')} style={[styles.template, template === 'expo' && styles.templateActive]}>
               <AppIcon icon={Smartphone} color={template === 'expo' ? '#FFFFFF' : colors.accent} size={20} />
               <View style={styles.templateCopy}>
                 <Text style={[styles.templateTitle, template === 'expo' && styles.templateTitleActive]}>{t('expoTemplate')}</Text>
                 <Text style={[styles.templateDescription, template === 'expo' && styles.templateDescriptionActive]}>{t('expoTemplateDescription')}</Text>
+              </View>
+            </Button>
+            <Button size="lg" variant={template === 'web' ? 'primary' : 'secondary'} accessibilityRole="radio" accessibilityState={{ disabled: availability.controlsDisabled, checked: template === 'web' }} isDisabled={availability.controlsDisabled} onPress={() => setTemplate('web')} style={[styles.template, template === 'web' && styles.templateActive]}>
+              <AppIcon icon={Code2} color={template === 'web' ? '#FFFFFF' : colors.blue} size={20} />
+              <View style={styles.templateCopy}>
+                <Text style={[styles.templateTitle, template === 'web' && styles.templateTitleActive]}>{t('webTemplate')}</Text>
+                <Text style={[styles.templateDescription, template === 'web' && styles.templateDescriptionActive]}>{t('webTemplateDescription')}</Text>
               </View>
             </Button>
           </View>

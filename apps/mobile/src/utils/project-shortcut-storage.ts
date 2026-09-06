@@ -41,7 +41,7 @@ export async function saveProjectShortcut(projectId: string, appearance: Project
   directory.create({ intermediates: true, idempotent: true })
   const iconUri = await prepareShortcutIcon(appearance.iconUri)
   const file = new File(directory, `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}.png`)
-  new File(iconUri).copy(file)
+  await new File(iconUri).copy(file)
   try {
     await AsyncStorage.setItem(key, JSON.stringify({ name: appearance.name.trim(), icon: file.name }))
   } catch (cause) {
