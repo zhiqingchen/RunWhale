@@ -83,13 +83,9 @@ Production mobile releases use one immutable `vX.Y.Z` tag for both platforms:
 
 1. Update `expo.version` in `apps/mobile/app.json` to the numeric `X.Y.Z` version and merge it to `main`.
 2. Create and push `vX.Y.Z` at that `main` commit. Prerelease suffixes and tags outside `main` are rejected.
-3. The Android workflow publishes the signed APK to the matching GitHub Release. The independent iOS workflow signs and uploads an IPA to App Store Connect, then attaches the IPA to the same GitHub Release.
+3. The Android workflow publishes the signed APK to the matching GitHub Release. The independent iOS workflow signs and uploads an IPA to App Store Connect.
 
-Both release workflows accept the existing tag through **Run workflow** on `main`. Choose `source: tag` to rebuild the original source, or `source: main` to rebuild the commit on `main` when the workflow was dispatched. The selected source must descend from the original tag and keep the same `expo.version`. For example, dispatch either workflow with `tag: v1.0.1` and `source: main` to build updated code as version `1.0.1`. The immutable tag stays fixed; artifact metadata records both the tag commit and the actual source commit. Android replaces the APK and its matching checksum and metadata in the existing GitHub Release.
-
-Android rebuilds generate an increasing `versionCode` from seconds since 2020-01-01 UTC. The iOS workflow generates `CFBundleVersion` when the App Store build job starts, using the Asia/Shanghai date and time in `YYYYMMDD.HHmm` format (for example, `20260902.1223`). These build numbers change while the user-visible version stays the same.
-
-The iOS workflow publishes the IPA after App Store Connect accepts the upload. Processing, TestFlight distribution, App Review submission, and App Store release remain manual. Each IPA filename includes its build number; `SHA256SUMS-ios` and `RELEASE_METADATA-ios.txt` describe the latest published iOS build. Earlier IPA builds remain available in the same Release. These are App Store distribution archives; normal iOS installation uses TestFlight or the App Store.
+The iOS workflow stops after App Store Connect accepts the upload. Processing, TestFlight distribution, App Review submission, and App Store release remain manual. A transient failure can be retried by dispatching the workflow with the existing tag; source changes require a new version and tag. The workflow generates `CFBundleVersion` when the App Store build job starts, using the Asia/Shanghai date and time in `YYYYMMDD.HHmm` format (for example, `20260902.1223`).
 
 Before the first release, repository administrators must add a GitHub tag ruleset for `v*.*.*` that blocks tag updates and deletion. The `production` and `app-store` GitHub Environments must restrict deployments to `main` and protected `v*.*.*` tags; required reviewers are recommended for both environments. The ruleset and deployment restrictions are release trust boundaries, including for manually dispatched recovery runs.
 
