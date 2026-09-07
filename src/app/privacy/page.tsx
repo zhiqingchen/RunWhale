@@ -48,8 +48,8 @@ export default function PrivacyPage() {
       eyebrow="Privacy"
       title="Privacy Policy"
       summary="RunWhale is local by design. This policy explains what stays on your device, what leaves it when you use connected services, and how the website is hosted."
-      updated="September 5, 2026"
-      updatedIso="2026-09-05"
+      updated="September 8, 2026"
+      updatedIso="2026-09-08"
     >
       <section>
         <h2>Scope</h2>
@@ -59,12 +59,19 @@ export default function PrivacyPage() {
       <section>
         <h2>Information handled by the app</h2>
         <p>RunWhale stores projects, Git history, agent sessions, attachments, preferences, project caches, and generated project data in the app’s local container on your device. Model-provider API keys are stored using the operating system’s secure storage.</p>
-        <p>RunWhale does not operate an account service or a cloud backend that stores copies of your app projects or agent sessions.</p>
+        <p>The community edition runs without a RunWhale account or server. The commercial edition offers optional accounts and subscriptions; its account service does not store copies of your projects or agent sessions.</p>
+      </section>
+
+      <section>
+        <h2>Commercial accounts and subscriptions</h2>
+        <p>When you sign in with an available Google or Apple login option, RunWhale verifies the provider&apos;s identity proof and stores your account identifier, linked provider identifiers, verified email address when supplied, and account and session timestamps. Login tokens stay in the app&apos;s secure storage; the server stores token hashes. They are not supplied to your projects, agent sessions, or Preview.</p>
+        <p>Cloudflare hosts the account API and database and processes the network requests needed to provide them. RevenueCat receives your RunWhale account identifier and store purchase information to verify subscriptions, trials, renewals, and refunds. RunWhale records subscription status and usage accounting. Apple or Google processes store payments; RunWhale does not receive your payment-card details.</p>
       </section>
 
       <section>
         <h2>Information sent to services you choose</h2>
         <p>When you run an agent, RunWhale sends your prompt and the project or session context needed to answer it directly to the model provider you selected. Depending on your request, that context may include source code, file contents, images, tool results, and conversation history. Supported providers may include Anthropic, DeepSeek, Google, and OpenAI.</p>
+        <p>If you use the optional RunWhale model API, requests pass through the RunWhale backend to its configured model provider. The backend retains usage accounting rather than prompts, project files, or conversation content. Provider retention is governed by that provider&apos;s policies.</p>
         <p>When you clone, fetch, pull, or push a repository, the app communicates with the Git host you specified. Installing dependencies may contact package registries. Those services process information under their own terms and privacy policies, and their retention rules are controlled by them and by your account settings.</p>
       </section>
 
@@ -83,6 +90,7 @@ export default function PrivacyPage() {
       <section>
         <h2>Retention, deletion, and your choices</h2>
         <p>You control app data stored on your device. You can delete individual sessions or projects in RunWhale, remove saved API keys in Settings, or remove the app and its local data through your device. Deleting local data does not delete copies already sent to a model provider, Git host, package registry, or other third party; contact that service to exercise rights over data it controls.</p>
+        <p>In the commercial edition, you can delete your account from the Me tab after signing in again. Deletion removes account identities and sessions while preserving local projects. Pseudonymous usage records remain until scheduled cleanup, generally three to four months; a temporary hashed identifier prevents quota-reset abuse until the next UTC calendar month. Deleting the account does not cancel an App Store or Google Play subscription. Manage cancellation in the store, whose billing records and RevenueCat records follow their own retention policies.</p>
         <p>To ask about information controlled by RunWhale, request deletion, or withdraw consent where applicable, email <a href="mailto:runwhale@runwhale.dev">runwhale@runwhale.dev</a>.</p>
       </section>
 
