@@ -470,12 +470,15 @@ function MessageImageGallery({ images }: { images: TranscriptImage[] }) {
   const styles = useTranscriptStyles()
   const [selected, setSelected] = useState<{ uri: string; name: string }>()
   const [failed, setFailed] = useState<Record<number, true>>({})
+  const [ratios, setRatios] = useState<Record<string, number>>({})
   return <>
     <View style={styles.messageImages}>{images.map((image, imageIndex) => {
       const uri = failed[imageIndex] ? undefined : messageImageUri(image)
       if (!uri) return <View key={imageIndex} style={styles.messageImageFallback}><AppIcon icon={ImageIcon} color="#FFFFFF" size={13} /><Text numberOfLines={2} style={styles.userMessageImage}>{image.name}</Text></View>
-      return <Pressable key={imageIndex} accessibilityRole="button" accessibilityLabel={image.name} onPress={() => setSelected({ uri, name: image.name })} style={images.length === 1 ? styles.messageImageSingle : styles.messageImageMultiple}>
-        <Image source={{ uri }} resizeMode="cover" onError={() => setFailed((current) => ({ ...current, [imageIndex]: true }))} style={styles.messageImageThumbnail} />
+      return <Pressable key={imageIndex} accessibilityRole="button" accessibilityLabel={image.name} onPress={() => setSelected({ uri, name: image.name })} style={images.length === 1 ? [styles.messageImageSingle, { aspectRatio: ratios[uri] ?? 1 }] : styles.messageImageMultiple}>
+        <Image source={{ uri }} resizeMode="contain" onLoad={({ nativeEvent: { source } }) => {
+          if (source.width > 0 && source.height > 0) setRatios((current) => ({ ...current, [uri]: source.width / source.height }))
+        }} onError={() => setFailed((current) => ({ ...current, [imageIndex]: true }))} style={styles.messageImageThumbnail} />
         <View style={styles.messageImageExpand}><AppIcon icon={Maximize2} color="#FFFFFF" size={12} /></View>
       </Pressable>
     })}</View>
@@ -594,7 +597,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   messageHeaderSpacer: { flex: 1 },
   messageTime: { color: colors.muted, fontSize: 9 },
   messageImages: { maxWidth: 220, flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 8 },
-  messageImageSingle: { width: 220, height: 176, borderRadius: 9, overflow: 'hidden', backgroundColor: 'rgba(255, 255, 255, 0.12)' },
+  messageImageSingle: { width: 220, borderRadius: 9, overflow: 'hidden', backgroundColor: 'rgba(255, 255, 255, 0.12)' },
   messageImageMultiple: { width: 108, height: 108, borderRadius: 8, overflow: 'hidden', backgroundColor: 'rgba(255, 255, 255, 0.12)' },
   messageImageThumbnail: { width: '100%', height: '100%' },
   messageImageExpand: { position: 'absolute', right: 6, bottom: 6, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(7, 12, 24, 0.66)' },

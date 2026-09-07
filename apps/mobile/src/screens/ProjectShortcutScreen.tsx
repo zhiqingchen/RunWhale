@@ -1,4 +1,8 @@
 import * as Clipboard from 'expo-clipboard'
+import * as DocumentPicker from 'expo-document-picker'
+import { Directory, File as FileSystemFile, Paths } from 'expo-file-system'
+import * as ImagePicker from 'expo-image-picker'
+import * as Sharing from 'expo-sharing'
 import { Image } from 'expo-image'
 import { router, useLocalSearchParams } from 'expo-router'
 import { Button } from 'heroui-native/button'
@@ -43,6 +47,7 @@ function ShortcutSetup({ projectId }: { projectId: string }) {
   const isIOS = Platform.OS === 'ios'
   const supported = Platform.OS === 'android' && NodeHost.supportsProjectShortcuts?.() === true
   const valid = isShortcutNameValid(appearance.name)
+  const iconUri = appearance.iconUri ?? project?.icon?.uri
 
   useEffect(() => {
     mounted.current = true
@@ -76,7 +81,7 @@ function ShortcutSetup({ projectId }: { projectId: string }) {
   }
 
   const persist = async () => {
-    const saved = await saveProjectShortcut(projectId, appearance)
+    const saved = await saveProjectShortcut(projectId, { ...appearance, iconUri })
     if (mounted.current) setAppearance(saved)
     return saved
   }
@@ -99,12 +104,10 @@ function ShortcutSetup({ projectId }: { projectId: string }) {
   const chooseIcon = (source: 'photos' | 'file') => perform(source, async () => {
     let uri: string | undefined
     if (source === 'photos') {
-      const picker = await import('expo-image-picker')
-      const result = await picker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 1 })
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 1 })
       if (!result.canceled) uri = result.assets[0]?.uri
     } else {
-      const picker = await import('expo-document-picker')
-      const result = await picker.getDocumentAsync({ type: 'image/*', copyToCacheDirectory: true, multiple: false })
+      const result = await DocumentPicker.getDocumentAsync({ type: 'image/*', copyToCacheDirectory: true, multiple: false })
       if (!result.canceled) uri = result.assets[0]?.uri
     }
     if (uri) {
@@ -133,17 +136,15 @@ function ShortcutSetup({ projectId }: { projectId: string }) {
   })
 
   const exportIcon = () => perform('export', async () => {
-    const sharing = await import('expo-sharing')
-    if (!await sharing.isAvailableAsync()) throw new Error(t('shortcutSharingUnavailable'))
+    if (!await Sharing.isAvailableAsync()) throw new Error(t('shortcutSharingUnavailable'))
     const saved = await persist()
     if (!mounted.current) return
-    const { Directory, File, Paths } = await import('expo-file-system')
     const directory = new Directory(Paths.cache, `shortcut-icon-${projectId}-${Date.now()}`)
     directory.create()
-    const file = new File(directory, 'App icon.png')
+    const file = new FileSystemFile(directory, 'App icon.png')
     try {
-      await new File(saved.iconUri).copy(file)
-      await sharing.shareAsync(file.uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: t('shortcutExportIcon') })
+      await new FileSystemFile(saved.iconUri).copy(file)
+      await Sharing.shareAsync(file.uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: t('shortcutExportIcon') })
     } finally { directory.delete() }
   })
 
@@ -164,14 +165,14 @@ function ShortcutSetup({ projectId }: { projectId: string }) {
         <Text style={styles.lead}>{t('shortcutDescription')}</Text>
         <View style={styles.previewCard}>
           <View style={styles.previewBadge}><AppIcon icon={Smartphone} color={colors.accent} size={14} /><Text style={styles.eyebrow}>{t('shortcutPreviewLabel')}</Text></View>
-          <Image source={appearance.iconUri ? { uri: appearance.iconUri } : require('../../assets/images/runwhale-icon.png')} style={styles.icon} contentFit="cover" accessibilityLabel={t('shortcutIcon')} />
+          <Image source={iconUri ? { uri: iconUri } : require('../../assets/images/runwhale-icon.png')} style={styles.icon} contentFit="cover" accessibilityLabel={t('shortcutIcon')} />
           <Text numberOfLines={2} style={styles.previewName}>{appearance.name.trim() || project.name}</Text>
           <Text style={styles.previewCaption}>{t('shortcutPreviewCaption')}</Text>
         </View>
         <View style={styles.card}>
           <Text style={styles.label}>{t('shortcutName')}</Text>
           <TextInput testID="shortcut-name" accessibilityLabel={t('shortcutName')} style={styles.input} value={appearance.name} placeholder={project.name} placeholderTextColor={colors.muted} maxLength={PROJECT_SHORTCUT_NAME_LIMIT} editable={loaded && !busy && Platform.OS !== 'web'} onChangeText={(name) => { setAppearance((current) => ({ ...current, name })); setNotice(undefined) }} returnKeyType="done" />
-          <View style={styles.iconHeader}><Text style={styles.label}>{t('shortcutIcon')}</Text>{appearance.iconUri ? <Button size="sm" variant="ghost" isDisabled={Boolean(busy)} onPress={() => setAppearance((current) => ({ name: current.name, iconUri: project.icon?.uri }))}><Button.Label>{t('reset')}</Button.Label></Button> : null}</View>
+          <View style={styles.iconHeader}><Text style={styles.label}>{t('shortcutIcon')}</Text>{iconUri ? <Button size="sm" variant="ghost" isDisabled={Boolean(busy)} onPress={() => setAppearance((current) => ({ name: current.name, iconUri: project.icon?.uri }))}><Button.Label>{t('reset')}</Button.Label></Button> : null}</View>
           <View style={styles.row}>
             <PendingButton variant="secondary" style={[styles.secondaryButton, styles.flexButton]} isPending={busy === 'photos'} isDisabled={!loaded || Boolean(busy) || Platform.OS === 'web'} onPress={() => { void chooseIcon('photos') }}>{busy === 'photos' ? <Spinner color={colors.accent} size="sm" /> : <AppIcon icon={ImageIcon} color={colors.accent} size={17} />}<Button.Label style={styles.secondaryLabel}>{t('photos')}</Button.Label></PendingButton>
             <PendingButton variant="secondary" style={[styles.secondaryButton, styles.flexButton]} isPending={busy === 'file'} isDisabled={!loaded || Boolean(busy) || Platform.OS === 'web'} onPress={() => { void chooseIcon('file') }}>{busy === 'file' ? <Spinner color={colors.accent} size="sm" /> : <AppIcon icon={File} color={colors.accent} size={17} />}<Button.Label style={styles.secondaryLabel}>{t('file')}</Button.Label></PendingButton>

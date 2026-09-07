@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Image } from 'react-native'
+import { Asset } from 'expo-asset'
+import { Directory, File, Paths } from 'expo-file-system'
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator'
 import { isShortcutNameValid, projectLaunchUrl, type ProjectShortcutAppearance } from './project-shortcut'
 
 function storageKey(projectId: string): string {
@@ -12,7 +15,6 @@ export async function loadProjectShortcut(projectId: string): Promise<ProjectSho
   if (!source) return undefined
   const saved: unknown = JSON.parse(source)
   if (!saved || typeof saved !== 'object' || !('name' in saved) || typeof saved.name !== 'string' || !isShortcutNameValid(saved.name)) throw new Error('Saved shortcut is invalid')
-  const { File, Paths } = await import('expo-file-system')
   const icon = 'icon' in saved && typeof saved.icon === 'string' && /^[a-z0-9-]+\.png$/.test(saved.icon)
     ? new File(Paths.document, 'project-shortcuts', projectId, saved.icon)
     : undefined
@@ -20,8 +22,6 @@ export async function loadProjectShortcut(projectId: string): Promise<ProjectSho
 }
 
 export async function prepareShortcutIcon(uri?: string): Promise<string> {
-  const { Asset } = await import('expo-asset')
-  const { manipulateAsync, SaveFormat } = await import('expo-image-manipulator')
   const source = uri ?? (await Asset.fromModule(require('../../assets/images/runwhale-icon.png')).downloadAsync()).localUri
   if (!source) throw new Error('Shortcut image is unavailable')
   const { width, height } = await Image.getSize(source)
@@ -36,7 +36,6 @@ export async function prepareShortcutIcon(uri?: string): Promise<string> {
 export async function saveProjectShortcut(projectId: string, appearance: ProjectShortcutAppearance): Promise<ProjectShortcutAppearance & { iconUri: string }> {
   const key = storageKey(projectId)
   if (!isShortcutNameValid(appearance.name)) throw new Error('Shortcut name is invalid')
-  const { Directory, File, Paths } = await import('expo-file-system')
   const directory = new Directory(Paths.document, 'project-shortcuts', projectId)
   directory.create({ intermediates: true, idempotent: true })
   const iconUri = await prepareShortcutIcon(appearance.iconUri)
@@ -59,7 +58,6 @@ export async function saveProjectShortcut(projectId: string, appearance: Project
 
 export async function removeProjectShortcutAppearance(projectId: string): Promise<void> {
   const key = storageKey(projectId)
-  const { Directory, Paths } = await import('expo-file-system')
   const directory = new Directory(Paths.document, 'project-shortcuts', projectId)
   if (directory.exists) directory.delete()
   await AsyncStorage.removeItem(key)
