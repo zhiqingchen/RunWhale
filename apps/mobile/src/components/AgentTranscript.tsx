@@ -315,7 +315,7 @@ function TranscriptNotice({ row, onPress }: { row: Extract<TranscriptRow, { kind
   const summary = conciseToolValue(error) ?? contextDetailSummary(row.text)
   return <TranscriptDetailCard
     label={label}
-    title={summary || label}
+    title={row.label === 'retry' ? label : summary || label}
     onPress={onPress}
     failed={row.failed}
     running={row.busy}
