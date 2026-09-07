@@ -1,10 +1,12 @@
+import appConfig from '../app.json'
 import { describe, expect, it } from 'vitest'
 import { isShortcutNameValid, projectIdFromLaunchUrl, projectLaunchUrl } from '../src/utils/project-shortcut'
 
 describe('project Home Screen links', () => {
   it('uses a stable project identity with no runtime endpoint or session', () => {
     const link = projectLaunchUrl('daily-notes')
-    expect(link).toBe('runwhale://run/daily-notes')
+    expect(link).toBe(`${appConfig.expo.scheme}://run/daily-notes`)
+    expect(projectIdFromLaunchUrl(`${appConfig.expo.android.package}://run/daily-notes`)).toBe('daily-notes')
     expect(projectIdFromLaunchUrl(link)).toBe('daily-notes')
   })
 

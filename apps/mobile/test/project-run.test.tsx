@@ -1,3 +1,4 @@
+import { projectLaunchUrl } from '../src/utils/project-shortcut'
 import { act, create, type ReactTestRenderer } from 'react-test-renderer'
 import { createRequire } from 'node:module'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -82,9 +83,9 @@ describe('Home Screen launch route', () => {
     state.loadStatus = 'ready'
     await act(async () => { tree = create(<ProjectRunScreen />) })
     state.open.mockClear()
-    await act(async () => { state.link?.({ url: 'runwhale://run/daily-notes' }) })
+    await act(async () => { state.link?.({ url: projectLaunchUrl('daily-notes') }) })
     expect(state.open).toHaveBeenCalledOnce()
-    await act(async () => { state.link?.({ url: 'runwhale://run/other-project' }) })
+    await act(async () => { state.link?.({ url: projectLaunchUrl('other-project') }) })
     expect(state.open).toHaveBeenCalledOnce()
   })
 

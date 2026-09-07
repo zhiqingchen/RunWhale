@@ -32,7 +32,7 @@ internal object ProjectShortcuts {
     try {
       val intent = requireNotNull(context.packageManager.getLaunchIntentForPackage(context.packageName)) { "App launcher is unavailable" }
       intent.action = Intent.ACTION_VIEW
-      intent.data = Uri.parse("runwhale://run/$projectId")
+      intent.data = Uri.parse("${context.packageName}://run/$projectId")
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
       val shortcut = ShortcutInfo.Builder(context, "project-$projectId")
         .setShortLabel(label)

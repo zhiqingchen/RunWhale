@@ -402,7 +402,7 @@ export class RunWhaleRuntimeHost {
   }
 
   private prepareContinuedWork(id: string): { prepared: boolean } {
-    if (typeof id !== 'string' || !/^app\.runwhale\.mobile\.agent\.[A-Za-z0-9-]{1,64}$/.test(id)) throw new Error('Invalid continued task identifier')
+    if (typeof id !== 'string' || !/^app\.runwhale\.(?:community|mobile)\.agent\.[A-Za-z0-9-]{1,64}$/.test(id)) throw new Error('Invalid continued task identifier')
     const current = this.continuedWork
     if (this.options.platform !== 'ios' || this.backgrounded || this.suspension
       || (current && !current.ended && (!current.execution || current.execution.active))) return { prepared: false }

@@ -144,7 +144,7 @@ describe('iOS runtime connection recovery', () => {
 
   it('binds a user submission to its native continued task', async () => {
     runtime.registerFileFlush(async () => undefined)
-    const id = 'app.runwhale.mobile.agent.ui-test'
+    const id = 'app.runwhale.community.agent.ui-test'
     native.beginContinuedAgentTask.mockResolvedValue(id)
     await act(async () => { await runtime.runAgent({ id: 'project', name: 'Project', description: '', updatedAt: 0, files: [] }, { sessionId: 'session', prompt: 'Make the change' }) })
     const requests = vi.mocked(fetch).mock.calls.map(([, init]) => JSON.parse(init!.body as string))

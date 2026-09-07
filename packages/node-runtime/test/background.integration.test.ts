@@ -68,7 +68,7 @@ async function setup(platform: 'ios' | 'android' = 'ios', initialization?: Promi
   return { host, driver, rpc, session, start, record, root, restart, reconnect, requests: () => requests, release: () => releases.splice(0).forEach((release) => release()) }
 }
 
-const continuedId = 'app.runwhale.mobile.agent.background-test'
+const continuedId = 'app.runwhale.community.agent.background-test'
 
 it('continues only the granted execution and reports real completed steps', async () => {
   const test = await setup()

@@ -32,7 +32,7 @@ env:
   XCODE_BUILD: 17F113
   IOS_SDK_VERSION: '26.5'
   IOS_SDK_NAME: iphoneos26.5
-  BUNDLE_ID: app.runwhale.mobile
+  BUNDLE_ID: app.runwhale.community
   MINIMUM_IOS_VERSION: '16.4'
   BUILD_TIME_ZONE: Asia/Shanghai
 

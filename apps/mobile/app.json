@@ -4,18 +4,18 @@
     "slug": "runwhale",
     "version": "1.0.1",
     "orientation": "default",
-    "scheme": "runwhale",
+    "scheme": "runwhale-community",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "icon": "./assets/images/runwhale-icon.png",
     "ios": {
       "icon": "./assets/images/runwhale-icon.png",
       "supportsTablet": true,
-      "bundleIdentifier": "app.runwhale.mobile",
+      "bundleIdentifier": "app.runwhale.community",
       "deploymentTarget": "16.4",
       "entitlements": {
         "keychain-access-groups": [
-          "$(AppIdentifierPrefix)app.runwhale.mobile"
+          "$(AppIdentifierPrefix)app.runwhale.community"
         ],
         "com.apple.developer.associated-domains": [
           "applinks:share.runwhale.dev"
@@ -23,7 +23,7 @@
       },
       "infoPlist": {
         "UIBackgroundModes": ["processing"],
-        "BGTaskSchedulerPermittedIdentifiers": ["app.runwhale.mobile.agent.*"],
+        "BGTaskSchedulerPermittedIdentifiers": ["app.runwhale.community.agent.*"],
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
@@ -31,7 +31,7 @@
       }
     },
     "android": {
-      "package": "app.runwhale.mobile",
+      "package": "app.runwhale.community",
       "blockedPermissions": [
         "android.permission.ACTIVITY_RECOGNITION"
       ],

@@ -64,13 +64,14 @@ xcodebuild -quiet \
   build
 
 APP_PATH="$DERIVED_DATA_DIR/Build/Products/Debug-iphonesimulator/RunWhale.app"
+BUNDLE_ID="$(node -p "require(process.argv[1]).expo.ios.bundleIdentifier" "$REPOSITORY_DIR/apps/mobile/app.json")"
 SIGNING_INFO="$(codesign -dv --verbose=4 "$APP_PATH" 2>&1)"
 
-if [[ "$SIGNING_INFO" != *"Identifier=app.runwhale.mobile"* || "$SIGNING_INFO" == *"linker-signed"* ]]; then
+if [[ "$SIGNING_INFO" != *"Identifier=$BUNDLE_ID"* || "$SIGNING_INFO" == *"linker-signed"* ]]; then
   echo "Refusing to install an improperly signed RunWhale Simulator app" >&2
   exit 1
 fi
 
 codesign --verify --strict "$APP_PATH"
 xcrun simctl install "$SIMULATOR_ID" "$APP_PATH"
-xcrun simctl launch "$SIMULATOR_ID" app.runwhale.mobile
+xcrun simctl launch "$SIMULATOR_ID" "$BUNDLE_ID"

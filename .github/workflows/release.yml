@@ -318,7 +318,7 @@ jobs:
           fi
 
           badging="$($aapt_path dump badging "$source_apk" | sed -n '1p')"
-          [[ "$badging" == *"name='app.runwhale.mobile'"* ]]
+          [[ "$badging" == *"name='app.runwhale.community'"* ]]
           [[ "$badging" == *"versionName='$VERSION'"* ]]
           [[ "$badging" == *"versionCode='$BUILD_NUMBER'"* ]]
           unzip -Z1 "$source_apk" >"$RUNNER_TEMP/android-release-apk-entries.txt"

@@ -11,7 +11,11 @@ const androidVersion = existsSync(androidPath) ? readFileSync(androidPath, 'utf8
 const iosVersions = existsSync(iosPath) ? [...readFileSync(iosPath, 'utf8').matchAll(/MARKETING_VERSION = ([^;]+);/gu)].map((match) => match[1]) : []
 
 assert.equal(appConfig.expo?.version, requested, `apps/mobile/app.json must match release version ${requested}`)
-assert.equal(appConfig.expo?.ios?.bundleIdentifier, 'app.runwhale.mobile', 'apps/mobile/app.json must use the release iOS bundle identifier')
+const bundleId = appConfig.expo?.ios?.bundleIdentifier
+assert.match(bundleId, /^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*)+$/u, 'Use a valid app bundle identifier')
+assert.equal(appConfig.expo?.android?.package, bundleId, 'Both platforms must use the same edition identity')
+assert.deepEqual(appConfig.expo?.ios?.entitlements?.['keychain-access-groups'], [`$(AppIdentifierPrefix)${bundleId}`])
+assert.deepEqual(appConfig.expo?.ios?.infoPlist?.BGTaskSchedulerPermittedIdentifiers, [`${bundleId}.agent.*`])
 assert.equal(appConfig.expo?.ios?.deploymentTarget, '16.4', 'apps/mobile/app.json must keep the minimum iOS version at 16.4')
 assert.equal(
   appConfig.expo?.ios?.infoPlist?.ITSAppUsesNonExemptEncryption,
