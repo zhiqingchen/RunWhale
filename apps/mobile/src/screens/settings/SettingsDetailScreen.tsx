@@ -7,7 +7,7 @@ import { usePreferences } from '@/state/preferences'
 import { useRuntime } from '@/state/runtime'
 import { useAppColors } from '@/theme/tokens'
 import { actionErrorPresentation, runExclusiveAction } from '@/utils/action-progress'
-import { focusedInputScrollOffset } from '@/utils/keyboard-scroll'
+import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll'
 import { permissionModeChangeRequiresConfirmation, permissionModeDescriptionKeys } from '@/utils/permission-mode'
 import { settingsAccessibilityContract, settingsChoiceAccessibility, settingsRadioAccessibilityState } from '@/utils/settings-accessibility'
 import { settingsUseStackedRows } from '@/utils/settings-layout'
@@ -23,7 +23,7 @@ import { Button } from 'heroui-native/button'
 import { Card } from 'heroui-native/card'
 import { Spinner } from 'heroui-native/spinner'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BackHandler, Linking, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, UIManager, View, findNodeHandle, useWindowDimensions } from 'react-native'
+import { BackHandler, Linking, KeyboardAvoidingView, Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ModelSettings } from './ModelSettings'
 import { SshSettings } from './SshSettings'
@@ -35,40 +35,7 @@ export function SettingsDetailScreen({ detail }: { detail: SettingsDetail }) {
   const colors = useAppColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const handleBack = useCallback(() => returnToSettingsHome(router), [router])
-  const scrollRef = useRef<ScrollView>(null)
-  const focusedInputRef = useRef<TextInput | null>(null)
-  const scrollOffsetRef = useRef(0)
-  const { height: viewportHeight, width: viewportWidth } = useWindowDimensions()
-
-  const revealFocusedInput = useCallback(() => {
-    const input = focusedInputRef.current
-    const scroll = scrollRef.current
-    if (!input || !scroll) return
-    const scrollHandle = findNodeHandle(scroll)
-    if (scrollHandle === null) return
-    UIManager.measure(scrollHandle, (_x, _y, _width, _height, _pageX, scrollPageY) => {
-      input.measure((_inputX, _inputY, _inputWidth, _inputHeight, _inputPageX, inputPageY) => {
-        scroll.scrollTo({ y: focusedInputScrollOffset(scrollOffsetRef.current, inputPageY, scrollPageY), animated: true })
-      })
-    })
-  }, [])
-
-  useEffect(() => {
-    if (Platform.OS !== 'android') return
-    const subscription = Keyboard.addListener('keyboardDidShow', revealFocusedInput)
-    return () => subscription.remove()
-  }, [revealFocusedInput])
-
-  useEffect(() => {
-    if (Platform.OS !== 'android') return
-    const timeout = setTimeout(() => { if (Keyboard.isVisible()) revealFocusedInput() }, 250)
-    return () => clearTimeout(timeout)
-  }, [revealFocusedInput, viewportHeight, viewportWidth])
-
-  const rememberFocusedInput = useCallback((input: TextInput | null) => { focusedInputRef.current = input }, [])
-  const forgetFocusedInput = useCallback((input: TextInput | null) => {
-    if (focusedInputRef.current === input) focusedInputRef.current = null
-  }, [])
+  const { scrollRef, onScroll, rememberFocusedInput, forgetFocusedInput } = useFocusedInputScroll()
 
   useFocusEffect(useCallback(() => {
     if (Platform.OS !== 'android') return undefined
@@ -90,7 +57,7 @@ export function SettingsDetailScreen({ detail }: { detail: SettingsDetail }) {
         contentContainerStyle={styles.detailContent}
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         keyboardShouldPersistTaps="handled"
-        onScroll={(event) => { scrollOffsetRef.current = event.nativeEvent.contentOffset.y }}
+        onScroll={onScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >

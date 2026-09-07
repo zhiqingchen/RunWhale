@@ -9,6 +9,7 @@ export interface NativePreviewModule {
 
 export const NATIVE_PREVIEW_EXPO_SDK_VERSION = catalog.expoSdkVersion
 export const NATIVE_PREVIEW_REACT_NATIVE_VERSION = catalog.reactNativeVersion
+export const NATIVE_PREVIEW_RUNTIME_ABI = Object.freeze(catalog.runtimeAbi)
 export const NATIVE_PREVIEW_MODULES: readonly NativePreviewModule[] = Object.freeze(
   catalog.modules.map((module) => Object.freeze({
     name: module.name,

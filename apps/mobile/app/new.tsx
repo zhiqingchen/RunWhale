@@ -1,9 +1,9 @@
 import { ProjectLoadFailure } from '@/components/ProjectLoadFailure'
 import { router } from 'expo-router'
 import { usePreventRemove } from 'expo-router/react-navigation'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Bot, Code2, GitBranch, Smartphone } from '@/components/icons'
-import { findNodeHandle, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, UIManager, useWindowDimensions, View } from 'react-native'
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
 import { Spinner } from 'heroui-native/spinner'
@@ -16,7 +16,7 @@ import { AppIcon } from '@/components/AppIcon'
 import { PendingButton } from '@/components/PendingButton'
 import { runExclusiveAction } from '@/utils/action-progress'
 import { createMobileSessionId } from '@/utils/session-id'
-import { focusedInputScrollOffset } from '@/utils/keyboard-scroll'
+import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll'
 import { completeNewProjectSubmission, idleNewProjectSubmissionUiState, newProjectAvailability, newProjectSubmissionKey, newProjectSubmissionUiReducer, prepareNewProjectSubmission, type PreparedNewProjectSubmission } from '@/utils/new-project-flow'
 import { cloneProgressMessageKey, cloneProgressPercent } from '@/utils/clone-progress'
 import type { ProjectCloneProgress } from '@runwhale/mobile-protocol'
@@ -38,12 +38,9 @@ export default function NewProjectScreen() {
   const [cloneProgress, setCloneProgress] = useState<ProjectCloneProgress | null | undefined>(undefined)
   const [retryingProjectLoad, setRetryingProjectLoad] = useState(false)
   const projectLoadRetryInFlight = useRef(false)
-  const scrollRef = useRef<ScrollView>(null)
+  const { scrollRef, onScroll, rememberFocusedInput, forgetFocusedInput } = useFocusedInputScroll()
   const nameInputRef = useRef<TextInput>(null)
   const repositoryInputRef = useRef<TextInput>(null)
-  const focusedInputRef = useRef<TextInput | null>(null)
-  const scrollOffsetRef = useRef(0)
-  const { height: viewportHeight, width: viewportWidth } = useWindowDimensions()
   const { loadStatus: projectLoadStatus, retryLoad: retryProjectLoad, addProject } = useProjects()
   const runtime = useRuntime()
   const availability = newProjectAvailability(projectLoadStatus, Boolean(runtime.info), submitting)
@@ -51,31 +48,6 @@ export default function NewProjectScreen() {
     ? t(cloneProgressMessageKey(cloneProgress.phase))
     : cloneProgress === null ? t('clonePreparingRepository') : undefined
   const clonePercent = cloneProgress ? cloneProgressPercent(cloneProgress) : undefined
-
-  const revealFocusedInput = useCallback(() => {
-    const input = focusedInputRef.current
-    const scroll = scrollRef.current
-    if (!input || !scroll) return
-    const scrollHandle = findNodeHandle(scroll)
-    if (scrollHandle === null) return
-    UIManager.measure(scrollHandle, (_x, _y, _width, _height, _pageX, scrollPageY) => {
-      input.measure((_inputX, _inputY, _inputWidth, _inputHeight, _inputPageX, inputPageY) => {
-        scroll.scrollTo({ y: focusedInputScrollOffset(scrollOffsetRef.current, inputPageY, scrollPageY), animated: true })
-      })
-    })
-  }, [])
-
-  useEffect(() => {
-    if (Platform.OS !== 'android') return
-    const subscription = Keyboard.addListener('keyboardDidShow', revealFocusedInput)
-    return () => subscription.remove()
-  }, [revealFocusedInput])
-
-  useEffect(() => {
-    if (Platform.OS !== 'android') return
-    const timeout = setTimeout(() => { if (Keyboard.isVisible()) revealFocusedInput() }, 250)
-    return () => clearTimeout(timeout)
-  }, [revealFocusedInput, viewportHeight, viewportWidth])
 
   usePreventRemove(submitting, () => dispatchSubmissionUi({ type: 'remove-attempted' }))
 
@@ -149,7 +121,7 @@ export default function NewProjectScreen() {
         contentContainerStyle={styles.form}
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
         keyboardShouldPersistTaps="handled"
-        onScroll={(event) => { scrollOffsetRef.current = event.nativeEvent.contentOffset.y }}
+        onScroll={onScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
@@ -164,7 +136,7 @@ export default function NewProjectScreen() {
           testID="new-project-load-error"
         /> : null}
         <Text style={styles.label}>{t('projectName')}</Text>
-        <TextInput ref={nameInputRef} accessibilityLabel={t('projectName')} accessibilityState={{ disabled: availability.controlsDisabled }} editable={!availability.controlsDisabled} value={name} onChangeText={setName} onFocus={() => { focusedInputRef.current = nameInputRef.current }} onBlur={() => { if (focusedInputRef.current === nameInputRef.current) focusedInputRef.current = null }} placeholder={t('appNamePlaceholder')} placeholderTextColor={colors.muted} style={styles.input} />
+        <TextInput ref={nameInputRef} accessibilityLabel={t('projectName')} accessibilityState={{ disabled: availability.controlsDisabled }} editable={!availability.controlsDisabled} value={name} onChangeText={setName} onFocus={() => rememberFocusedInput(nameInputRef.current)} onBlur={() => forgetFocusedInput(nameInputRef.current)} placeholder={t('appNamePlaceholder')} placeholderTextColor={colors.muted} style={styles.input} />
         {!repositoryUrl.trim() && <>
           <Text style={styles.label}>{t('projectTemplate')}</Text>
           <View style={styles.templates}>
@@ -185,7 +157,7 @@ export default function NewProjectScreen() {
           </View>
         </>}
         <Text style={styles.label}>{t('githubRepositoryOptional')}</Text>
-        <TextInput ref={repositoryInputRef} accessibilityLabel={t('githubRepositoryOptional')} accessibilityState={{ disabled: availability.controlsDisabled }} editable={!availability.controlsDisabled} value={repositoryUrl} onChangeText={setRepositoryUrl} onFocus={() => { focusedInputRef.current = repositoryInputRef.current }} onBlur={() => { if (focusedInputRef.current === repositoryInputRef.current) focusedInputRef.current = null }} placeholder={t('githubRepositoryPlaceholder')} placeholderTextColor={colors.muted} autoCapitalize="none" autoCorrect={false} keyboardType="url" style={styles.input} />
+        <TextInput ref={repositoryInputRef} accessibilityLabel={t('githubRepositoryOptional')} accessibilityState={{ disabled: availability.controlsDisabled }} editable={!availability.controlsDisabled} value={repositoryUrl} onChangeText={setRepositoryUrl} onFocus={() => rememberFocusedInput(repositoryInputRef.current)} onBlur={() => forgetFocusedInput(repositoryInputRef.current)} placeholder={t('githubRepositoryPlaceholder')} placeholderTextColor={colors.muted} autoCapitalize="none" autoCorrect={false} keyboardType="url" style={styles.input} />
         <View style={styles.note}><Text style={styles.noteText}>{repositoryUrl.trim() ? t('repositoryPreviewNote') : t('projectTemplateNote')}</Text></View>
         {cloneProgressLabel ? <View
           accessible

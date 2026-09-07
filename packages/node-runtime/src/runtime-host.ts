@@ -58,6 +58,7 @@ import { MobileTaskRunner } from '@runwhale/mobile-runtime/task-runner'
 import { MobileMetroRuntime } from './metro-runtime.js'
 import { readPreviewArtifact, writePreviewArtifact } from './preview-artifact.js'
 import { emptyProjectFiles, emptyProjectManifest } from './project-manifest.js'
+import { providerCredentialRef } from './provider-credential.js'
 
 const WORKSPACE_MUTATION_TOOLS = new Set(['write_file', 'write_files', 'node_task', 'typescript_program', 'generate_image'])
 
@@ -1745,7 +1746,7 @@ export class RunWhaleRuntimeHost {
     assertSessionId(sessionId)
     const activeEvents = this.sessionExecution(projectId, sessionId)?.active ? this.sessionExecution(projectId, sessionId)?.events : undefined
     if (activeEvents) return sessionSurfaceRecord({ ...await this.readSession(projectId, sessionId), events: [...activeEvents] })
-    let source = await this.sessionFileIdentity(projectId, sessionId)
+    const source = await this.sessionFileIdentity(projectId, sessionId)
     try {
       const value = JSON.parse((await this.sessionFs(projectId).readText(`.runwhale/sessions/${sessionId}.surface`)).content) as unknown
       if (isRecord(value) && value.version === 1 && isRecord(value.source) && sameSessionFileIdentityValue(value.source, source) && isRecord(value.record)) {
@@ -1754,28 +1755,31 @@ export class RunWhaleRuntimeHost {
       }
     } catch { /* missing, stale, or corrupt caches are rebuilt from the canonical session */ }
 
-    let record = await this.readSession(projectId, sessionId)
-    let currentSource = await this.sessionFileIdentity(projectId, sessionId)
-    if (!sameSessionFileIdentity(source, currentSource)) {
-      source = currentSource
-      record = await this.readSession(projectId, sessionId)
-      currentSource = await this.sessionFileIdentity(projectId, sessionId)
-    }
+    const { record, cacheSource } = await this.readSessionForCache(projectId, sessionId, source)
     const surface = sessionSurfaceRecord(record)
-    if (sameSessionFileIdentity(source, currentSource) && record.state !== 'running') {
-      await this.writeSessionCaches(projectId, record, currentSource).catch(() => undefined)
+    if (cacheSource) {
+      await this.writeSessionCaches(projectId, record, cacheSource).catch(() => undefined)
     }
     return surface
   }
 
   private async readSessionSummary(projectId: string, sessionId: string): Promise<AgentSessionSummary> {
     assertSessionId(sessionId)
-    let source = await this.sessionFileIdentity(projectId, sessionId)
+    const source = await this.sessionFileIdentity(projectId, sessionId)
     try {
       const cached = parseSessionSummaryCache((await this.sessionFs(projectId).readText(`.runwhale/sessions/${sessionId}.summary`)).content, source, projectId, sessionId)
       if (cached) return this.currentSessionSummary(cached)
     } catch { /* missing, stale, or corrupt caches are rebuilt from the canonical session */ }
 
+    const { record, cacheSource } = await this.readSessionForCache(projectId, sessionId, source)
+    const summary = sessionSummary(record)
+    if (cacheSource) {
+      await this.writeSessionSummaryCache(projectId, summary, cacheSource).catch(() => undefined)
+    }
+    return this.currentSessionSummary(summary)
+  }
+
+  private async readSessionForCache(projectId: string, sessionId: string, source: SessionFileIdentity): Promise<{ record: AgentSessionRecord; cacheSource: SessionFileIdentity | undefined }> {
     let record = await this.readSession(projectId, sessionId)
     let currentSource = await this.sessionFileIdentity(projectId, sessionId)
     if (!sameSessionFileIdentity(source, currentSource)) {
@@ -1783,11 +1787,10 @@ export class RunWhaleRuntimeHost {
       record = await this.readSession(projectId, sessionId)
       currentSource = await this.sessionFileIdentity(projectId, sessionId)
     }
-    const summary = sessionSummary(record)
-    if (sameSessionFileIdentity(source, currentSource) && summary.state !== 'running') {
-      await this.writeSessionSummaryCache(projectId, summary, currentSource).catch(() => undefined)
+    return {
+      record,
+      cacheSource: sameSessionFileIdentity(source, currentSource) && record.state !== 'running' ? currentSource : undefined,
     }
-    return this.currentSessionSummary(summary)
   }
 
   private currentSessionSummary(summary: AgentSessionSummary): AgentSessionSummary {
@@ -2341,13 +2344,6 @@ function goalReference(id: unknown, revision: unknown): { id: string; revision: 
   if (!selectedId || selectedId.length > 256) throw new Error('invalid Goal id')
   if (!Number.isSafeInteger(selectedRevision) || selectedRevision < 1) throw new Error('invalid Goal revision')
   return { id: selectedId, revision: selectedRevision }
-}
-
-function providerCredentialRef(provider: MobileModelProvider): string {
-  if (provider === 'openai') return 'ref:OPENAI_API_KEY'
-  if (provider === 'anthropic') return 'ref:ANTHROPIC_API_KEY'
-  if (provider === 'google') return 'ref:GOOGLE_API_KEY'
-  return 'ref:DEEPSEEK_API_KEY'
 }
 
 function throwIfAborted(signal: AbortSignal): void {

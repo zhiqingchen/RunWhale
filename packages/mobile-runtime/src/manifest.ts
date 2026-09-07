@@ -1,11 +1,10 @@
 import { z } from 'zod'
-import { isProjectImagePath, type PreviewPlatform, type RuntimePlatform } from '@runwhale/mobile-protocol'
+import { isProjectImagePath, NATIVE_PREVIEW_RUNTIME_ABI } from '@runwhale/mobile-protocol'
+
+export { resolveProjectPreviewPlatform } from '@runwhale/mobile-protocol'
 
 export const RUNWHALE_SCHEMA_VERSION = 1 as const
-export const RUNTIME_ABI = {
-  android: 'runwhale-expo57-android-v1',
-  ios: 'runwhale-expo57-ios-v1',
-} as const
+export const RUNTIME_ABI = NATIVE_PREVIEW_RUNTIME_ABI
 
 const taskSchema = z.object({
   entry: z.string().min(1),
@@ -52,23 +51,4 @@ export type RunWhaleManifest = z.infer<typeof runWhaleManifestSchema>
 
 export function parseRunWhaleManifest(input: unknown): RunWhaleManifest {
   return runWhaleManifestSchema.parse(input)
-}
-
-export function resolveProjectPreviewPlatform(manifest: RunWhaleManifest, runtimePlatform: RuntimePlatform): PreviewPlatform | undefined {
-  const hasWeb = Boolean(manifest.entry.web)
-  const hasNative = Boolean(manifest.entry[runtimePlatform])
-  if (manifest.preview?.target === 'web') {
-    if (!hasWeb) throw new Error('Project selects Web Preview but does not declare entry.web')
-    return 'web'
-  }
-  if (manifest.preview?.target === 'native') {
-    if (!hasNative) throw new Error(`Project selects Native Preview but does not declare entry.${runtimePlatform}`)
-    return runtimePlatform
-  }
-  if (hasWeb && hasNative) {
-    throw new Error('Project declares both Web and Native Preview entries; set preview.target in runwhale.json')
-  }
-  if (hasNative) return runtimePlatform
-  if (hasWeb) return 'web'
-  return undefined
 }

@@ -1,4 +1,4 @@
-import { NATIVE_PREVIEW_TEMPLATE_DEPENDENCIES, type ProjectImage } from '@runwhale/mobile-protocol'
+import { NATIVE_PREVIEW_RUNTIME_ABI, NATIVE_PREVIEW_TEMPLATE_DEPENDENCIES, type ProjectImage } from '@runwhale/mobile-protocol'
 import { readTextProjectFiles } from '../utils/project-text-files'
 
 export interface ProjectFile {
@@ -392,7 +392,7 @@ function manifestContent(id: string, name: string, template: ProjectTemplate): s
   const preview = template === 'web'
     ? { runtimeAbi: {}, entry: { web: 'src/main.tsx' }, preview: { target: 'web' } }
     : {
-        runtimeAbi: { android: 'runwhale-expo57-android-v1', ios: 'runwhale-expo57-ios-v1' },
+        runtimeAbi: NATIVE_PREVIEW_RUNTIME_ABI,
         entry: { android: 'index.tsx', ios: 'index.tsx' },
         preview: { target: 'native' },
       }

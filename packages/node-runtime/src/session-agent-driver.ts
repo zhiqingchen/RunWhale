@@ -1,6 +1,7 @@
 import type { MobileHarness, MobileHarnessOptions, MobileImageInput } from '@runwhale/dsh-mobile'
 import { MOBILE_DEFAULT_MODELS, type MobileAgentPreset, type MobileModelProvider, type MobileModelProviderProfile } from '@runwhale/mobile-protocol'
 import type { AgentDriver, AgentRunOptions, AgentSessionLoadOptions } from './agent-driver.js'
+import { providerCredentialRef } from './provider-credential.js'
 
 interface SessionAgentDriverOptions {
   createHarness(options: MobileHarnessOptions): Promise<MobileHarness>
@@ -172,11 +173,4 @@ export function createSessionAgentDriver(options: SessionAgentDriverOptions) {
     },
   }
   return agent satisfies AgentDriver
-}
-
-function providerCredentialRef(provider: MobileModelProvider): string {
-  if (provider === 'openai') return 'ref:OPENAI_API_KEY'
-  if (provider === 'anthropic') return 'ref:ANTHROPIC_API_KEY'
-  if (provider === 'google') return 'ref:GOOGLE_API_KEY'
-  return 'ref:DEEPSEEK_API_KEY'
 }

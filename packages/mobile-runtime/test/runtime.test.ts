@@ -53,6 +53,11 @@ describe('runwhale manifest', () => {
 
     const ambiguous = parseRunWhaleManifest({ ...base, entry: { web: 'src/main.tsx', android: 'index.ts' } })
     expect(() => resolveProjectPreviewPlatform(ambiguous, 'android')).toThrow(/set preview\.target/)
+
+    const blankWeb = parseRunWhaleManifest({ ...base, entry: { web: ' \t', android: 'index.tsx' } })
+    expect(resolveProjectPreviewPlatform(blankWeb, 'android')).toBe('android')
+    expect(resolveProjectPreviewPlatform(blankWeb, 'ios')).toBeUndefined()
+    expect(() => resolveProjectPreviewPlatform({ ...blankWeb, preview: { target: 'web' } }, 'android')).toThrow(/does not declare entry\.web/)
   })
 
   it('rejects a Preview selection without its required entry', () => {

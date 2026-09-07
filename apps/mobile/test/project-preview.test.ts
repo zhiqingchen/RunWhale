@@ -37,4 +37,15 @@ describe('project Preview configuration', () => {
       error: 'Project selects Native Preview but does not declare entry.android',
     })
   })
+
+  it('ignores blank entries when selecting Native Preview and reports unavailable Web Preview', () => {
+    const manifest = { entry: { web: ' \t', android: 'index.tsx' } }
+    expect(projectPreviewConfiguration(project(manifest), 'android')).toEqual({ target: 'native', platform: 'android' })
+    expect(projectPreviewConfiguration(project({ ...manifest, preview: { target: 'web' } }), 'android')).toEqual({
+      error: 'Project selects Web Preview but does not declare entry.web',
+    })
+    expect(projectPreviewConfiguration(project({ ...manifest, preview: { target: 'native' } }), 'web')).toEqual({
+      error: 'Native Preview is unavailable in the desktop UI',
+    })
+  })
 })
