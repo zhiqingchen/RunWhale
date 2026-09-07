@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { HostEvent } from '@runwhale/mobile-protocol'
-import { latestSessionSystemPrompt, mergeSessionTranscript, projectSessionTranscript } from '../src/utils/session-transcript'
+import { groupTranscriptActivities, latestSessionSystemPrompt, mergeSessionTranscript, projectSessionTranscript } from '../src/utils/session-transcript'
 import type { ToolActivitySessionEvent as Event } from '../src/utils/tool-activity'
 
 const scope = { projectId: 'project', sessionId: 'session', taskId: 'task' }
@@ -12,6 +12,37 @@ function live(e: Event, afterSequence?: number): HostEvent {
 const delta = (seq: number, text: string): HostEvent => ({ ...live(event('', seq)), name: 'agent.delta', data: { ...scope, sessionSequence: seq, turn: 1, step: 1, kind: 'text', text } })
 
 describe('one Session transcript', () => {
+  it('combines consecutive tool steps while preserving individual calls, states, and message boundaries', () => {
+    const log = [
+      event('tool/call', 1, { turn: 1, step: 1, callId: 'read', name: 'read_files' }),
+      event('tool/result', 2, { turn: 1, step: 1, callId: 'read', output: 'contents' }),
+      event('assistant/message', 3, { turn: 1, step: 2, content: [] }),
+      event('tool/call', 4, { turn: 1, step: 2, callId: 'inspect', name: 'preview_inspect' }),
+      event('tool/result', 5, { turn: 1, step: 2, callId: 'inspect', isError: true, output: 'failed' }),
+      event('tool/call', 6, { turn: 1, step: 2, callId: 'logs', name: 'preview_logs' }),
+    ]
+    const source = projectSessionTranscript(log, true)
+    const original = structuredClone(source)
+    const grouped = groupTranscriptActivities(source)
+    expect(grouped).toHaveLength(1)
+    expect(grouped[0]).toMatchObject({ id: source[0]!.id, kind: 'activities' })
+    const row = grouped[0]!
+    if (row.kind !== 'activities') throw new Error('Expected tool row')
+    expect(row.activities.flatMap(activity => activity.items).map(item => [item.callId, item.state])).toEqual([
+      ['read', 'succeeded'], ['inspect', 'failed'], ['logs', 'running'],
+    ])
+    expect(source).toEqual(original)
+    log.push(
+      event('assistant/message', 7, { turn: 1, step: 3, ...message('Checking the result') }),
+      event('tool/call', 8, { turn: 1, step: 3, callId: 'close', name: 'preview_close' }),
+      event('turn/end', 9, { turn: 1 }),
+      event('tool/call', 10, { turn: 2, step: 1, callId: 'status', name: 'git_status' }),
+    )
+    const next = groupTranscriptActivities(projectSessionTranscript(log, true))
+    expect(next.map(row => row.kind)).toEqual(['activities', 'assistant', 'activities', 'turn', 'activities'])
+    expect(next[0]!.id).toBe(grouped[0]!.id)
+  })
+
   it('converges at every history/live split, including duplicate deliveries and final handoff', () => {
     const log = [
       event('user/message', 0, message('inspect')),

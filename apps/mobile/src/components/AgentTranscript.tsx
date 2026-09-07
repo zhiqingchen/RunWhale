@@ -1,6 +1,6 @@
 import { memo, type ReactNode, type Ref, type RefObject, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { Bot, Check, ChevronDown, ChevronRight, Circle, CircleCheck, CircleX, Code2, Copy, Database, GitBranch, History, Image as ImageIcon, Maximize2, RefreshCw } from '@/components/icons'
-import { FlatList, Image, type LayoutChangeEvent, type ListRenderItemInfo, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
+import { FlatList, Image, type LayoutChangeEvent, type ListRenderItemInfo, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { NodeHost } from '@runwhale/node-host'
 import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
@@ -20,15 +20,16 @@ import { createTranscriptPositionCoordinator, transcriptHistoryWindow } from '@/
 import { assistantMessageCopyText, transcriptBranchActionState, type AssistantMessageBlock, transcriptInteractionContract, transcriptLayoutContract, type TranscriptBranchInFlight } from '@/utils/transcript-feedback'
 import { type ToolActivityGroup, type ToolActivitySessionEvent, type ToolActivityState } from '@/utils/tool-activity'
 import { contextDetailSummary, type TranscriptContextRecord } from '@/utils/transcript-context'
-import { projectSessionTranscript, type SessionTranscriptRow } from '@/utils/session-transcript'
+import { groupTranscriptActivities, projectSessionTranscript, type GroupedTranscriptRow } from '@/utils/session-transcript'
 import { type PendingTranscriptPrompt } from '@/utils/transcript-user'
 
 interface TranscriptImage { attachmentId?: string; name: string; width?: number; height?: number; bytes?: number }
 
-export type TranscriptRow = SessionTranscriptRow
+export type TranscriptRow = GroupedTranscriptRow
   | { kind: 'live-prompt'; id: string; text: string }
   | { kind: 'live-working'; id: string; label: string }
 
+const TOOL_ROW_GAP = 6
 // Older pages append to the inverted list, preserving the visible messages.
 const HISTORY_PAGE_SIZE = 16
 const TRANSCRIPT_MAINTAIN_VISIBLE_POSITION = { minIndexForVisible: 0 } as const
@@ -70,10 +71,10 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   const historyLoadPending = useRef(false)
   const scrollToEdgeFrame = useRef<number | undefined>(undefined)
   const onBranchRef = useRef(onBranch)
-  const [selectedActivityId, setSelectedActivityId] = useState<string>()
+  const [selectedTool, setSelectedTool] = useState<{ activityId: string; itemId: string }>()
   const [selectedDetailId, setSelectedDetailId] = useState<string>()
   useEffect(() => { onBranchRef.current = onBranch }, [onBranch])
-  const historyRows = useMemo(() => projectSessionTranscript(events as ToolActivitySessionEvent[], Boolean(liveWorkingLabel)), [events, liveWorkingLabel])
+  const historyRows = useMemo(() => groupTranscriptActivities(projectSessionTranscript(events as ToolActivitySessionEvent[], Boolean(liveWorkingLabel))), [events, liveWorkingLabel])
   const liveRows = useMemo<TranscriptRow[]>(() => {
     const rows: TranscriptRow[] = []
     if (livePrompt && !historyRows.some(row => row.id === livePrompt.id)) rows.push({ kind: 'live-prompt', ...livePrompt })
@@ -85,9 +86,8 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   const visibleHistoryRows = useMemo(() => historyRows.slice(historyWindow.start), [historyRows, historyWindow.start])
   const rows = useMemo(() => [...visibleHistoryRows, ...liveRows].reverse(), [liveRows, visibleHistoryRows])
   hasRows.current = rows.length > 0
-  const selectedActivity = useMemo(() => rows.find((row): row is Extract<TranscriptRow, { kind: 'activity' }> => row.kind === 'activity' && row.activity.id === selectedActivityId)?.activity, [rows, selectedActivityId])
+  const selectedActivity = useMemo(() => historyRows.flatMap(row => row.kind === 'activities' ? row.activities : []).find(activity => activity.id === selectedTool?.activityId), [historyRows, selectedTool?.activityId])
   const selectedDetail = useMemo(() => rows.find(row => (row.kind === 'context' || row.kind === 'notice') && row.id === selectedDetailId), [rows, selectedDetailId])
-  const selectedFailedItemId = selectedActivity?.items.find((item) => item.state === 'failed')?.id
 
   useEffect(() => { historyLoadPending.current = false }, [historyWindow.start])
 
@@ -154,7 +154,7 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
 
   const branchEnabled = Boolean(onBranch)
   const handleBranch = useCallback((sequence?: number) => onBranchRef.current?.(sequence), [])
-  const selectActivity = useCallback((activityId: string) => setSelectedActivityId(activityId), [])
+  const selectActivity = useCallback((activityId: string, itemId: string) => setSelectedTool({ activityId, itemId }), [])
   const selectDetails = useCallback((contextId: string) => setSelectedDetailId(contextId), [])
   const renderRow = useCallback(({ item }: ListRenderItemInfo<TranscriptRow>) => <TranscriptRowView
     row={item}
@@ -230,10 +230,10 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
     keyboardDismissMode={agentKeyboardDismissMode(Platform.OS)}
     keyboardShouldPersistTaps="handled"
   /><ToolActivityDialog
-    open={Boolean(selectedActivityId && selectedActivity)}
-    onOpenChange={(open) => { if (!open) setSelectedActivityId(undefined) }}
+    open={Boolean(selectedTool && selectedActivity)}
+    onOpenChange={(open) => { if (!open) setSelectedTool(undefined) }}
     activity={selectedActivity}
-    initialItemId={selectedFailedItemId}
+    initialItemId={selectedTool?.itemId}
     testID="tool-activity-dialog"
   /><TranscriptTextDetails
     open={Boolean(selectedDetail)}
@@ -249,14 +249,14 @@ const TranscriptRowView = memo(function TranscriptRowView({ row, onBranch, branc
   onBranch?(sequence?: number): void
   branching?: TranscriptBranchInFlight
   branchAvailable: boolean
-  onSelectActivity(activityId: string): void
+  onSelectActivity(activityId: string, itemId: string): void
   onSelectDetails(contextId: string): void
   styles: ReturnType<typeof createStyles>
   workingColor: string
 }) {
   if (row.kind === 'user') { const images = messageImages(row.event.data); return <View style={styles.userBubbleRow}><View style={styles.userBubble}>{images.length > 0 && <MessageImageGallery images={images} />}{Boolean(row.text) && <TranscriptRichText text={row.text} inverted />}</View></View> }
   if (row.kind === 'assistant') return <AssistantMessage status={row.status} event={row.event} blocks={row.blocks} branchSequence={row.branchSequence} onBranch={onBranch} branching={branching} branchAvailable={branchAvailable} />
-  if (row.kind === 'activity') return <ToolActivityCard activity={row.activity} onPress={() => onSelectActivity(row.activity.id)} />
+  if (row.kind === 'activities') return <ToolActivityRow activities={row.activities} onSelectActivity={onSelectActivity} />
   if (row.kind === 'turn') return <TurnFooter event={row.event} />
   if (row.kind === 'notice') return <TranscriptNotice row={row} onPress={() => onSelectDetails(row.id)} />
   if (row.kind === 'context') return <ContextCard context={row.context} onSelectDetails={onSelectDetails} />
@@ -368,27 +368,48 @@ function ReasoningBlock({ text }: { text: string }) {
   </View>
 }
 
-function ToolActivityCard({ activity, onPress }: { activity: ToolActivityGroup; onPress(): void }) {
+function ToolActivityRow({ activities, onSelectActivity }: { activities: ToolActivityGroup[]; onSelectActivity(activityId: string, itemId: string): void }) {
   const { t } = useI18n()
   const colors = useAppColors()
-  const countLabel = t(activity.items.length === 1 ? 'toolActivityCountSingular' : 'toolActivityCount', { count: activity.items.length })
-  const statusLabel = toolActivityStatusLabel(activity.state, t)
-  const failed = activity.items.find((item) => item.state === 'failed')
-  const running = [...activity.items].reverse().find((item) => item.state === 'running')
-  const settledTarget = [...activity.items].reverse().find((item) => item.target)?.target
-  const detail = failed
-    ? conciseToolValue(failed.error ?? failed.output)
-    : running ? [running.name.trim() || t('unknownTool'), running.target].filter(Boolean).join(' · ') : settledTarget
-  const icon = activity.state === 'failed' ? CircleX : activity.state === 'succeeded' ? CircleCheck : Circle
-  return <TranscriptDetailCard
-    label={[t('toolActivity'), countLabel, statusLabel].join(', ')}
-    title={toolNameSummary(activity, t('unknownTool'))}
-    summary={detail}
-    onPress={onPress}
-    failed={activity.state === 'failed'}
-    running={activity.state === 'running'}
-    icon={activity.state === 'running' ? <Spinner color={colors.blue} size="sm" /> : <AppIcon icon={icon} color={activity.state === 'failed' ? colors.danger : colors.accent} size={17} />}
-  />
+  const styles = useTranscriptStyles()
+  const [width, setWidth] = useState(0)
+  const tools = activities.flatMap(activity => activity.items.map(item => ({ activityId: activity.id, item })))
+  const minimumWidth = Math.max(0, (width - TOOL_ROW_GAP * (tools.length - 1)) / Math.max(1, tools.length))
+  return <View style={styles.toolActivityGroup}>
+    <ScrollView
+      horizontal
+      nestedScrollEnabled
+      directionalLockEnabled
+      bounces={false}
+      keyboardShouldPersistTaps="handled"
+      showsHorizontalScrollIndicator={false}
+      onLayout={event => setWidth(event.nativeEvent.layout.width)}
+      style={styles.toolScroll}
+      contentContainerStyle={styles.toolRow}
+      testID="transcript-tool-row"
+    >
+      {tools.map(({ activityId, item }) => {
+        const name = item.name.trim() || t('unknownTool')
+        const statusLabel = toolActivityStatusLabel(item.state, t)
+        const icon = item.state === 'failed' ? CircleX : item.state === 'succeeded' ? CircleCheck : Circle
+        return <Pressable
+          key={item.id}
+          accessibilityRole="button"
+          accessibilityLabel={[name, statusLabel, item.target].filter(Boolean).join(', ')}
+          accessibilityHint={t('details')}
+          onPress={() => onSelectActivity(activityId, item.id)}
+          style={({ pressed }) => [styles.toolChip, { minWidth: minimumWidth }, item.state === 'running' && styles.toolChipRunning, item.state === 'failed' && styles.toolChipFailed, pressed && styles.toolChipPressed]}
+          testID={`transcript-tool-${item.id}`}
+        >
+          <View pointerEvents="none" style={styles.activityIcon}>
+            {item.state === 'running' ? <Spinner color={colors.blue} size="sm" /> : <AppIcon icon={icon} color={item.state === 'failed' ? colors.danger : item.state === 'stopped' ? colors.muted : colors.accent} size={16} />}
+          </View>
+          <Text numberOfLines={1} style={[styles.toolChipName, item.state === 'failed' && styles.danger]}>{name}</Text>
+          <AppIcon icon={ChevronRight} color={colors.muted} size={12} />
+        </Pressable>
+      })}
+    </ScrollView>
+  </View>
 }
 
 function TurnFooter({ event }: { event: ToolActivitySessionEvent }) {
@@ -501,15 +522,6 @@ function toolActivityStatusLabel(state: ToolActivityState, t: ReturnType<typeof 
   return t('stateCompleted')
 }
 
-function toolNameSummary(activity: ToolActivityGroup, unknownTool: string): string {
-  const counts = new Map<string, number>()
-  for (const item of activity.items) {
-    const name = item.name.trim() || unknownTool
-    counts.set(name, (counts.get(name) ?? 0) + 1)
-  }
-  return [...counts].map(([name, count]) => count === 1 ? name : `${name} ×${count}`).join(' · ')
-}
-
 function conciseToolValue(value: unknown): string | undefined {
   const text = firstToolText(value)?.trim().replace(/\s+/g, ' ')
   if (!text) return undefined
@@ -605,6 +617,14 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   reasoningTitle: { color: '#6C5AD9', fontSize: 11, fontWeight: '900' },
   reasoningMeta: { color: colors.muted, fontSize: 10 },
   activity: { width: '100%', minHeight: transcriptInteractionContract.disclosureMinimumHeight, height: 'auto', borderWidth: 1, borderColor: colors.border, borderRadius: 11, backgroundColor: colors.panel, padding: transcriptLayoutContract.toolCardPadding, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  toolActivityGroup: { gap: 6 },
+  toolScroll: { flexGrow: 0 },
+  toolRow: { flexGrow: 1, gap: TOOL_ROW_GAP },
+  toolChip: { flexGrow: 1, flexShrink: 0, minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 7, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.panel },
+  toolChipRunning: { borderColor: colors.blue, backgroundColor: colors.accentDeep },
+  toolChipFailed: { borderColor: colors.danger },
+  toolChipPressed: { opacity: 0.65 },
+  toolChipName: { color: colors.text, fontSize: 11, lineHeight: 17, fontWeight: '700' },
   activityRunning: { borderLeftWidth: 2, borderLeftColor: colors.blue, backgroundColor: colors.accentDeep },
   activityIcon: { width: 20, minHeight: 20, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
   activityCopy: { flex: 1, minWidth: 0, gap: 2 },

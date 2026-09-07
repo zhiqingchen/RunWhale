@@ -14,6 +14,21 @@ export type SessionTranscriptRow =
   | { id: string; kind: 'turn'; event: Event }
   | { id: string; kind: 'notice'; event: Event; label: 'command' | 'compaction' | 'retry' | 'error' | 'max-tokens'; text: string; busy?: boolean; failed?: boolean }
 
+export type GroupedTranscriptRow = Exclude<SessionTranscriptRow, { kind: 'activity' }>
+  | { id: string; kind: 'activities'; activities: ToolActivityGroup[] }
+
+/** Keep adjacent tool steps in one display row without changing their detail records. */
+export function groupTranscriptActivities(rows: readonly SessionTranscriptRow[]): GroupedTranscriptRow[] {
+  const grouped: GroupedTranscriptRow[] = []
+  for (const row of rows) {
+    if (row.kind !== 'activity') { grouped.push(row); continue }
+    const previous = grouped.at(-1)
+    if (previous?.kind === 'activities') previous.activities.push(row.activity)
+    else grouped.push({ id: row.id, kind: 'activities', activities: [row.activity] })
+  }
+  return grouped
+}
+
 /** Request headers are complete snapshots; an omitted prompt clears the previous one. */
 export function latestSessionSystemPrompt(events: readonly Event[]): string | undefined {
   const header = events.findLast(event => event.type === 'request/header')
