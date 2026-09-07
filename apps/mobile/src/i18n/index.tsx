@@ -414,6 +414,7 @@ const english = {
   githubImportSafetyBody: 'A new local project will be created. RunWhale will not overwrite a project, install dependencies, run Agent, or start Preview.',
   githubImportConfirm: 'Import new project',
   githubImporting: 'Importing snapshot…',
+  githubImportWaitingForRuntime: 'Connecting to local runtime…',
   githubImportFailed: 'Import failed',
   openGithub: 'Open GitHub',
   reportOnGithub: 'Report on GitHub',
@@ -444,6 +445,7 @@ const english = {
 type MessageKey = keyof typeof english
 
 const chinese: Record<MessageKey, string> = {
+  githubImportWaitingForRuntime: '正在连接本地运行时…',
   ...shortcutChinese,
   modelWebSearch: '允许联网搜索',
   modelWebSearchHint: '使用此模型搜索，沿用提供方地址和 API 密钥。接口及账号需支持联网搜索，可能产生搜索费用。',

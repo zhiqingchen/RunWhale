@@ -30,11 +30,13 @@ export function GitHubSnapshotImportScreen({ initialReference, initialError }: P
   const [error, setError] = useState(initialError)
   const [importing, setImporting] = useState(false)
   const [progress, setProgress] = useState<ProjectCloneProgress | undefined>()
+  const runtimeReady = Boolean(runtime.info)
 
   const submitImport = async () => {
-    if (!reference || importing || loadStatus !== 'ready') return
+    if (!reference || importing || loadStatus !== 'ready' || !runtimeReady) return
     setImporting(true)
     setError(undefined)
+    setProgress(undefined)
     try {
       const project = await runtime.importGithubSnapshot(reference, setProgress)
       await addProject(project)
@@ -43,6 +45,7 @@ export function GitHubSnapshotImportScreen({ initialReference, initialError }: P
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {
       setImporting(false)
+      setProgress(undefined)
     }
   }
 
@@ -85,8 +88,8 @@ export function GitHubSnapshotImportScreen({ initialReference, initialError }: P
           <View style={styles.noticeCopy}><Text style={styles.noticeTitle}>{t('githubImportFailed')}</Text><Text style={[styles.noticeBody, styles.errorText]}>{error}</Text></View>
         </View> : null}
         <View style={styles.actionsCard}>
-          <PendingButton variant="primary" isPending={importing} isDisabled={loadStatus !== 'ready'} onPress={() => { void submitImport() }} style={styles.primaryButton}>
-            {({ isPending }) => <View style={styles.buttonContent}>{isPending ? <Spinner color="#FFFFFF" size="sm" /> : null}<Button.Label style={styles.primaryLabel}>{isPending ? t('githubImporting') : t('githubImportConfirm')}</Button.Label></View>}
+          <PendingButton variant="primary" isPending={importing} isDisabled={loadStatus !== 'ready' || !runtimeReady} onPress={() => { void submitImport() }} style={styles.primaryButton}>
+            {({ isPending }) => <View style={styles.buttonContent}>{isPending || !runtimeReady ? <Spinner color="#FFFFFF" size="sm" /> : null}<Button.Label style={styles.primaryLabel}>{isPending ? t('githubImporting') : !runtimeReady ? t('githubImportWaitingForRuntime') : t('githubImportConfirm')}</Button.Label></View>}
           </PendingButton>
           <Button variant="secondary" isDisabled={importing} onPress={() => { void Linking.openURL(githubCommitUrl(reference)) }} style={styles.secondaryButton}>
             <AppIcon icon={ExternalLink} color={colors.accent} size={16} /><Button.Label style={styles.secondaryLabel}>{t('openGithub')}</Button.Label>

@@ -198,9 +198,13 @@ export class MobileGitRepository {
         http: boundedHttp(transport.http, options.signal, MAX_SNAPSHOT_DOWNLOAD_BYTES, '25 MB', downloadBudget),
         url: transport.url,
         protocolVersion: 1,
-        ...(transport.onAuth ? { onAuth: transport.onAuth } : {}),
+        ...(options.credential && transport.onAuth ? { onAuth: transport.onAuth } : {}),
       })
     } catch (publicError) {
+      if (options.signal?.aborted) throw publicError
+      if (!(publicError instanceof git.Errors.HttpError) || ![401, 403, 404].includes(publicError.data.statusCode)) {
+        throw new Error(`GitHub HTTPS access failed: ${safeGitError(publicError)}`)
+      }
       if (!options.sshPrivateKey) {
         throw new Error(`GitHub repository is private or unavailable, and this device has no GitHub SSH key: ${safeGitError(publicError)}`)
       }
@@ -215,49 +219,58 @@ export class MobileGitRepository {
           ...(transport.onAuth ? { onAuth: transport.onAuth } : {}),
         })
       } catch (sshError) {
-        throw new Error(`GitHub SSH access was denied or the repository no longer exists: ${safeGitError(sshError)}`)
+        transport.dispose?.()
+        if (options.signal?.aborted) throw sshError
+        if (sshError instanceof Error && /All configured authentication methods failed/.test(sshError.message)) {
+          throw new Error('GitHub rejected this device’s SSH key. Add the public key from Settings > Git SSH to a GitHub account with access to this repository, then retry.')
+        }
+        throw new Error(`GitHub SSH access failed: ${safeGitError(sshError)}`)
       }
     }
 
-    options.onProgress?.({ phase: 'preparing', loaded: 0 })
-    await git.init({ fs, dir, defaultBranch: 'runwhale-import' })
-    await git.addRemote({ fs, dir, remote: 'origin', url: remoteUrl })
-    let fetched: FetchResult
     try {
-      fetched = await git.fetch({
-        fs,
-        http: boundedHttp(transport.http, options.signal, MAX_SNAPSHOT_DOWNLOAD_BYTES, '25 MB', downloadBudget),
-        dir,
-        remote: 'origin',
-        url: transport.url,
-        ref: 'runwhale-import',
-        remoteRef: selected.commit,
-        depth: 1,
-        singleBranch: true,
-        tags: false,
-        ...(transport.onAuth ? { onAuth: transport.onAuth } : {}),
-        onProgress({ phase, loaded, total }) {
-          if (loaded > MAX_GIT_ENTRIES || total > MAX_GIT_ENTRIES) throw new Error(`Git repository exceeds the ${MAX_GIT_ENTRIES.toLocaleString('en-US')} object import limit`)
-          options.onProgress?.({ phase: cloneProgressPhase(phase), loaded, ...(total === undefined ? {} : { total }) })
-        },
-      })
-    } catch (error) {
-      throw new Error(`GitHub commit does not exist or could not be fetched: ${safeGitError(error)}`)
+      options.onProgress?.({ phase: 'preparing', loaded: 0 })
+      await git.init({ fs, dir, defaultBranch: 'runwhale-import' })
+      await git.addRemote({ fs, dir, remote: 'origin', url: remoteUrl })
+      let fetched: FetchResult
+      try {
+        fetched = await git.fetch({
+          fs,
+          http: boundedHttp(transport.http, options.signal, MAX_SNAPSHOT_DOWNLOAD_BYTES, '25 MB', downloadBudget),
+          dir,
+          remote: 'origin',
+          url: transport.url,
+          ref: 'runwhale-import',
+          remoteRef: selected.commit,
+          depth: 1,
+          singleBranch: true,
+          tags: false,
+          ...(transport.onAuth ? { onAuth: transport.onAuth } : {}),
+          onProgress({ phase, loaded, total }) {
+            if (loaded > MAX_GIT_ENTRIES || total > MAX_GIT_ENTRIES) throw new Error(`Git repository exceeds the ${MAX_GIT_ENTRIES.toLocaleString('en-US')} object import limit`)
+            options.onProgress?.({ phase: cloneProgressPhase(phase), loaded, ...(total === undefined ? {} : { total }) })
+          },
+        })
+      } catch (error) {
+        throw new Error(`GitHub commit does not exist or could not be fetched: ${safeGitError(error)}`)
+      }
+      if (fetched.fetchHead?.toLowerCase() !== selected.commit) throw new Error('GitHub returned a different commit than requested')
+      await git.readCommit({ fs, dir, oid: selected.commit }).catch(() => { throw new Error('GitHub commit does not exist in the fetched snapshot') })
+      await git.writeRef({ fs, dir, ref: 'refs/heads/runwhale-import', value: selected.commit, force: true })
+      const repository = new MobileGitRepository(dir, options.http ? { http: options.http } : {})
+      options.onProgress?.({ phase: 'validating', loaded: 0 })
+      await repository.validateRefTree('refs/heads/runwhale-import', SNAPSHOT_TREE_LIMITS)
+      const sensitivePaths = await inspectGitSnapshotSecurity(dir, 'refs/heads/runwhale-import')
+      if (sensitivePaths.length > 0) throw new Error(`GitHub snapshot contains blocked credentials or unsafe files: ${sensitivePaths.join(', ')}`)
+      await git.checkout({ fs, dir, ref: 'runwhale-import', force: false, nonBlocking: true, batchSize: 50 })
+      await validateMaterializedGitRepository(dir, SNAPSHOT_TREE_LIMITS)
+      await repository.sanitizeConfiguration()
+      await repository.audit('snapshot.import', { remote: remoteUrl, commit: selected.commit, access, outcome: 'success' })
+      options.onProgress?.({ phase: 'validating', loaded: 1, total: 1 })
+      return { access, remoteUrl }
+    } finally {
+      transport.dispose?.()
     }
-    if (fetched.fetchHead?.toLowerCase() !== selected.commit) throw new Error('GitHub returned a different commit than requested')
-    await git.readCommit({ fs, dir, oid: selected.commit }).catch(() => { throw new Error('GitHub commit does not exist in the fetched snapshot') })
-    await git.writeRef({ fs, dir, ref: 'refs/heads/runwhale-import', value: selected.commit, force: true })
-    const repository = new MobileGitRepository(dir, options.http ? { http: options.http } : {})
-    options.onProgress?.({ phase: 'validating', loaded: 0 })
-    await repository.validateRefTree('refs/heads/runwhale-import', SNAPSHOT_TREE_LIMITS)
-    const sensitivePaths = await inspectGitSnapshotSecurity(dir, 'refs/heads/runwhale-import')
-    if (sensitivePaths.length > 0) throw new Error(`GitHub snapshot contains blocked credentials or unsafe files: ${sensitivePaths.join(', ')}`)
-    await git.checkout({ fs, dir, ref: 'runwhale-import', force: false, nonBlocking: true, batchSize: 50 })
-    await validateMaterializedGitRepository(dir, SNAPSHOT_TREE_LIMITS)
-    await repository.sanitizeConfiguration()
-    await repository.audit('snapshot.import', { remote: remoteUrl, commit: selected.commit, access, outcome: 'success' })
-    options.onProgress?.({ phase: 'validating', loaded: 1, total: 1 })
-    return { access, remoteUrl }
   }
 
   async ensureInitialized(message = 'Initialize RunWhale project'): Promise<boolean> {

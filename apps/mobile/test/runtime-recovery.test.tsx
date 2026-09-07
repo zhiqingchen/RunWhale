@@ -121,6 +121,27 @@ async function loseConnection() {
 }
 
 describe('iOS runtime connection recovery', () => {
+  it('recovers an interrupted import without replaying the project creation', async () => {
+    const originalFetch = vi.mocked(fetch).getMockImplementation()!
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const { method } = JSON.parse(init!.body as string)
+      if (method === 'project.import.githubSnapshot') {
+        reachable = false
+        throw new Error('The network connection was lost')
+      }
+      return originalFetch(input, init)
+    })
+    await act(async () => {
+      await expect(runtime.importGithubSnapshot({ owner: 'runwhale', repo: 'demo', commit: 'a'.repeat(40) })).rejects.toBeInstanceOf(RuntimeTransportError)
+    })
+    expect(runtime.info).toBeUndefined()
+    reachable = true
+    await advance(3_000)
+    expect(runtime.info).toBeDefined()
+    const imports = vi.mocked(fetch).mock.calls.filter(([, init]) => JSON.parse(init!.body as string).method === 'project.import.githubSnapshot')
+    expect(imports).toHaveLength(1)
+  })
+
   it('binds a user submission to its native continued task', async () => {
     runtime.registerFileFlush(async () => undefined)
     const id = 'app.runwhale.mobile.agent.ui-test'
@@ -208,10 +229,12 @@ describe('iOS runtime connection recovery', () => {
     expect(suspendedSignals).toHaveLength(1)
     await changeAppState('inactive')
     expect(suspendedSignals[0]?.aborted).toBe(true)
+    expect(runtime.info).toBeUndefined()
 
-    hang = false
     await changeAppState('background')
     await changeAppState('active')
+    expect(runtime.info).toBeUndefined()
+    hang = false
     await advance(3_000)
     expect(runtime.info).toBeDefined()
     expect(runtime.lastError).toBeUndefined()

@@ -3,7 +3,7 @@ import { mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import * as git from 'isomorphic-git'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MobileGitRepository, inspectGitSnapshotSecurity, normalizeGitHubRepositoryUrl, normalizeGitRepositoryUrl, validateMaterializedGitRepository } from '../src/git.js'
 
 const sshTransportMocks = vi.hoisted(() => ({ dispose: vi.fn() }))
@@ -17,6 +17,7 @@ vi.mock('../src/github-ssh.js', () => ({
 }))
 
 describe('mobile project Git', () => {
+  afterEach(() => vi.restoreAllMocks())
   it('initializes, reviews, stages, commits, logs, and audits without a subprocess', async () => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-git-'))
     await writeFile(join(root, '.gitignore'), '.runwhale/\nnode_modules/\n')
@@ -124,9 +125,10 @@ describe('mobile project Git', () => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-git-private-fetch-'))
     const commit = 'a'.repeat(40)
     const refs = vi.spyOn(git, 'listServerRefs')
-      .mockRejectedValueOnce(new Error('HTTP 404'))
+      .mockRejectedValueOnce(new git.Errors.HttpError(404, 'Not Found', ''))
       .mockResolvedValueOnce([])
     const fetch = vi.spyOn(git, 'fetch').mockRejectedValueOnce(new Error('stop after transport selection'))
+    sshTransportMocks.dispose.mockClear()
 
     await expect(MobileGitRepository.importGitHubSnapshot(root, {
       owner: 'runwhale',
@@ -135,12 +137,41 @@ describe('mobile project Git', () => {
     }, { sshPrivateKey: 'test-device-key' })).rejects.toThrow(/could not be fetched/)
 
     expect(refs).toHaveBeenCalledTimes(2)
+    expect(sshTransportMocks.dispose).toHaveBeenCalledOnce()
     expect(fetch).toHaveBeenCalledWith(expect.objectContaining({
       url: 'https://github.com/runwhale/private-demo.git',
       remoteRef: commit,
       depth: 1,
     }))
-    vi.restoreAllMocks()
+  })
+
+  it.each([
+    new Error('getaddrinfo ENOTFOUND github.com'),
+    new git.Errors.HttpError(503, 'Service Unavailable', ''),
+  ])('preserves HTTPS failures without attempting SSH: %s', async (failure) => {
+    const refs = vi.spyOn(git, 'listServerRefs').mockRejectedValueOnce(failure)
+    await expect(MobileGitRepository.importGitHubSnapshot('unused', {
+      owner: 'runwhale', repo: 'demo', commit: 'a'.repeat(40),
+    }, { sshPrivateKey: 'test-device-key' })).rejects.toThrow(`GitHub HTTPS access failed: ${failure.message}`)
+    expect(refs).toHaveBeenCalledOnce()
+  })
+
+  it('uses the actual anonymous HTTP status to select SSH and explains a rejected device key', async () => {
+    const http = { request: vi.fn(async () => ({
+      url: 'https://github.com/runwhale/private-demo.git/info/refs?service=git-upload-pack',
+      method: 'GET', statusCode: 401, statusMessage: 'Unauthorized', headers: {},
+      body: (async function* () { yield new Uint8Array() })(),
+    })) }
+    const listServerRefs = git.listServerRefs
+    vi.spyOn(git, 'listServerRefs')
+      .mockImplementationOnce(listServerRefs)
+      .mockRejectedValueOnce(new Error('All configured authentication methods failed'))
+    sshTransportMocks.dispose.mockClear()
+    await expect(MobileGitRepository.importGitHubSnapshot('unused', {
+      owner: 'runwhale', repo: 'private-demo', commit: 'a'.repeat(40),
+    }, { http, sshPrivateKey: 'test-device-key' })).rejects.toThrow('Add the public key from Settings > Git SSH')
+    expect(http.request).toHaveBeenCalledOnce()
+    expect(sshTransportMocks.dispose).toHaveBeenCalledOnce()
   })
 
   it('disposes a GitHub SSH inspection transport on success and failure', async () => {

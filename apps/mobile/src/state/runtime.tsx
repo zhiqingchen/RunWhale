@@ -9,7 +9,7 @@ import { projectCloneProgressFromEvent } from '@/utils/clone-progress'
 import { synchronizeRuntimeCredentials } from '@/utils/runtime-credential-sync'
 import { parseRuntimeHostInfo, type RuntimeHostInfo } from '@/utils/runtime-host-info'
 import { nativeRuntimeRecoveryAction, publishRuntimeHost, runtimeBootPollingAction, runtimeConnectionRecoveryAllowed, runtimeHostPublicationReady, runtimeLifecycleAttemptActive } from '@/utils/runtime-startup'
-import { RUNTIME_BOOT_PROBE_TIMEOUT_MS, RUNTIME_BOOT_TIMEOUT_MS, RUNTIME_RECONNECT_TIMEOUT_MS, RUNTIME_CREDENTIAL_READ_TIMEOUT_MS, RUNTIME_REQUEST_TIMEOUT_GRACE_MS, RuntimeTransportError, runtimeBootStepTimeoutMs, runtimeRequestTimeoutMs, withClientDeadline } from '@/utils/runtime-request'
+import { RUNTIME_BOOT_PROBE_TIMEOUT_MS, RUNTIME_BOOT_TIMEOUT_MS, RUNTIME_RECONNECT_TIMEOUT_MS, RUNTIME_CREDENTIAL_READ_TIMEOUT_MS, RUNTIME_REQUEST_TIMEOUT_GRACE_MS, RuntimeTransportError, isRuntimeTransportError, runtimeBootStepTimeoutMs, runtimeRequestTimeoutMs, withClientDeadline } from '@/utils/runtime-request'
 import { appendLiveTranscriptEvent, compactLiveTranscriptEvents } from '@/utils/live-transcript-events'
 import { NativePreviewLauncher, NativePreviewLaunchCancelled } from '@/utils/native-preview-launch'
 import { runtimeProjectFileContent, type StudioProject } from './project-data'
@@ -62,6 +62,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   const activeProjectId = useRef<string | undefined>(undefined)
   const infoRef = useRef<HostInfo | undefined>(undefined)
   const retryBootRef = useRef<() => Promise<void>>(async () => undefined)
+  const recoverImportTransportRef = useRef<(host: HostInfo) => void>(() => undefined)
   const publishHost = useCallback((hostInfo: HostInfo | undefined) => {
     publishRuntimeHost(infoRef, setInfo, hostInfo)
   }, [])
@@ -334,6 +335,11 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
       recoveryPromise = handled
       return handled
     }
+    recoverImportTransportRef.current = (host) => {
+      if (!isLifecycleActive() || (infoRef.current && !sameHost(infoRef.current, host))) return
+      publishHost(undefined)
+      void recoverHost(host)
+    }
     retryBootRef.current = () => {
       if (bootPromise) return bootPromise
       // Retire the previous recovery before its delayed responses can publish.
@@ -391,11 +397,15 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
       recoveryPromise = undefined
       connectionController.abort()
       closeEventSocket()
+      // A foreground activation must verify the endpoint before imports can
+      // use it again; native iOS recovery may replace the localhost listener.
+      publishHost(undefined)
     })
     return () => {
       cancelled = true
       connectionController.abort()
       retryBootRef.current = async () => undefined
+      recoverImportTransportRef.current = () => undefined
       closeEventSocket()
       subscription.remove()
       appState.remove()
@@ -478,6 +488,11 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
         files: [],
         filePaths: listed.paths,
       }
+    } catch (error) {
+      // The host may have completed the import before its response was lost.
+      // Recover connectivity, but never replay this project-creating request.
+      if (isRuntimeTransportError(error)) recoverImportTransportRef.current(hostInfo)
+      throw error
     } finally {
       cloneProgressListeners.current.delete(requestId)
     }
