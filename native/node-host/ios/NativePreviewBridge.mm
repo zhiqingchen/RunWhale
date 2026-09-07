@@ -1,4 +1,5 @@
 #import "NativePreviewBridge.h"
+#import "NativePreviewSurface.h"
 
 #import "RCTDefaultReactNativeFactoryDelegate.h"
 #import "RCTDependencyProvider.h"
@@ -424,6 +425,11 @@ static void RunWhaleInstallNativePreviewFatalReporter(
   errorUtils.setProperty(runtime, "reportFatalError", std::move(fatalReporter));
 }
 
+// React Native implements this callback in the factory's private host delegate.
+@interface RCTReactNativeFactory (RunWhaleHostLifecycle)
+- (void)hostDidStart:(RCTHost *)host;
+@end
+
 @interface RunWhaleNativePreviewFactory : RCTReactNativeFactory <RCTComponentViewFactoryComponentProvider>
 @property(nonatomic, copy) RunWhaleNativePreviewRuntimeFailureHandler runtimeFailureHandler;
 @property(nonatomic, copy) NSString *projectIdentifier;
@@ -432,6 +438,11 @@ static void RunWhaleInstallNativePreviewFatalReporter(
 
 @implementation RunWhaleNativePreviewFactory {
   EXAppContext *_previewAppContext;
+}
+
+- (void)hostDidStart:(RCTHost *)host {
+  RunWhaleConfigureNativePreviewSurfaces(host.surfacePresenter);
+  [super hostDidStart:host];
 }
 
 - (NSDictionary<NSString *, Class<RCTComponentViewProtocol>> *)thirdPartyFabricComponents {
