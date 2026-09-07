@@ -1,4 +1,5 @@
 import fetch, { Blob, File, FormData, Headers, Request, Response } from 'node-fetch'
+import { Readable } from 'node:stream'
 
 /**
  * Node's bundled fetch currently initializes a WebAssembly HTTP parser. V8
@@ -14,7 +15,17 @@ export function installJitlessFetch(force = false): boolean {
   // objects. Its pako fallback is pure JavaScript and works in jitless Node.
   globals.CompressionStream = undefined
   globals.DecompressionStream = undefined
-  globals.fetch = fetch
+  globals.fetch = async (...args: Parameters<typeof fetch>) => {
+    const response = await fetch(...args)
+    const body = response.body
+    if (body instanceof Readable) {
+      // Anthropic and Google SDKs read SSE with the Web Streams API. Adapt lazily:
+      // creating the bridge eagerly would consume JSON, image and Git response bodies.
+      let webBody: ReturnType<typeof Readable.toWeb> | undefined
+      Object.defineProperty(body, 'getReader', { value: () => (webBody ??= Readable.toWeb(body)).getReader() })
+    }
+    return response
+  }
   globals.Headers = Headers
   globals.Request = Request
   globals.Response = Response

@@ -13,6 +13,7 @@ vi.mock('react-native', () => ({
   Platform: { OS: 'ios' }, StyleSheet: { create: (value: unknown) => value },
   useWindowDimensions: () => ({ width: 390 }), useColorScheme: () => 'light',
 }))
+vi.mock('expo-image', () => ({ Image: 'Image' }))
 vi.mock('expo-router', async () => {
   const { useEffect } = await import('react')
   return { router: { push: vi.fn() }, useFocusEffect: (callback: () => () => void) => useEffect(callback, [callback]) }

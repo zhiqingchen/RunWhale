@@ -1,6 +1,8 @@
+import { WebSearchSources } from '@/components/WebSearchSources'
+import { webSourceUrl } from '@/utils/web-search'
 import { memo, type ReactNode, type Ref, type RefObject, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { Bot, Check, ChevronDown, ChevronRight, Circle, CircleCheck, CircleX, Code2, Copy, Database, GitBranch, History, Image as ImageIcon, Maximize2, RefreshCw } from '@/components/icons'
-import { FlatList, Image, type LayoutChangeEvent, type ListRenderItemInfo, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { FlatList, Image, Linking, type LayoutChangeEvent, type ListRenderItemInfo, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { NodeHost } from '@runwhale/node-host'
 import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
@@ -375,6 +377,7 @@ function ToolActivityRow({ activities, onSelectActivity }: { activities: ToolAct
   const [width, setWidth] = useState(0)
   const tools = activities.flatMap(activity => activity.items.map(item => ({ activityId: activity.id, item })))
   const minimumWidth = Math.max(0, (width - TOOL_ROW_GAP * (tools.length - 1)) / Math.max(1, tools.length))
+  const images = tools.filter(({ item }) => item.name === 'generate_image' && item.state === 'succeeded').flatMap(({ item }) => messageImages({ content: item.output }))
   return <View style={styles.toolActivityGroup}>
     <ScrollView
       horizontal
@@ -409,6 +412,8 @@ function ToolActivityRow({ activities, onSelectActivity }: { activities: ToolAct
         </Pressable>
       })}
     </ScrollView>
+    {tools.filter(({ item }) => item.name === 'web_search' && item.state === 'succeeded').map(({ item }) => <WebSearchSources key={item.id} meta={item.meta} />)}
+    {images.length > 0 ? <MessageImageGallery images={images} /> : null}
   </View>
 }
 
@@ -456,7 +461,8 @@ function inlineMarkdown(text: string, styles: ReturnType<typeof createStyles>, i
     if (token.startsWith('`') && token.endsWith('`')) return <Text key={index} style={[styles.inlineCode, inverted && styles.inlineCodeInverted]}>{token.slice(1, -1)}</Text>
     if ((token.startsWith('**') && token.endsWith('**')) || (token.startsWith('__') && token.endsWith('__'))) return <Text key={index} style={styles.bold}>{token.slice(2, -2)}</Text>
     const link = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
-    return <Text key={index} style={[link && styles.link, link && inverted && styles.linkInverted]}>{link?.[1] ?? token}</Text>
+    const url = webSourceUrl(link?.[2])
+    return <Text key={index} accessibilityRole={url ? 'link' : undefined} onPress={url ? () => { void Linking.openURL(url) } : undefined} style={[link && styles.link, link && inverted && styles.linkInverted]}>{link?.[1] ?? token}</Text>
   })
 }
 
@@ -484,7 +490,11 @@ function messageImageUri(image: TranscriptImage): string | undefined {
 function messageImages(data: Record<string, unknown> | undefined): TranscriptImage[] {
   const message = asRecord(data?.message) ?? data
   const content = Array.isArray(message?.content) ? message.content : []
-  return content.flatMap((value) => {
+  const imageContent = content.flatMap((value) => {
+    const block = asRecord(value)
+    return block?.type === 'tool-result' && Array.isArray(block.content) ? block.content : [value]
+  })
+  return imageContent.flatMap((value) => {
     const block = asRecord(value)
     const attachment = asRecord(block?.attachment)
     if (block?.type !== 'image' || !attachment) return []
@@ -620,11 +630,11 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   toolActivityGroup: { gap: 6 },
   toolScroll: { flexGrow: 0 },
   toolRow: { flexGrow: 1, gap: TOOL_ROW_GAP },
-  toolChip: { flexGrow: 1, flexShrink: 0, minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 7, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.panel },
+  toolChip: { flexGrow: 1, flexShrink: 0, minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 7, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.panel },
   toolChipRunning: { borderColor: colors.blue, backgroundColor: colors.accentDeep },
   toolChipFailed: { borderColor: colors.danger },
   toolChipPressed: { opacity: 0.65 },
-  toolChipName: { color: colors.text, fontSize: 11, lineHeight: 17, fontWeight: '700' },
+  toolChipName: { flexGrow: 1, color: colors.text, fontSize: 11, lineHeight: 17, fontWeight: '700' },
   activityRunning: { borderLeftWidth: 2, borderLeftColor: colors.blue, backgroundColor: colors.accentDeep },
   activityIcon: { width: 20, minHeight: 20, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
   activityCopy: { flex: 1, minWidth: 0, gap: 2 },

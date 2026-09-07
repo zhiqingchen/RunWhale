@@ -15,6 +15,29 @@ afterEach(async () => {
 })
 
 describe('RunWhaleRuntimeHost', () => {
+  it('resolves versioned workspace icons and falls back for missing or escaping image files', async () => {
+    const cache = join(import.meta.dirname, '../../../.cache')
+    await mkdir(cache, { recursive: true })
+    const root = await mkdtemp(join(cache, 'project-icon-'))
+    const host = new RunWhaleRuntimeHost({ root, moduleStore: join(root, 'modules'), platform: 'ios', agent: { run: async () => ({ text: '' }) } })
+    try {
+      const rpc = createRuntimeRpc(await host.start())
+      await rpc('project.create', { id: 'icon-test', name: 'Ocean' })
+      const projectRoot = join(root, 'projects/icon-test')
+      const fs = new MobileProjectFileSystem([projectRoot])
+      const manifest = JSON.parse((await fs.readText('runwhale.json')).content)
+      const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64')
+      await fs.writeBinary('assets/icon.png', png)
+      await fs.writeText('runwhale.json', JSON.stringify({ ...manifest, icon: 'assets/icon.png' }))
+      expect(await rpc('project.icon', { projectId: 'icon-test' })).toMatchObject({ ok: true, result: { icon: { path: 'assets/icon.png', version: expect.stringMatching(/^[a-f0-9]{64}$/), uri: expect.stringContaining('/assets/icon.png') } } })
+      await rm(join(projectRoot, 'assets/icon.png'))
+      expect(await rpc('project.icon', { projectId: 'icon-test' })).toMatchObject({ ok: true, result: {} })
+      await writeFile(join(root, 'outside.png'), png)
+      await symlink(join(root, 'outside.png'), join(projectRoot, 'assets/icon.png'))
+      expect(await rpc('project.icon', { projectId: 'icon-test' })).toMatchObject({ ok: true, result: {} })
+    } finally { await host.stop(); await rm(root, { recursive: true, force: true }) }
+  })
+
   it('atomically imports a GitHub commit as a new project without starting project work', async () => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-github-import-'))
     const host = new RunWhaleRuntimeHost({ root, moduleStore: join(root, 'modules'), platform: 'ios', agent: { run: async () => ({ text: '' }) } })
@@ -326,12 +349,12 @@ describe('RunWhaleRuntimeHost', () => {
     await rpc('project.create', { id: 'model-profile-project', name: 'Model profile' })
     const modelProfile = {
       baseURL: 'http://127.0.0.1:8000/v1',
-      models: [{ id: ' private-coder ', name: ' Private Coder ', contextWindow: 65_536, maxTokens: 8_192 }],
+      models: [{ id: ' private-coder ', name: ' Private Coder ', webSearch: false, imageGeneration: true, contextWindow: 65_536, maxTokens: 8_192 }],
     }
     expect(await rpc('agent.run', { projectId: 'model-profile-project', prompt: 'Inspect', provider: 'openai', model: 'private-coder', modelProfile })).toMatchObject({ ok: true })
     expect(receivedProfile).toEqual({
       baseURL: modelProfile.baseURL,
-      models: [{ id: 'private-coder', name: 'Private Coder', contextWindow: 65_536, maxTokens: 8_192 }],
+      models: [{ id: 'private-coder', name: 'Private Coder', webSearch: false, imageGeneration: true, contextWindow: 65_536, maxTokens: 8_192 }],
     })
     expect(await rpc('agent.run', {
       projectId: 'model-profile-project',

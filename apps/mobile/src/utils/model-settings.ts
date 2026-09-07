@@ -12,7 +12,7 @@ export function normalizedModelProfile(value: unknown): MobileModelProviderProfi
   const seen = new Set<string>()
   const models = candidate.models.map((entry): MobileModelDefinition => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) throw new Error('Each model must be an object.')
-    const source = entry as { id?: unknown; name?: unknown; contextWindow?: unknown; maxTokens?: unknown }
+    const source = entry as { id?: unknown; name?: unknown; contextWindow?: unknown; maxTokens?: unknown; imageGeneration?: unknown; webSearch?: unknown }
     const id = typeof source.id === 'string' ? source.id.trim() : ''
     if (!id || id.length > 256 || seen.has(id)) throw new Error('Model IDs must be unique and at most 256 characters.')
     seen.add(id)
@@ -20,7 +20,9 @@ export function normalizedModelProfile(value: unknown): MobileModelProviderProfi
     if (name.length > 256) throw new Error('Model names must be at most 256 characters.')
     const contextWindow = optionalPositiveInteger(source.contextWindow, 'Context window')
     const maxTokens = optionalPositiveInteger(source.maxTokens, 'Max output tokens')
-    return { id, ...(name ? { name } : {}), ...(contextWindow ? { contextWindow } : {}), ...(maxTokens ? { maxTokens } : {}) }
+    if (source.imageGeneration !== undefined && typeof source.imageGeneration !== 'boolean') throw new Error('Image generation capability must be a boolean.')
+    if (source.webSearch !== undefined && typeof source.webSearch !== 'boolean') throw new Error('Web search capability must be a boolean.')
+    return { ...(source.webSearch === undefined ? {} : { webSearch: source.webSearch }), ...(source.imageGeneration === undefined ? {} : { imageGeneration: source.imageGeneration }), id, ...(name ? { name } : {}), ...(contextWindow ? { contextWindow } : {}), ...(maxTokens ? { maxTokens } : {}) }
   })
   return { ...(baseURL ? { baseURL } : {}), models }
 }

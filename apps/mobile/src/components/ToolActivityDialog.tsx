@@ -1,3 +1,4 @@
+import { WebSearchSources } from './WebSearchSources'
 import { useEffect, useMemo, useState } from 'react'
 import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Button } from 'heroui-native/button'
@@ -133,6 +134,7 @@ function ToolDetail({ item, noOutputLabel, inputLabel, outputLabel, errorLabel, 
           : item.target ? <Text selectable style={styles.detailTarget}>{item.target}</Text> : null}
       </View>
     </View>
+    {item.name === 'web_search' && item.state === 'succeeded' ? <WebSearchSources meta={item.meta} /> : null}
     {item.input !== undefined ? <DetailSection title={inputLabel} value={item.input} fallback={noOutputLabel} toolName={item.name} copyLabel={copyLabel} copiedLabel={copiedLabel} copyFailedLabel={copyFailedLabel} styles={styles} /> : null}
     <DetailSection title={outputLabel} value={item.output} fallback={noOutputLabel} toolName={item.name} copyLabel={copyLabel} copiedLabel={copiedLabel} copyFailedLabel={copyFailedLabel} styles={styles} />
     {item.error !== undefined ? <DetailSection title={errorLabel} value={item.error} fallback={noOutputLabel} toolName={item.name} copyLabel={copyLabel} copiedLabel={copiedLabel} copyFailedLabel={copyFailedLabel} danger styles={styles} /> : null}

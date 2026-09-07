@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { PreviewPlatform, RuntimePlatform } from '@runwhale/mobile-protocol'
+import { isProjectImagePath, type PreviewPlatform, type RuntimePlatform } from '@runwhale/mobile-protocol'
 
 export const RUNWHALE_SCHEMA_VERSION = 1 as const
 export const RUNTIME_ABI = {
@@ -17,6 +17,7 @@ export const runWhaleManifestSchema = z.object({
   schemaVersion: z.literal(RUNWHALE_SCHEMA_VERSION),
   id: z.string().regex(/^[a-z0-9][a-z0-9-]{1,62}$/),
   name: z.string().min(1).max(80),
+  icon: z.string().refine(isProjectImagePath, 'Icon must reference a workspace PNG, JPEG, or WebP file').optional(),
   runtimeAbi: z.object({
     android: z.literal(RUNTIME_ABI.android).optional(),
     ios: z.literal(RUNTIME_ABI.ios).optional(),

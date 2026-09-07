@@ -1,3 +1,4 @@
+import { ProjectIcon } from '@/components/ProjectIcon'
 import { ProjectLoadFailure } from '@/components/ProjectLoadFailure'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router } from 'expo-router'
@@ -284,6 +285,7 @@ export default function WorkspaceScreen() {
                 onPress={() => openProject(project.id, sessions)}
                 style={styles.projectOpenButton}
               >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><ProjectIcon project={project} />
                 <View style={styles.projectCopy}>
                   <View style={styles.projectTitleRow}>
                     <Text numberOfLines={1} style={styles.projectName}>{project.name}</Text>
@@ -293,6 +295,7 @@ export default function WorkspaceScreen() {
                     {project.template ? <AppIcon icon={project.template === 'web' ? Code2 : Smartphone} color={project.template === 'web' ? colors.blue : colors.accent} size={13} /> : null}
                     <Text numberOfLines={1} style={styles.projectMeta}>{t(projectFilePaths(project).length === 1 ? 'fileCountSingular' : 'fileCount', { count: projectFilePaths(project).length })} · {sessionLoadStatus === 'loaded' ? t(sessions.length === 1 ? 'sessionCountSingular' : 'sessionCount', { count: sessions.length }) : sessionLoadStatus === 'failed' ? t('stateFailed') : t('loadingSessions')}</Text>
                   </View>
+                </View>
                 </View>
               </Button>
               <View style={styles.projectHeaderActions}>

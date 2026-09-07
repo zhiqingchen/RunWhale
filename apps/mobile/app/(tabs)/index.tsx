@@ -1,3 +1,4 @@
+import { ProjectIcon } from '@/components/ProjectIcon'
 import { ProjectLoadFailure } from '@/components/ProjectLoadFailure'
 import { router, useFocusEffect } from 'expo-router'
 import { Button } from 'heroui-native/button'
@@ -153,7 +154,7 @@ export default function HomeScreen() {
               <View style={styles.continueBody}>
                 <View style={styles.projectLine}>
                   <View style={styles.projectIdentity}>
-                    <View style={styles.projectIcon}><AppIcon icon={History} color={colors.accent} size={17} /></View>
+                    <ProjectIcon project={continueModel.project} size={28} />
                     <Text numberOfLines={1} style={styles.projectName}>{continueModel.project.name}</Text>
                   </View>
                   {continueRefreshing ? <Spinner color={colors.accent} size="sm" /> : continueModel.status ? <View style={[

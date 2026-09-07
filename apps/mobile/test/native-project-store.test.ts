@@ -28,6 +28,21 @@ function fixture(initial: Record<string, Record<string, string>> = { 'project-1'
 afterEach(() => vi.useRealTimers())
 
 describe('native project ownership', () => {
+  it('refreshes workspace icon versions without persisting container image URLs', async () => {
+    const f = fixture()
+    const icon = { path: 'assets/icon.png', uri: 'file:///container/assets/icon.png', version: 'first' }
+    f.runtime.readProjectIcon = vi.fn(async () => ({ icon: { ...icon } }))
+    await f.store.load(async () => null)
+    expect(f.store.projects[0]?.icon).toEqual(icon)
+    expect(JSON.stringify(f.saved())).not.toContain('file:///container')
+    icon.version = 'second'
+    await f.store.refresh('project-1', 'assets/icon.png')
+    expect(f.store.projects[0]?.icon?.version).toBe('second')
+    f.runtime.readProjectIcon = async () => ({})
+    await f.store.refresh('project-1')
+    expect(f.store.projects[0]?.icon).toBeUndefined()
+  })
+
   it('drops stale shortcuts after restart and reload while retaining existing metadata and discovering runtime projects', async () => {
     const f = fixture({ 'project-1': { 'index.ts': 'runtime' }, 'removed': {} })
     await f.store.load(async () => null)

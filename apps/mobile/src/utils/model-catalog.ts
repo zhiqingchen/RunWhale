@@ -27,10 +27,12 @@ export function cloneDefaultModelProfiles(): Record<MobileModelProvider, MobileM
 /** Restore explicit custom profiles; omitted providers follow the installed catalog. */
 export function restoreModelProfiles(value: unknown, version: unknown): Record<MobileModelProvider, MobileModelProviderProfile> {
   const profiles = cloneDefaultModelProfiles()
-  if (version !== 2 || !value || typeof value !== 'object' || Array.isArray(value)) return profiles
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return profiles
   for (const provider of providers) {
     const candidate = (value as Record<string, unknown>)[provider]
     if (candidate === undefined) continue
+    // Legacy bundled catalogs may reset, but never discard a user's custom endpoint.
+    if (version !== 2 && (!candidate || typeof candidate !== 'object' || !('baseURL' in candidate) || !candidate.baseURL)) continue
     try {
       profiles[provider] = normalizedModelProfile(candidate)
     } catch { /* Invalid stored profiles fall back to this provider's catalog. */ }

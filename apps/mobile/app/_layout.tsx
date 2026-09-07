@@ -40,6 +40,7 @@ export default function RootLayout() {
 function RuntimeProjectProvider({ children }: PropsWithChildren) {
   const runtime = useRuntime()
   const nativeFiles = useMemo(() => ({
+    readProjectIcon: (projectId: string) => runtime.request('project.icon', { projectId }),
     listProjects: () => runtime.request('project.list', {}),
     createProject: (id: string, name: string) => runtime.request('project.create', { id, name }),
     listFiles: async (projectId: string) => (await runtime.request('project.files', { projectId })).paths,

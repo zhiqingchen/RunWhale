@@ -47,11 +47,14 @@
     "@deepseek-ai/dsh-tool-goal": "0.1.2-rc.1",
     "@deepseek-ai/dsh-tool-skill": "0.1.2-rc.1",
     "@deepseek-ai/dsh-tool-todo": "0.1.2-rc.1",
+    "@deepseek-ai/dsh-tool-web": "0.1.2-rc.1",
     "@deepseek-ai/dsh-tools": "0.1.2-rc.1",
     "@deepseek-ai/dsh-typert-protocol": "0.1.2-rc.1",
     "@deepseek-ai/dsh-user-approval": "0.1.2-rc.1",
     "@deepseek-ai/dsh-user-questions": "0.1.2-rc.1",
     "@deepseek-ai/dsh-util-values": "0.1.2-rc.1",
+    "@deepseek-ai/dsh-web": "0.1.2-rc.1",
+    "@deepseek-ai/dsh-web-search-deepseek": "0.1.2-rc.1",
     "typescript": "6.0.3"
   },
   "devDependencies": {

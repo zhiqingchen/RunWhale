@@ -1,4 +1,4 @@
-import { NATIVE_PREVIEW_TEMPLATE_DEPENDENCIES } from '@runwhale/mobile-protocol'
+import { NATIVE_PREVIEW_TEMPLATE_DEPENDENCIES, type ProjectImage } from '@runwhale/mobile-protocol'
 import { readTextProjectFiles } from '../utils/project-text-files'
 
 export interface ProjectFile {
@@ -10,6 +10,7 @@ export interface StudioProject {
   id: string
   name: string
   description: string
+  icon?: ProjectImage
   updatedAt: number
   template?: ProjectTemplate
   source?: GitHubProjectSource

@@ -38,6 +38,11 @@ describe('harness model catalog preferences', () => {
     expect(modelProfileOverrides(profiles)).toEqual({})
   })
 
+  it('migrates legacy custom endpoints so saved credentials keep their intended provider', () => {
+    const custom = { baseURL: 'https://gateway.example', models: [{ id: 'gpt-5.6-sol' }] }
+    expect(restoreModelProfiles({ openai: custom }, undefined).openai).toEqual(custom)
+  })
+
   it('retains a custom model subset without a custom endpoint', () => {
     const custom = { models: [{ id: 'gpt-5.4-mini' }] }
     expect(restoreModelProfiles({ openai: custom }, 2).openai).toEqual(custom)

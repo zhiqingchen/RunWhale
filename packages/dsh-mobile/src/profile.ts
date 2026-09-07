@@ -30,6 +30,13 @@ import UserQuestionService, {
 import { MobileCredentialProvider, type NativeSecretStore } from './credentials-mobile.js'
 import { MobileImageAttachmentStore } from './image-attachments-mobile.js'
 import { registerMobileWorkspaceTools, type MobileWorkspaceServices } from './tools-mobile.js'
+import { credentialRef } from '@deepseek-ai/dsh-credentials'
+import WebRuntime from '@deepseek-ai/dsh-web'
+import * as ToolWeb from '@deepseek-ai/dsh-tool-web'
+import { registerGoogleSearchTool } from './web-search-google-tool.js'
+import { mobileWebSearchProvider } from './web-search-mobile.js'
+import { supportsModelWebSearch, supportsModelImageGeneration } from '@runwhale/mobile-protocol'
+import { generateModelImage } from './image-generation-mobile.js'
 import { MOBILE_DEFAULT_MODELS, type AgentGoal, type AgentQueuedMessage, type MobileModelProvider, type MobileModelProviderProfile, type MobilePermissionMode } from '@runwhale/mobile-protocol'
 
 export interface MobileHarnessOptions {
@@ -471,6 +478,9 @@ function completedTurnMessageIds(events: readonly SessionEvent[]): string[] {
 export async function createMobileHarness(options: MobileHarnessOptions): Promise<MobileHarness> {
   const ctx = new Context()
   const workspaces = new Map<string, string>()
+  const currentProvider = options.provider ?? 'deepseek'
+  const agentModel = options.model?.trim() || MOBILE_PROVIDER_DEFAULT_MODELS[currentProvider]
+  const imageGeneration = options.mode !== 'deterministic' && supportsModelImageGeneration(currentProvider, agentModel, options.modelProfile)
   if (options.attachmentRoot) await ctx.plugin(MobileImageAttachmentStore, { root: options.attachmentRoot })
   await ctx.plugin(LlmRuntime)
   await ctx.plugin(SessionStore)
@@ -519,8 +529,24 @@ export async function createMobileHarness(options: MobileHarnessOptions): Promis
   })
   registerMobileWorkspaceTools(ctx, (sessionId) => workspaces.get(sessionId), {
     ...options.workspaceServices,
+    ...(imageGeneration ? { generateImage: async (request: import('./image-generation-mobile.js').ModelImageRequest) => {
+      const credential = await ctx.credentials.resolve(credentialRef('OPENAI_API_KEY'))
+      if (!credential) throw new Error('Configure the current OpenAI API key before generating images')
+      return generateModelImage({ baseURL: options.modelProfile?.baseURL, apiKey: credential.value }, request)
+    } } : {}),
     ...(options.requestPackageInstall ? { requestPackageInstall: options.requestPackageInstall } : {}),
   })
+  if (options.mode !== 'deterministic' && supportsModelWebSearch(currentProvider, agentModel, options.modelProfile)) {
+    await ctx.plugin(WebRuntime, { searchProvider: currentProvider })
+    ctx.web.registerSearchProvider(mobileWebSearchProvider({
+      provider: currentProvider, model: agentModel, baseURL: options.modelProfile?.baseURL,
+      resolveApiKey: async () => (await ctx.credentials.resolve(credentialRef(({ openai: 'OPENAI_API_KEY', deepseek: 'DEEPSEEK_API_KEY', anthropic: 'ANTHROPIC_API_KEY', google: 'GOOGLE_API_KEY' } as const)[currentProvider])))?.value,
+    }))
+    if (currentProvider === 'google') registerGoogleSearchTool(ctx)
+    else await ctx.plugin(ToolWeb, { search: true, fetch: false, searchMaxQueries: 2, searchMaxResults: 6, searchTimeoutMs: 180_000 })
+    ctx.systemPrompt.section({ name: 'mobile-web-search', order: 1240, text: 'Web search uses the currently selected provider and model with the existing account. Use it for current facts, research, and documentation; it is available during planning and read-only work. Cite returned source URLs as clickable markdown links. If search fails, disclose the failure and continue only with information you can support; do not retry automatically or claim that unsourced text was verified. Never put credentials in a search query.' })
+  }
+  if (imageGeneration) ctx.systemPrompt.section({ name: 'project-image-generation', order: 1250, text: 'Use generate_image whenever the project needs generated raster assets. It uses gpt-image-2 through your configured provider and API key. You remain the agent model and choose the image prompt from the project context. During the first implementation turn, once the project purpose and visual direction are clear, reuse a suitable existing icon by setting runwhale.json icon, or generate one with projectIcon=true if the manifest has no icon. Use a simple square composition, an opaque background, and generous edge spacing for home-screen cropping. Keep the subject centered; some providers return a different aspect ratio and icon surfaces center-crop it. Do not generate icons in planning/read-only work or unrelated maintenance, replace an existing icon without user intent, or repeatedly retry failed image generation. Continue the main task if image generation is unavailable or fails.' })
   await ctx.plugin(AgentRegistry)
   await ctx.plugin(LlmRetry)
   await ctx.plugin(GoalService, { defaultMaxGoalRounds: 64 })
@@ -563,7 +589,7 @@ export async function createMobileHarness(options: MobileHarnessOptions): Promis
   providers[provider] = {
     ...providers[provider],
     ...(modelProfile?.baseURL ? { baseURL: modelProfile.baseURL } : {}),
-    ...(modelProfile ? { models: modelProfile.models.map((entry) => ({ ...entry })) } : {}),
+    ...(modelProfile ? { models: modelProfile.models.map(({ imageGeneration: _imageGeneration, webSearch: _webSearch, ...entry }) => entry) } : {}),
   }
   await ctx.plugin(LlmPiAi, { providers })
   const model = options.model?.trim() || MOBILE_PROVIDER_DEFAULT_MODELS[provider]

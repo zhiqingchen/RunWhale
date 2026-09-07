@@ -1,6 +1,7 @@
+import type { ProjectImage } from '@runwhale/mobile-protocol'
 import { deserializeProjects, type ProjectFile, type StudioProject } from './project-data'
 
-export type ProjectMetadata = Omit<StudioProject, 'files' | 'filePaths'>
+export type ProjectMetadata = Omit<StudioProject, 'files' | 'filePaths' | 'icon'>
 export interface EditorDraft {
   projectId: string
   path: string
@@ -18,6 +19,7 @@ interface SavedProjects {
   drafts: EditorDraft[]
 }
 export interface NativeProjectFiles {
+  readProjectIcon?(projectId: string): Promise<{ icon?: ProjectImage }>
   listProjects(): Promise<Array<{ id: string; name: string; updatedAt: number }>>
   createProject(id: string, name: string): Promise<unknown>
   listFiles(projectId: string): Promise<readonly string[]>
@@ -30,7 +32,7 @@ interface Storage {
 }
 const keyOf = (projectId: string, path: string) => JSON.stringify([projectId, path])
 const messageOf = (cause: unknown) => cause instanceof Error ? cause.message : String(cause)
-const metadata = ({ files: _files, filePaths: _paths, ...project }: StudioProject): ProjectMetadata => project
+const metadata = ({ files: _files, filePaths: _paths, icon: _icon, ...project }: StudioProject): ProjectMetadata => project
 
 /** Runtime files are authoritative. Only metadata and unresolved edits survive a Studio restart. */
 export class NativeProjectStore {
@@ -204,10 +206,10 @@ export class NativeProjectStore {
     if (!project) return
     for (const file of project.filePaths ?? []) if (!path || path === file) this.contents.delete(keyOf(projectId, file))
     this.publish()
-    const paths = await this.runtime.listFiles(projectId)
+    const [paths, appearance] = await Promise.all([this.runtime.listFiles(projectId), this.runtime.readProjectIcon?.(projectId)])
     if (this.epochs.get(projectId) !== epoch) return
     const pending = this.drafts.filter((draft) => draft.projectId === projectId).map((draft) => draft.path)
-    this.projects = this.projects.map((item) => item.id === projectId ? { ...item, filePaths: [...new Set([...paths, ...pending])].sort() } : item)
+    this.projects = this.projects.map((item) => item.id === projectId ? { ...item, icon: appearance?.icon, filePaths: [...new Set([...paths, ...pending])].sort() } : item)
     this.publish()
   }
 

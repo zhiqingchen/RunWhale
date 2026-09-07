@@ -19,6 +19,8 @@ export interface MobileModelDefinition {
   name?: string
   contextWindow?: number
   maxTokens?: number
+  imageGeneration?: boolean
+  webSearch?: boolean
 }
 export interface MobileModelProviderProfile {
   baseURL?: string
@@ -58,6 +60,12 @@ export interface ProjectSummary {
   id: string
   name: string
   updatedAt: number
+}
+
+export interface ProjectImage {
+  path: string
+  uri: string
+  version: string
 }
 
 export type ProjectClonePhase = 'preparing' | 'receiving' | 'resolving' | 'checkout' | 'validating'
@@ -265,6 +273,7 @@ export interface MobileHostRequestMap {
   'project.attach': { params: { projectId: string; sourcePath: string; name: string; mediaType: MobileImageMediaType }; result: ProjectAttachment }
   'project.files': { params: { projectId: string }; result: { paths: string[] } }
   'project.read': { params: { projectId: string; path: string }; result: { content: string; version: string } }
+  'project.icon': { params: { projectId: string }; result: { icon?: ProjectImage } }
   'project.write': { params: { projectId: string; path: string; content: string; expectedVersion?: string }; result: { version: string } }
   'session.create': { params: { projectId: string; sessionId?: string; title?: string }; result: AgentSessionRecord }
   'session.list': { params: { projectId: string }; result: AgentSessionSummary[] }

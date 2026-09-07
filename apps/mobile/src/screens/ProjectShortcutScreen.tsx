@@ -58,7 +58,7 @@ function ShortcutSetup({ projectId }: { projectId: string }) {
     try {
       const saved = Platform.OS === 'web' ? undefined : await loadProjectShortcut(projectId)
       if (!mounted.current) return
-      setAppearance(saved ?? { name: project.name.slice(0, PROJECT_SHORTCUT_NAME_LIMIT) })
+      setAppearance({ name: saved?.name ?? project.name.slice(0, PROJECT_SHORTCUT_NAME_LIMIT), iconUri: saved?.iconUri ?? project.icon?.uri })
       setLoaded(true)
     } catch (cause) { setError(t('shortcutActionFailed', { message: cause instanceof Error ? cause.message : String(cause) })) }
   }
@@ -171,7 +171,7 @@ function ShortcutSetup({ projectId }: { projectId: string }) {
         <View style={styles.card}>
           <Text style={styles.label}>{t('shortcutName')}</Text>
           <TextInput testID="shortcut-name" accessibilityLabel={t('shortcutName')} style={styles.input} value={appearance.name} placeholder={project.name} placeholderTextColor={colors.muted} maxLength={PROJECT_SHORTCUT_NAME_LIMIT} editable={loaded && !busy && Platform.OS !== 'web'} onChangeText={(name) => { setAppearance((current) => ({ ...current, name })); setNotice(undefined) }} returnKeyType="done" />
-          <View style={styles.iconHeader}><Text style={styles.label}>{t('shortcutIcon')}</Text>{appearance.iconUri ? <Button size="sm" variant="ghost" isDisabled={Boolean(busy)} onPress={() => setAppearance((current) => ({ name: current.name }))}><Button.Label>{t('reset')}</Button.Label></Button> : null}</View>
+          <View style={styles.iconHeader}><Text style={styles.label}>{t('shortcutIcon')}</Text>{appearance.iconUri ? <Button size="sm" variant="ghost" isDisabled={Boolean(busy)} onPress={() => setAppearance((current) => ({ name: current.name, iconUri: project.icon?.uri }))}><Button.Label>{t('reset')}</Button.Label></Button> : null}</View>
           <View style={styles.row}>
             <PendingButton variant="secondary" style={[styles.secondaryButton, styles.flexButton]} isPending={busy === 'photos'} isDisabled={!loaded || Boolean(busy) || Platform.OS === 'web'} onPress={() => { void chooseIcon('photos') }}>{busy === 'photos' ? <Spinner color={colors.accent} size="sm" /> : <AppIcon icon={ImageIcon} color={colors.accent} size={17} />}<Button.Label style={styles.secondaryLabel}>{t('photos')}</Button.Label></PendingButton>
             <PendingButton variant="secondary" style={[styles.secondaryButton, styles.flexButton]} isPending={busy === 'file'} isDisabled={!loaded || Boolean(busy) || Platform.OS === 'web'} onPress={() => { void chooseIcon('file') }}>{busy === 'file' ? <Spinner color={colors.accent} size="sm" /> : <AppIcon icon={File} color={colors.accent} size={17} />}<Button.Label style={styles.secondaryLabel}>{t('file')}</Button.Label></PendingButton>

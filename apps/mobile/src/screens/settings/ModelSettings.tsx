@@ -16,20 +16,21 @@ import { settingsAccessibilityContract, settingsChoiceAccessibility, settingsRad
 import { credentialDraftPersistenceReducer, credentialEditPresentation, credentialLookupPresentation, credentialProviderChangeRequiresDraftDiscard, credentialSaveAnnouncementPending, loadCredentialPresence, type CredentialLookupState } from '@/utils/settings-credential'
 import { settingsDestructiveActionContract } from '@/utils/settings-feedback'
 import { settingsProviderColumnCount } from '@/utils/settings-layout'
+import { supportsModelWebSearch, supportsModelImageGeneration } from '@runwhale/mobile-protocol'
 import type { MobileModelDefinition, MobileModelProvider, MobileModelProviderProfile } from '@runwhale/mobile-protocol'
 import * as SecureStore from 'expo-secure-store'
 import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
 import { Spinner } from 'heroui-native/spinner'
 import { useEffect, useReducer, useRef, useState } from 'react'
-import { AccessibilityInfo, Keyboard, Platform, Text, TextInput, View, useWindowDimensions } from 'react-native'
+import { AccessibilityInfo, Keyboard, Platform, Text, TextInput, View, Switch, useWindowDimensions } from 'react-native'
 import { useSettingsStyles } from './settings-styles'
 
 type CredentialAction = 'saving' | 'removing'
 
 type CredentialError = 'credentialSaveFailed' | 'credentialActivationFailed' | 'credentialRemoveFailed' | 'credentialDeactivationFailed'
 
-type ModelDraft = { id: string; name: string; contextWindow: string; maxTokens: string }
+type ModelDraft = { id: string; name: string; contextWindow: string; maxTokens: string; imageGeneration?: boolean; webSearch?: boolean }
 
 export function ModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: TextInput | null): void; onInputFocus(input: TextInput | null): void }) {
   const [key, setKey] = useState('')
@@ -403,6 +404,20 @@ export function ModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input
             placeholderTextColor={controlColors.choiceForeground}
             style={styles.textInput}
           />
+          <View>
+            <View style={styles.modelCapacityRow}>
+              <Text style={styles.fieldLabel}>{t('modelWebSearch')}</Text>
+              <Switch accessibilityLabel={`${t('modelWebSearch')} · ${entry.id}`} value={entry.webSearch ?? supportsModelWebSearch(modelProvider, entry.id)} onValueChange={(value) => updateModelDraft(index, { webSearch: value })} />
+            </View>
+            <Text style={styles.fieldLabel}>{t('modelWebSearchHint')}</Text>
+          </View>
+          {modelProvider === 'openai' ? <View>
+            <View style={styles.modelCapacityRow}>
+              <Text style={styles.fieldLabel}>{t('modelImageGeneration')}</Text>
+              <Switch accessibilityLabel={`${t('modelImageGeneration')} · ${entry.id}`} value={entry.imageGeneration ?? supportsModelImageGeneration(modelProvider, entry.id)} onValueChange={(value) => updateModelDraft(index, { imageGeneration: value })} />
+            </View>
+            <Text style={styles.fieldLabel}>{t('modelImageGenerationHint')}</Text>
+          </View> : null}
           <View style={styles.modelCapacityRow}>
             <TextInput
               accessibilityLabel={t('contextWindowOptional')}
@@ -526,6 +541,8 @@ function providerName(provider: MobileModelProvider): string {
 function modelDraft(model: MobileModelDefinition): ModelDraft {
   return {
     id: model.id,
+    ...(model.webSearch === undefined ? {} : { webSearch: model.webSearch }),
+    ...(model.imageGeneration === undefined ? {} : { imageGeneration: model.imageGeneration }),
     name: model.name ?? '',
     contextWindow: model.contextWindow === undefined ? '' : String(model.contextWindow),
     maxTokens: model.maxTokens === undefined ? '' : String(model.maxTokens),

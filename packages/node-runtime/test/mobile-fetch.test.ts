@@ -53,4 +53,25 @@ describe('jitless fetch fallback', () => {
     const bytes = await readFile(join(root, '.git', 'objects', firstDirectory!, firstObject!))
     expect(bytes.toString('utf8')).not.toBe('[object ReadableStream]')
   })
+
+  it('streams SDK responses through getReader and propagates cancellation', async () => {
+    installJitlessFetch(true)
+    const server = createServer((_request, response) => {
+      response.writeHead(200, { 'Content-Type': 'text/event-stream' })
+      response.write('data: {"text":"新闻"}\n\n')
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    try {
+      const address = server.address()
+      if (!address || typeof address === 'string') throw new Error('Server did not bind')
+      const response = await fetch(`http://127.0.0.1:${address.port}`)
+      const reader = response.body!.getReader()
+      expect(new TextDecoder().decode((await reader.read()).value)).toContain('新闻')
+      await reader.cancel()
+      expect((await reader.read()).done).toBe(true)
+    } finally {
+      server.closeAllConnections()
+      await new Promise<void>((resolve) => server.close(() => resolve()))
+    }
+  })
 })

@@ -56,9 +56,32 @@ export class MobileProjectFileSystem {
   }
 
   async writeText(path: string, content: string, expectedVersion?: string): Promise<{ version: string }> {
-    const bytes = Buffer.from(content, 'utf8')
+    return this.writeBinary(path, Buffer.from(content, 'utf8'), { expectedVersion })
+  }
+
+  async readBinary(path: string, maxBytes: number): Promise<{ content: Buffer; version: string; path: string }> {
+    const target = await this.resolveExisting(path)
+    const info = await stat(target)
+    if (!info.isFile() || info.size < 1 || info.size > maxBytes) throw new Error('Image file is empty or exceeds the size limit')
+    const content = await readFile(target)
+    if (content.length > maxBytes) throw new Error('Image file exceeds the size limit')
+    return { content, version: versionOf(content), path: target }
+  }
+
+  async assertNewFile(path: string): Promise<void> {
+    const target = await this.resolveForWrite(path)
+    try { await lstat(target) } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return
+      throw error
+    }
+    throw new SandboxViolation('Image already exists; choose a new path', 'CONFLICT')
+  }
+
+  async writeBinary(path: string, bytes: Uint8Array, options: { expectedVersion?: string | undefined; createOnly?: boolean; signal?: AbortSignal } = {}): Promise<{ version: string }> {
+    const { expectedVersion, signal } = options
     let target = await this.resolveForWrite(path)
     return withFileWrite(target, async () => {
+      signal?.throwIfAborted()
       let current: Buffer | undefined
       try {
         const info = await lstat(target)
@@ -71,6 +94,7 @@ export class MobileProjectFileSystem {
       if (expectedVersion !== undefined && (current === undefined || versionOf(current) !== expectedVersion)) {
         throw new SandboxViolation('file changed since it was read', 'CONFLICT')
       }
+      if (options.createOnly && current !== undefined) throw new SandboxViolation('Image already exists; choose a new path', 'CONFLICT')
       await mkdir(dirname(target), { recursive: true })
       const canonicalParent = await realpath(dirname(target))
       await this.assertWithinRoot(canonicalParent)
@@ -84,6 +108,7 @@ export class MobileProjectFileSystem {
         await handle.close()
       }
       try {
+        signal?.throwIfAborted()
         await rename(temporary, target)
       } catch (error) {
         await unlink(temporary).catch(() => undefined)

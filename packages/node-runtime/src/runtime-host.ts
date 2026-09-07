@@ -7,9 +7,10 @@ import { randomUUID } from 'node:crypto'
 import type { Stats } from 'node:fs'
 import { lstat, mkdir, readdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import {
   githubCommitUrl,
+  isProjectImagePath,
   isMobilePermissionMode,
   previewRepairMessage,
   MOBILE_HOST_PROTOCOL_VERSION,
@@ -58,7 +59,7 @@ import { MobileMetroRuntime } from './metro-runtime.js'
 import { readPreviewArtifact, writePreviewArtifact } from './preview-artifact.js'
 import { emptyProjectFiles, emptyProjectManifest } from './project-manifest.js'
 
-const WORKSPACE_MUTATION_TOOLS = new Set(['write_file', 'write_files', 'node_task', 'typescript_program'])
+const WORKSPACE_MUTATION_TOOLS = new Set(['write_file', 'write_files', 'node_task', 'typescript_program', 'generate_image'])
 
 export interface RuntimeHostOptions {
   root: string
@@ -199,6 +200,7 @@ export class RunWhaleRuntimeHost {
         return this.withProjectWork(selectedProjectId, () => this.attachProjectImage(selectedProjectId, String(sourcePath), String(name), imageMediaType(mediaType)))
       },
       'project.files': async ({ projectId }) => ({ paths: await this.listProjectFiles(String(projectId)) }),
+      'project.icon': async ({ projectId }) => this.projectIcon(String(projectId)),
       'project.read': async ({ projectId, path }) => this.projectFs(String(projectId)).readText(String(path)),
       'project.write': async ({ projectId, path, content, expectedVersion }) => {
         const selectedProjectId = String(projectId)
@@ -772,6 +774,17 @@ export class RunWhaleRuntimeHost {
     this.previewReport = { endpoint, status, notified }
     if (notified) await execution?.persist()
     return { recorded: true, notified }
+  }
+
+  private async projectIcon(projectId: string): Promise<MobileHostRequestMap['project.icon']['result']> {
+    const fs = this.projectFs(projectId)
+    try {
+      const manifest = JSON.parse((await fs.readText('runwhale.json')).content) as { icon?: unknown }
+      if (!isProjectImagePath(manifest.icon)) return {}
+      const image = await fs.readBinary(manifest.icon, 5 * 1024 * 1024)
+      if (!detectImageMediaType(image.content)) return {}
+      return { icon: { path: manifest.icon, uri: pathToFileURL(image.path).href, version: image.version } }
+    } catch { return {} } // A missing or invalid icon must not hide a project.
   }
 
   private async listProjects(): Promise<Array<{ id: string; name: string; updatedAt: number }>> {
@@ -2256,7 +2269,9 @@ function mobileModelProviderProfile(value: unknown): MobileModelProviderProfile 
     if (entry.name !== undefined && !name) throw new Error(`model ${id} has an empty display name`)
     const contextWindow = optionalPositiveSafeInteger(entry.contextWindow, `model ${id} context window`)
     const maxTokens = optionalPositiveSafeInteger(entry.maxTokens, `model ${id} output cap`)
-    return { id, ...(name ? { name } : {}), ...(contextWindow ? { contextWindow } : {}), ...(maxTokens ? { maxTokens } : {}) }
+    if (entry.imageGeneration !== undefined && typeof entry.imageGeneration !== 'boolean') throw new Error('invalid image generation capability')
+    if (entry.webSearch !== undefined && typeof entry.webSearch !== 'boolean') throw new Error('invalid web search capability')
+    return { id, ...(entry.webSearch === undefined ? {} : { webSearch: entry.webSearch }), ...(entry.imageGeneration === undefined ? {} : { imageGeneration: entry.imageGeneration }), ...(name ? { name } : {}), ...(contextWindow ? { contextWindow } : {}), ...(maxTokens ? { maxTokens } : {}) }
   })
   return { ...(baseURL ? { baseURL } : {}), models }
 }

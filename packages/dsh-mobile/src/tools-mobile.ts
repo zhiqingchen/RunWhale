@@ -7,6 +7,8 @@ import type { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import { MobileGitRepository, MobileProjectFileSystem, MobileTypeScriptService } from '@runwhale/mobile-runtime'
+import { isProjectImagePath } from '@runwhale/mobile-protocol'
+import { MOBILE_IMAGE_MODEL, MOBILE_IMAGE_SIZES, type ModelImageRequest } from './image-generation-mobile.js'
 import type { MobileGitFetchResult, MobileGitPullResult, MobileGitPushResult } from '@runwhale/mobile-runtime'
 import type { PreviewEndpoint } from '@runwhale/mobile-protocol'
 import type { PreviewTestCommand, PreviewTestObservation } from '@runwhale/mobile-protocol'
@@ -26,6 +28,7 @@ export interface MobilePackageInstallOutcome {
 }
 
 export interface MobileWorkspaceServices {
+  generateImage?: (request: ModelImageRequest) => Promise<Uint8Array>
   moduleStore?: string
   ensureModuleStore?: () => Promise<void>
   requestPackageInstall?: (sessionId: string, projectRoot: string, dependencies: Record<string, string>, offline: boolean | undefined, signal: AbortSignal) => Promise<MobilePackageInstallOutcome>
@@ -95,6 +98,57 @@ export function registerMobileWorkspaceTools(
   }
   const renderJson = (_args: unknown, value: unknown) => [{ type: 'text' as const, text: JSON.stringify(value) }]
   const portableJson = (value: unknown): JsonValue => JSON.parse(JSON.stringify(value)) as JsonValue
+
+  if (services.generateImage) ctx.tools.register(defineTool({
+    name: 'generate_image',
+    description: 'Generate or edit an image with gpt-image-2 through the configured OpenAI provider Images API and existing API key. Choose the prompt based on this project. Default size is 816x816; choose a larger or non-square size only when the asset needs it. Project icons always request 816x816 at low quality. Save the returned image unchanged; do not crop or resize it. Save a PNG at a new workspace path. Describe all relevant visual context in prompt. For a missing project icon, use projectIcon=true and assets/project-icon.png; this also sets runwhale.json icon. Reuse existing icons. For an explicit replacement, generate at a new path then update the manifest. Optional referencePaths are workspace PNG/JPEG/WebP images. Generation uses the current account and may incur image charges. Do not retry automatically after an error.',
+    parameters: {
+      prompt: { type: 'string', required: true },
+      path: { type: 'string', required: true },
+      projectIcon: { type: 'boolean' },
+      size: { type: 'string', enum: [...MOBILE_IMAGE_SIZES] },
+      referencePaths: { type: 'array', items: { type: 'string' } },
+    },
+    output: { schema: { type: 'json' }, render: (_args, result) => {
+      const { attachment, ...details } = result as unknown as { attachment: ImageAttachmentRef; path: string }
+      return [{ type: 'text', text: JSON.stringify(details) }, { type: 'image', attachment }]
+    } },
+    timeoutMs: 6 * 60_000,
+    async execute({ prompt, path, projectIcon = false, size = '816x816', referencePaths = [] }, exec) {
+      if (exec.agent && ctx.get('planMode')?.get(exec.agent).active) throw new Error('Image generation is unavailable in plan mode')
+      if (!isProjectImagePath(path) || !path.endsWith('.png')) throw new Error('Generated images require a relative workspace .png path')
+      if (!prompt.trim() || prompt.length > 16_000) throw new Error('Image prompt must contain between 1 and 16000 characters')
+      if (referencePaths.length > 4 || referencePaths.some((value) => !isProjectImagePath(value))) throw new Error('Use at most four workspace image references')
+      await requestWriteApproval(exec.agent, 'generate_image', exec.signal, 'Generate an image with gpt-image-2 using the configured provider account and save it in the project.', exec.callId)
+      const fs = new MobileProjectFileSystem([executionRoot(exec.agent)])
+      const manifestFile = projectIcon ? await fs.readText('runwhale.json') : undefined
+      const manifest = manifestFile ? JSON.parse(manifestFile.content) as Record<string, unknown> : undefined
+      if (manifest?.icon) throw new Error('Project already has an icon; reuse it or explicitly update its manifest reference')
+      // Refuse an existing destination before making a billable request.
+      await fs.assertNewFile(path)
+      const references: ModelImageRequest['references'][number][] = []
+      let referenceBytes = 0
+      for (const referencePath of referencePaths) {
+        const { content } = await fs.readBinary(referencePath, 5 * 1024 * 1024)
+        referenceBytes += content.length
+        if (referenceBytes > 12 * 1024 * 1024) throw new Error('Image references exceed the mobile size limit')
+        const mediaType = /\.png$/i.test(referencePath) ? 'image/png' : /\.webp$/i.test(referencePath) ? 'image/webp' : 'image/jpeg'
+        await ctx.attachments.validateImage({ data: content, mediaType })
+        references.push({ data: content, mediaType })
+      }
+      const data = await services.generateImage!({ prompt, projectIcon, size, references, signal: exec.signal })
+
+      exec.signal.throwIfAborted()
+      await ctx.attachments.validateImage({ data, mediaType: 'image/png' })
+      const result = await fs.writeBinary(path, data, { createOnly: true, signal: exec.signal })
+      if (manifest && manifestFile) {
+        exec.signal.throwIfAborted()
+        await fs.writeText('runwhale.json', `${JSON.stringify({ ...manifest, icon: path }, null, 2)}\n`, manifestFile.version)
+      }
+      const attachment = await ctx.attachments.saveImage({ data, mediaType: 'image/png', name: path })
+      return portableJson({ path, ...result, projectIcon, imageModel: MOBILE_IMAGE_MODEL, attachment })
+    },
+  }))
 
   ctx.tools.register(defineTool({
     name: 'read_file',
