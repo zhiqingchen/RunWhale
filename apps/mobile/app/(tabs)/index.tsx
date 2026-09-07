@@ -54,12 +54,11 @@ export default function HomeScreen() {
       return invalidate
     }
 
-    setContinueLoad({ projectId, loading: true, sessionFailed: false })
+    setContinueLoad((current) => current.projectId === projectId && current.sessions !== undefined
+      ? current
+      : { projectId, loading: Boolean(runtime.info) || !runtime.lastError, sessionFailed: !runtime.info && Boolean(runtime.lastError) })
 
-    if (!runtime.info) {
-      setContinueLoad({ projectId, loading: !runtime.lastError, sessionFailed: Boolean(runtime.lastError) })
-      return invalidate
-    }
+    if (!runtime.info) return invalidate
 
     const request = { projectId, revision }
     void Promise.allSettled([
@@ -72,13 +71,17 @@ export default function HomeScreen() {
       const activePreviewProjectId = snapshot && previewEventsResult.status === 'fulfilled'
         ? homeActivePreviewProjectId(snapshot, previewEventsResult.value.events)
         : undefined
-      setContinueLoad({
-        projectId,
-        sessions: sessionsResult.status === 'fulfilled' ? sessionsResult.value : undefined,
-        snapshot,
-        activePreviewProjectId,
-        loading: false,
-        sessionFailed: sessionsResult.status === 'rejected',
+      setContinueLoad((current) => {
+        const previous = current.projectId === projectId ? current : undefined
+        const sessions = sessionsResult.status === 'fulfilled' ? sessionsResult.value : previous?.sessions
+        return {
+          projectId,
+          sessions,
+          snapshot: snapshot ?? previous?.snapshot,
+          activePreviewProjectId: snapshot && previewEventsResult.status === 'fulfilled' ? activePreviewProjectId : previous?.activePreviewProjectId,
+          loading: false,
+          sessionFailed: sessions === undefined && sessionsResult.status === 'rejected',
+        }
       })
     })
 

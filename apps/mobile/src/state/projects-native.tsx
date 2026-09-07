@@ -26,14 +26,14 @@ export function NativeProjectProvider({ children, nativeFiles, runtimeReady, eve
     return {
       async retryLoad() {
         if (!runtimeReady) return
-        setLoadStatus('loading')
+        setLoadStatus((current) => current === 'ready' ? current : 'loading')
         setLoadError(undefined)
         try {
           await requireStore().load(createChunkedProjectSnapshotStorage(AsyncStorage).read)
           setLoadStatus('ready')
         } catch (cause) {
           setLoadError(cause instanceof Error ? cause.message : String(cause))
-          setLoadStatus('failed')
+          setLoadStatus((current) => current === 'ready' ? current : 'failed')
         }
       },
       retryPersistence: () => requireStore().retry(),

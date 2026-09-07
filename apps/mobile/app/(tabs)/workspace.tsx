@@ -73,17 +73,17 @@ export default function WorkspaceScreen() {
   const refreshProjectSessions = useCallback(async (projectId: string) => {
     if (sessionRefreshes.current.has(projectId)) return
     if (!runtime.info) {
-      setSessionLoadStatusByProject((current) => ({ ...current, [projectId]: runtime.lastError ? 'failed' : 'loading' }))
+      setSessionLoadStatusByProject((current) => current[projectId] === 'loaded' ? current : { ...current, [projectId]: runtime.lastError ? 'failed' : 'loading' })
       return
     }
     const refreshToken = Symbol(projectId)
     sessionRefreshes.current.set(projectId, refreshToken)
-    setSessionLoadStatusByProject((current) => ({ ...current, [projectId]: 'loading' }))
+    setSessionLoadStatusByProject((current) => current[projectId] === 'loaded' ? current : { ...current, [projectId]: 'loading' })
     try {
       const result = await loadSessionSummaries(() => runtime.request('session.list', { projectId }))
       if (sessionRefreshes.current.get(projectId) !== refreshToken) return
       if (result.status === 'loaded') setSessionsByProject((current) => ({ ...current, [projectId]: result.sessions }))
-      setSessionLoadStatusByProject((current) => ({ ...current, [projectId]: result.status }))
+      setSessionLoadStatusByProject((current) => current[projectId] === 'loaded' ? current : { ...current, [projectId]: result.status })
     } finally {
       if (sessionRefreshes.current.get(projectId) === refreshToken) sessionRefreshes.current.delete(projectId)
     }
