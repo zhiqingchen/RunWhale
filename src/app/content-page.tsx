@@ -27,6 +27,7 @@ const navigation = {
       faq: { label: "FAQ", href: "/faq" },
       support: { label: "Support", href: "/support" },
       privacy: { label: "Privacy", href: "/privacy" },
+      terms: { label: "Terms", href: "/terms" },
     },
   },
   "zh-CN": {
@@ -46,6 +47,7 @@ const navigation = {
       faq: { label: "常见问题", href: "/zh-CN/faq" },
       support: { label: "支持", href: "/zh-CN/support" },
       privacy: { label: "隐私", href: "/zh-CN/privacy" },
+      terms: { label: "服务条款", href: "/zh-CN/terms" },
     },
   },
 } as const;
@@ -139,6 +141,7 @@ export function ContentPage({
           <Link href={copy.links.faq.href}>{copy.links.faq.label}</Link>
           <Link href={copy.links.support.href}>{copy.links.support.label}</Link>
           <Link href={copy.links.privacy.href}>{copy.links.privacy.label}</Link>
+          <Link href={copy.links.terms.href}>{copy.links.terms.label}</Link>
           <Link href={languageHref} hrefLang={copy.languageCode}>{copy.languageLabel}</Link>
           <a href={githubUrl} target="_blank" rel="noreferrer">GitHub</a>
         </nav>

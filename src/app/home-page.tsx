@@ -328,6 +328,7 @@ export function HomePage({ locale }: { locale: WebsiteLocale }) {
           <Link href={sitePath(copy.footer.guideHref)}>{copy.footer.guide}</Link>
           <Link href={sitePath(copy.footer.faqHref)}>{copy.footer.faq}</Link>
           <Link href={sitePath(copy.footer.privacyHref)}>{copy.footer.privacy}</Link>
+          <Link href={sitePath(copy.footer.termsHref)}>{copy.footer.terms}</Link>
           <Link href={sitePath(copy.footer.supportHref)}>{copy.footer.support}</Link>
           <Link href={sitePath(copy.languageHref)} hrefLang={locale === "en" ? "zh-CN" : "en-US"}>{copy.languageLabel}</Link>
           <Link href={githubUrl} target="_blank" rel="noreferrer"><GitHubIcon size={15} /> GitHub <ArrowRight size={14} /></Link>

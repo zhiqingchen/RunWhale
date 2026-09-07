@@ -76,6 +76,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: languageAlternates("/privacy", "/zh-CN/privacy"),
     },
     {
+      url: `${siteUrl}/terms`,
+      lastModified: "2026-09-08",
+      alternates: languageAlternates("/terms", "/zh-CN/terms"),
+    },
+    {
+      url: `${siteUrl}/zh-CN/terms`,
+      lastModified: "2026-09-08",
+      alternates: languageAlternates("/terms", "/zh-CN/terms"),
+    },
+    {
       url: `${siteUrl}/support`,
       alternates: languageAlternates("/support", "/zh-CN/support"),
     },
