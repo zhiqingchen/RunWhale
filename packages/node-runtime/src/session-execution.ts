@@ -24,6 +24,7 @@ export class AgentSessionExecution {
   receivedLiveEvent = false
   startEventCount = 0
   record: AgentSessionRecord | undefined
+  persistedState: AgentSessionRecord['state'] | undefined
   taskId = ''
   private finishCompletion: (() => void) | undefined
   private releaseProject: (() => void) | undefined
@@ -34,7 +35,10 @@ export class AgentSessionExecution {
   private readonly writer
 
   constructor(readonly projectId: string, readonly sessionId: string, private readonly options: SessionExecutionOptions) {
-    this.writer = createLatestOnlyWriter<AgentSessionRecord>(async (record) => { await options.write(record) })
+    this.writer = createLatestOnlyWriter<AgentSessionRecord>(async (record) => {
+      await options.write(record)
+      this.persistedState = record.state
+    })
   }
 
   get active(): boolean { return this.phase !== 'idle' }
@@ -53,6 +57,7 @@ export class AgentSessionExecution {
     this.packageMutated = false
     this.receivedLiveEvent = false
     this.persistenceFailure = undefined
+    this.persistedState = undefined
   }
 
   async acquireProject(): Promise<void> { this.releaseProject = await this.options.acquireProject() }

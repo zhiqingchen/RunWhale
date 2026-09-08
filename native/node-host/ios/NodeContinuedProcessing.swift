@@ -1,5 +1,6 @@
 import BackgroundTasks
 import Foundation
+import OSLog
 import UIKit
 
 typealias NodeLifecycleRequest = (String, [String: Any], @escaping ([String: Any]?) -> Void) -> Void
@@ -17,6 +18,7 @@ final class NodeContinuedProcessing {
     init(id: String, copy: [String: String]) { self.id = id; self.copy = copy }
   }
 
+  private let logger = Logger(subsystem: "app.runwhale.nodehost", category: "BackgroundAgent")
   private let request: NodeLifecycleRequest
   private var job: Job?
   private var timer: DispatchSourceTimer?
@@ -33,7 +35,7 @@ final class NodeContinuedProcessing {
       guard let self, self.job === next else { completion(nil); return }
       guard result?["prepared"] as? Bool == true,
         UIApplication.shared.applicationState == .active else {
-        self.finish(next, success: false, pause: false)
+        self.finish(next, reason: "preparation-unavailable")
         completion(nil)
         return
       }
@@ -52,13 +54,13 @@ final class NodeContinuedProcessing {
         continued.expirationHandler = { [weak self, weak next] in
           DispatchQueue.main.async {
             guard let self, let next else { return }
-            self.finish(next, success: false, pause: true)
+            self.finish(next, reason: "expired", pause: true)
           }
         }
         self.poll(next)
       }
       guard registered else {
-        self.finish(next, success: false, pause: false)
+        self.finish(next, reason: "registration-failed")
         completion(nil)
         return
       }
@@ -80,7 +82,9 @@ final class NodeContinuedProcessing {
         timer.resume()
         completion(next.id)
       } catch {
-        self.finish(next, success: false, pause: false)
+        // Codes are sufficient for scheduling failures; never log task content.
+        self.logger.error("Background submission failed: code=\((error as NSError).code)")
+        self.finish(next, reason: "submission-failed")
         completion(nil)
       }
     }
@@ -90,7 +94,7 @@ final class NodeContinuedProcessing {
     guard job === current, !current.polling else { return }
     // A submission may fail to deliver a handler. Foreground work still runs.
     if current.task == nil && Date().timeIntervalSince(current.startedAt) > 8 {
-      finish(current, success: false, pause: false)
+      finish(current, reason: "delivery-timeout")
       return
     }
     current.polling = true
@@ -101,14 +105,14 @@ final class NodeContinuedProcessing {
         // Foreground recovery replaces the localhost listener. Allow that brief
         // transport handoff without treating it as a user cancellation.
         if Date().timeIntervalSince(current.lastContact) > 8 {
-          self.finish(current, success: false, pause: current.task != nil)
+          self.finish(current, reason: "transport-lost", pause: current.task != nil)
         }
         return
       }
       current.lastContact = Date()
       let steps = (result?["completedSteps"] as? NSNumber)?.int64Value ?? 0
       if state == "pending" && Date().timeIntervalSince(current.startedAt) > 8 {
-        self.finish(current, success: false, pause: false)
+        self.finish(current, reason: "admission-timeout")
         return
       }
       switch state {
@@ -124,25 +128,33 @@ final class NodeContinuedProcessing {
           task.progress.totalUnitCount = max(1, steps)
           task.progress.completedUnitCount = task.progress.totalUnitCount
         }
-        self.finish(current, success: true, pause: false)
+        self.finish(current, reason: "completed", success: true)
+      case "saving":
+        if let task = current.task { task.updateTitle(task.title, subtitle: current.copy["saving"] ?? "Saving progress…") }
       case "waiting":
         if let task = current.task { task.updateTitle(task.title, subtitle: current.copy["waiting"] ?? "Open RunWhale to continue") }
-        self.finish(current, success: false, pause: true)
+        // Node reports waiting only after the session is durably paused.
+        // This background segment has finished its handoff; the Agent session
+        // remains paused and is never relabeled as a completed user request.
+        self.finish(current, reason: "saved-for-foreground", success: true)
       default:
-        self.finish(current, success: false, pause: false)
+        self.finish(current, reason: state == "failed" ? "agent-failed" : "stopped")
       }
     }
   }
 
-  private func finish(_ current: Job, success: Bool, pause: Bool) {
+  private func finish(_ current: Job, reason: String, success: Bool = false, pause: Bool = false) {
     guard job === current else { return }
+    logger.notice("Background execution ended: reason=\(reason, privacy: .public), success=\(success), elapsed=\(Int(Date().timeIntervalSince(current.startedAt)))s")
     job = nil
     timer?.cancel()
     timer = nil
     current.task?.expirationHandler = nil
     // Request a pause before surrendering execution time. Node checkpoints
     // throughout the run; expiration itself cannot guarantee time for a final save.
-    request("host.continued.end", ["id": current.id, "pause": pause]) { _ in }
+    var params: [String: Any] = ["id": current.id, "pause": pause]
+    if pause { params["reason"] = reason == "transport-lost" ? "transport-lost" : "expired" }
+    request("host.continued.end", params) { _ in }
     if let task = current.task { task.setTaskCompleted(success: success) }
     else { BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: current.id) }
   }

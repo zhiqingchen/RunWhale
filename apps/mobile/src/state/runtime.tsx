@@ -517,7 +517,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     const continuedTaskId = Platform.OS === 'ios'
       ? await NodeHost.beginContinuedAgentTask?.({
         title: t('agentBackgroundTitle'), working: t('agentBackgroundWorking'),
-        steps: t('agentBackgroundSteps'), waiting: t('agentBackgroundWaiting'),
+        steps: t('agentBackgroundSteps'), saving: t('agentBackgroundSaving'), waiting: t('agentBackgroundWaiting'),
       }).catch(() => null) ?? undefined
       : undefined
     if (signal?.aborted && continuedTaskId) void request('host.continued.end', { id: continuedTaskId, pause: false }).catch(() => undefined)

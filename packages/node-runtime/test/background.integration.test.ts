@@ -6,11 +6,15 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { createMobileHarness, MobileHarness } from '@runwhale/dsh-mobile'
 import { createSessionAgentDriver } from '../src/session-agent-driver.js'
 import { RunWhaleRuntimeHost } from '../src/runtime-host.js'
+import { AgentSessionExecution } from '../src/session-execution.js'
 
 type Adapter = Parameters<MobileHarness['context']['llm']['registerAdapter']>[1]
 const { LlmAdapter } = await import(createRequire(new URL('../../dsh-mobile/package.json', import.meta.url)).resolve('@deepseek-ai/dsh-llm')) as { LlmAdapter: new () => Adapter }
 const cleanup: Array<() => Promise<unknown>> = []
-afterEach(async () => { for (const dispose of cleanup.splice(0).reverse()) await dispose() })
+afterEach(async () => {
+  vi.restoreAllMocks()
+  for (const dispose of cleanup.splice(0).reverse()) await dispose()
+})
 
 async function setup(platform: 'ios' | 'android' = 'ios', initialization?: Promise<void>) {
   const root = await mkdtemp(join(tmpdir(), 'runwhale-background-'))
@@ -138,6 +142,10 @@ it('does not admit an execution after its prepared native task was cancelled', a
 
 it('pauses background work that needs a user answer', async () => {
   const test = await setup()
+  let allowSave!: () => void
+  const saving = new Promise<void>((resolve) => { allowSave = resolve })
+  const pause = test.driver.pause!.bind(test.driver)
+  vi.spyOn(test.driver, 'pause').mockImplementation(async (sessionId) => { await saving; await pause(sessionId) })
   await test.rpc('host.continued.prepare', { id: continuedId })
   const running = test.start(continuedId)
   await vi.waitFor(() => expect(test.requests()).toBe(1))
@@ -145,8 +153,11 @@ it('pauses background work that needs a user answer', async () => {
   const approval = test.host.requestAgentApproval({ sessionId: test.session.sessionId, toolName: 'write_file' }, controller.signal)
   await test.rpc('host.continued.status', { id: continuedId, granted: true })
   await test.rpc('host.background', { revision: 1, graceMs: 0 })
-  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toMatchObject({ state: 'waiting' })
+  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toMatchObject({ state: 'saving' })
+  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toMatchObject({ state: 'saving' })
+  allowSave()
   await running
+  await vi.waitFor(async () => expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toMatchObject({ state: 'waiting' }))
   await test.rpc('host.foreground', { revision: 2 })
   expect((await test.record()).state).toBe('paused')
   expect(test.requests()).toBe(1)
@@ -176,9 +187,43 @@ it('saves the continued session instead of starting Preview in the background', 
   await test.rpc('host.background', { revision: 1, graceMs: 0 })
   await expect(test.host.runAgentPreview(join(test.root, 'projects/project'), test.session.sessionId, new AbortController().signal)).rejects.toThrow('Open RunWhale')
   await running
+  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toMatchObject({ state: 'waiting' })
   await test.rpc('host.foreground', { revision: 2 })
   expect((await test.record()).state).toBe('paused')
   expect(test.requests()).toBe(1)
+  const { events } = await test.rpc('host.snapshot')
+  expect(events).toContainEqual(expect.objectContaining({ name: 'diagnostic', data: expect.objectContaining({ source: 'background', code: 'BACKGROUND_PREVIEW' }) }))
+})
+
+it('does not acknowledge a foreground handoff when saving the pause fails', async () => {
+  const test = await setup()
+  await test.rpc('host.continued.prepare', { id: continuedId })
+  const outcome = test.start(continuedId).catch((error: unknown) => error)
+  await vi.waitFor(() => expect(test.requests()).toBe(1))
+  await test.rpc('host.continued.status', { id: continuedId, granted: true })
+  await test.rpc('host.background', { revision: 1, graceMs: 0 })
+  const persist = AgentSessionExecution.prototype.persist
+  vi.spyOn(AgentSessionExecution.prototype, 'persist').mockImplementation(function (this: AgentSessionExecution, state) {
+    if (state === 'paused') {
+      // Match a failed disk write after the in-memory record was updated.
+      if (this.record) this.record = { ...this.record, state }
+      return Promise.reject(new Error('Synthetic checkpoint failure'))
+    }
+    return persist.call(this, state)
+  })
+  await expect(test.host.runAgentPreview(join(test.root, 'projects/project'), test.session.sessionId, new AbortController().signal)).rejects.toThrow('Open RunWhale')
+  expect(await outcome).toBeInstanceOf(Error)
+  await vi.waitFor(async () => expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toMatchObject({ state: 'failed' }))
+  const { events } = await test.rpc('host.snapshot')
+  expect(events).toContainEqual(expect.objectContaining({ name: 'diagnostic', data: expect.objectContaining({ code: 'BACKGROUND_SAVE_FAILED' }) }))
+})
+
+it('reports an actual agent error as failed rather than a saved handoff', async () => {
+  const test = await setup()
+  vi.spyOn(test.driver, 'run').mockRejectedValue(new Error('Synthetic agent failure'))
+  await test.rpc('host.continued.prepare', { id: continuedId })
+  await expect(test.start(continuedId)).rejects.toThrow('Synthetic agent failure')
+  expect(await test.rpc('host.continued.status', { id: continuedId, granted: true })).toMatchObject({ state: 'failed' })
 })
 
 it('continues a paused session exactly once after replacing the localhost listener', async () => {

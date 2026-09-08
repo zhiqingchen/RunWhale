@@ -81,7 +81,11 @@ export interface RuntimeHostOptions {
 
 type RuntimePreparation = 'module-store' | 'npm'
 type RuntimePreparationState = { ready: boolean; pending?: Promise<void> }
-type ContinuedAgentWork = { id: string; granted: boolean; ended: boolean; execution?: AgentSessionExecution; taskId?: string }
+type ContinuedEndReason = 'waiting' | 'preview' | 'expired' | 'transport-lost' | 'preparation-timeout' | 'stopped'
+type ContinuedAgentWork = {
+  id: string; granted: boolean; ended: boolean; execution?: AgentSessionExecution; taskId?: string
+  handoffState?: 'saving' | 'waiting' | 'failed'
+}
 
 export class RunWhaleRuntimeHost {
   private readonly projectsRoot: string
@@ -133,7 +137,7 @@ export class RunWhaleRuntimeHost {
       'host.foreground': async ({ revision }) => this.foreground(revision),
       'host.continued.prepare': async ({ id }) => this.prepareContinuedWork(id),
       'host.continued.status': async ({ id, granted }) => this.continuedWorkStatus(id, granted),
-      'host.continued.end': async ({ id, pause }) => ({ ended: this.endContinuedWork(id, pause) }),
+      'host.continued.end': async ({ id, pause, reason }) => ({ ended: this.endContinuedWork(id, pause, reason === 'transport-lost' ? reason : pause ? 'expired' : 'stopped') }),
       'host.stop': async () => { queueMicrotask(() => { void this.stop() }); return this.snapshot('stopping') },
       'host.snapshot': async ({ afterSequence }) => ({ snapshot: this.snapshot(), events: this.server.eventsAfter(afterSequence ?? 0) }),
       'host.environment': async () => this.runtimeEnvironment(),
@@ -409,7 +413,7 @@ export class RunWhaleRuntimeHost {
     if (this.continuedWatchdog) clearTimeout(this.continuedWatchdog)
     this.continuedWork = { id, granted: false, ended: false }
     // Preparation and native delivery are bounded, including a failed Studio submission.
-    this.continuedWatchdog = setTimeout(() => { this.endContinuedWork(id, false) }, 10_000)
+    this.continuedWatchdog = setTimeout(() => { this.endContinuedWork(id, false, 'preparation-timeout') }, 10_000)
     return { prepared: true }
   }
 
@@ -418,25 +422,30 @@ export class RunWhaleRuntimeHost {
     if (!work || work.id !== id) return { state: 'missing', completedSteps: 0 }
     const execution = work.execution
     const completedSteps = execution && execution.taskId === work.taskId ? execution.completedSteps : 0
-    if (work.ended || (execution && (execution.taskId !== work.taskId || execution.pauseRequested))) return { state: 'stopped', completedSteps }
-    if (execution && !execution.active) return { state: execution.record?.state === 'completed' ? 'completed' : 'stopped', completedSteps }
+    if (execution && execution.taskId !== work.taskId) return { state: 'stopped', completedSteps }
+    if (work.ended) return { state: work.handoffState ?? 'stopped', completedSteps }
+    if (execution?.pauseRequested) return { state: 'stopped', completedSteps }
+    if (execution && !execution.active) {
+      const state = execution.record?.state
+      return { state: state === 'completed' && execution.persistedState === 'completed' ? 'completed' : state === 'failed' ? 'failed' : 'stopped', completedSteps }
+    }
     if (this.backgrounded && execution && (
       [...this.pendingAgentApprovals.values()].some((request) => request.sessionId === execution.sessionId)
       || [...this.pendingAgentQuestions.values()].some((request) => request.sessionId === execution.sessionId)
     )) {
-      this.endContinuedWork(id, true)
-      return { state: 'waiting', completedSteps }
+      this.endContinuedWork(id, true, 'waiting')
+      return { state: 'saving', completedSteps }
     }
     if (granted === true) {
       work.granted = true
       if (this.continuedWatchdog) clearTimeout(this.continuedWatchdog)
       // A lost native connection must never leave an unbounded runtime exemption.
-      this.continuedWatchdog = setTimeout(() => { this.endContinuedWork(id, true) }, 10_000)
+      this.continuedWatchdog = setTimeout(() => { this.endContinuedWork(id, true, 'transport-lost') }, 10_000)
     }
     return { state: execution ? 'running' : 'pending', completedSteps }
   }
 
-  private endContinuedWork(id: string, pause: boolean): boolean {
+  private endContinuedWork(id: string, pause: boolean, reason: ContinuedEndReason = pause ? 'expired' : 'stopped'): boolean {
     const work = this.continuedWork
     if (!work || work.id !== id || work.ended) return false
     work.ended = true
@@ -444,12 +453,30 @@ export class RunWhaleRuntimeHost {
     if (this.continuedWatchdog) clearTimeout(this.continuedWatchdog)
     this.continuedWatchdog = undefined
     const execution = work.execution
+    if (pause || execution?.record?.state !== 'completed') this.server.emit('diagnostic', {
+      source: 'background', code: `BACKGROUND_${reason.toUpperCase().replaceAll('-', '_')}`,
+      ...(execution ? { projectId: execution.projectId, sessionId: execution.sessionId, taskId: work.taskId } : {}),
+      message: `Background execution ended: ${reason}.`,
+    })
     if (pause && execution && execution.taskId === work.taskId) {
       // iOS uses the same expiration callback for system expiry and user cancellation.
       execution.requiresExplicitResume = true
       this.backgroundSessions.delete(execution)
-      if (execution.active) void this.pauseExecution(execution).catch(() => {
-        execution.controller.abort(new Error('Continued background work expired'))
+      const handoff = reason === 'waiting' || reason === 'preview'
+      if (handoff) work.handoffState = 'saving'
+      void this.pauseExecution(execution).then(() => {
+        if (execution.taskId !== work.taskId) return
+        // Only a durable pause completes a foreground handoff. A requested
+        // pause or an in-memory record alone is not proof that saving succeeded.
+        if (handoff) {
+          if (execution.record?.state !== 'paused' || execution.persistedState !== 'paused') throw new Error('Background pause was not saved')
+          work.handoffState = 'waiting'
+        }
+      }).catch(() => {
+        if (execution.taskId !== work.taskId) return
+        if (handoff) work.handoffState = 'failed'
+        execution.controller.abort(new Error('Could not save background work'))
+        this.server.emit('diagnostic', { source: 'background', projectId: execution.projectId, sessionId: execution.sessionId, taskId: work.taskId, code: 'BACKGROUND_SAVE_FAILED', message: 'Could not save background work.' })
       })
     }
     return true
@@ -750,7 +777,7 @@ export class RunWhaleRuntimeHost {
   private requirePreviewForeground(projectId: string): void {
     if (this.options.platform !== 'ios' || !this.backgrounded) return
     const work = this.continuedWork
-    if (work?.execution?.projectId === projectId) this.endContinuedWork(work.id, true)
+    if (work?.execution?.projectId === projectId) this.endContinuedWork(work.id, true, 'preview')
     throw new Error('Open RunWhale and continue the session to use Preview.')
   }
 
