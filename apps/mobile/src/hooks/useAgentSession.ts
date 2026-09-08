@@ -127,13 +127,13 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
       settleRevision,
     }))
   }, [])
-  const refreshSessionHistory = useCallback(async (preferredSessionId?: string, settleRevision?: number) => {
+  const refreshSessionHistory = useCallback(async (preferredSessionId?: string, settleRevision?: number, waitForConnection = false) => {
     const selected = preferredSessionId ?? sessionId
     const hydrated = !selected || hydratedSessionHistory.current === selected
     const eventFloor = latestEventSequence.current
     const observedRun = activeRunController.current
     if (selected) setSessionHistoryState(sessionRefreshPresentationStatus(hydrated, 'start'))
-    if (!runtime.info) {
+    if (!runtime.info && !waitForConnection) {
       if (selected && runtime.lastError) setSessionHistoryState(sessionRefreshPresentationStatus(hydrated, 'failure'))
       return
     }
@@ -412,7 +412,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
       try {
         let previousTaskId = sessionRecord?.taskId
         if (recover) {
-          const latest = await refreshSessionHistory(targetSessionId)
+          const latest = await refreshSessionHistory(targetSessionId, undefined, true)
           if (!latest) throw new Error(t('sessionRecoveryUnavailable'))
           previousTaskId = latest.taskId
           if (latest.state === 'running' || latest.state === 'completed') return

@@ -54,8 +54,8 @@ internal class NativePreviewTesting {
 
   fun execute(activity: Activity, command: JSONObject, complete: (String) -> Unit) {
     try {
-      val preview = requireNotNull(root) { "Native Preview is not mounted" }
-      check(preview.isShown && preview.hasWindowFocus()) { "Keep the Native Preview visible while testing" }
+      val preview = requireNotNull(root) { "Preview is not mounted" }
+      check(preview.isShown && preview.hasWindowFocus()) { "Keep the Preview visible while testing" }
       when (command.getString("kind")) {
         "logs" -> complete(result(readLogs(command.optLong("afterSequence", 0))))
         "screenshot" -> capture(activity, preview, complete)

@@ -70,9 +70,9 @@ export function LocalPersistenceFeedback() {
 function createStyles(colors: ThemeColors) { return StyleSheet.create({
   portal: { position: 'absolute', left: 12, right: 12, zIndex: 2_000, elevation: 2_000, alignItems: 'center' },
   card: { width: '100%', maxWidth: 520, padding: 10, gap: 8, borderRadius: radius.large, borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.panel },
-  alert: { width: '100%' },
+  alert: { width: '100%', padding: 0, backgroundColor: 'transparent', boxShadow: 'none' },
   title: { color: colors.text, fontSize: typeScale.body, fontWeight: '900' },
   description: { color: colors.danger, fontSize: typeScale.label, lineHeight: 18 },
-  retry: { minHeight: controlSize.regular, alignSelf: 'flex-end', borderRadius: radius.small, backgroundColor: colors.accent, paddingHorizontal: 18 },
+  retry: { height: 'auto', minHeight: controlSize.regular, alignSelf: 'flex-end', borderRadius: radius.small, backgroundColor: colors.accent, paddingHorizontal: 18 },
   retryLabel: { color: '#FFFFFF', fontSize: typeScale.button, fontWeight: '800' },
 }) }

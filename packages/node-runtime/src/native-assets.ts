@@ -27,7 +27,7 @@ module.exports = async asset => {
     if (!roots.some(root => {
       const part = relative(root, path);
       return part === '' || (part !== '..' && !part.startsWith('..' + sep) && !isAbsolute(part));
-    })) throw new Error('Native Preview asset is outside the project/module store');
+    })) throw new Error('Preview asset is outside the project/module store');
     const hash = createHash('sha256').update(await readFile(path)).digest('hex');
     return pathToFileURL(join(${JSON.stringify(nativeAssetDirectory(root))}, hash + '.' + asset.type)).href;
   }));
@@ -50,12 +50,12 @@ export async function collectNativeAssets(root: string, assets: readonly { files
     for (const [index, source] of asset.files.entries()) {
       const path = fileURLToPath(metadata.fileUris[index]!)
       const name = path.slice(directory.length + 1)
-      if (join(directory, name) !== path || !isAssetName(name)) throw new Error('Invalid Native Preview asset path')
+      if (join(directory, name) !== path || !isAssetName(name)) throw new Error('Invalid Preview asset path')
       const bytes = await readFile(source)
       if (!name.startsWith(`${sha256(bytes)}.`)) throw new Error('Project asset changed while Preview was building; run Preview again')
       if (files[name] !== undefined) continue
       size += bytes.byteLength
-      if (size > 64 * 1024 * 1024) throw new Error('Native Preview assets exceed the 64 MiB limit')
+      if (size > 64 * 1024 * 1024) throw new Error('Preview assets exceed the 64 MiB limit')
       files[name] = bytes.toString('base64')
     }
   }
@@ -74,13 +74,13 @@ export function isNativeAssets(value: unknown): value is NativeAssets {
 export async function materializeNativeAssets(assets: NativeAssets): Promise<void> {
   await mkdir(assets.directory, { recursive: true })
   // Never follow a project-created link when publishing asset snapshots.
-  if (await realpath(assets.directory) !== assets.directory) throw new Error('Native Preview asset directory must not be a symbolic link')
+  if (await realpath(assets.directory) !== assets.directory) throw new Error('Preview asset directory must not be a symbolic link')
   for (const [name, content] of Object.entries(assets.files)) {
     await writeFile(join(assets.directory, name), Buffer.from(content, 'base64'), { flag: 'wx', mode: 0o600 }).catch(async (error: NodeJS.ErrnoException) => {
       if (error.code !== 'EEXIST') throw error
       const path = join(assets.directory, name)
       if (await realpath(path) !== path || sha256(await readFile(path)) !== name.slice(0, 64)) {
-        throw new Error('Native Preview asset snapshot is damaged')
+        throw new Error('Preview asset snapshot is damaged')
       }
     })
   }

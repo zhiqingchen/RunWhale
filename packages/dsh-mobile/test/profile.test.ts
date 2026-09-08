@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createMobileHarness, DEEPSEEK_MOBILE_MODEL, MOBILE_MAX_PARALLEL_TOOL_CALLS, MOBILE_PROVIDER_DEFAULT_MODELS, MobileCredentialProvider, MobileHarness, OPENAI_MOBILE_REQUEST_IMAGE_MAX_BYTES, OPENAI_MOBILE_REQUEST_IMAGE_PIXEL_BUDGET, type NativeSecretStore } from '../src/index.js'
 import { Context } from '@deepseek-ai/cordis'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
@@ -32,6 +32,29 @@ class HangingAdapter extends LlmAdapter {
 }
 
 describe('DSH mobile profile', () => {
+  it('retries an OpenAI HTTP 503 within the same turn, but stops on an authentication error', async () => {
+    const secrets = new MemorySecrets()
+    secrets.values.set('ref:OPENAI_API_KEY', 'fixture')
+    const request = vi.fn()
+      .mockResolvedValueOnce(new Response('{"message":"Service temporarily unavailable","type":"api_error"}', { status: 503 }))
+      .mockImplementation(async () => new Response('{"error":{"message":"Invalid API key"}}', { status: 401 }))
+    vi.stubGlobal('fetch', request)
+    let harness: MobileHarness | undefined
+    try {
+      harness = await createMobileHarness({ mode: 'deepseek', provider: 'openai', model: 'gpt-5.4-mini', secrets,
+        modelProfile: { baseURL: 'https://provider.invalid/v1', models: [{ id: 'gpt-5.4-mini' }] } })
+      const result = await harness.run({ sessionId: 'server-retry', prompt: 'Continue the task' })
+      expect(request).toHaveBeenCalledTimes(2)
+      expect(result.failure?.code).toBe('AUTH')
+      expect(result.events.filter((event) => event.type === 'llm/retry')).toHaveLength(1)
+      expect(result.events.find((event) => event.type === 'llm/retry')?.data).toMatchObject({ failure: { code: 'SERVER' } })
+      expect(result.events.filter((event) => event.type === 'turn/start')).toHaveLength(1)
+    } finally {
+      await harness?.dispose()
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('recovers a prematurely closed model stream within the same turn', async () => {
     const harness = await createMobileHarness({ mode: 'deterministic', secrets: new MemorySecrets() })
     let attempts = 0

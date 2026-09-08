@@ -141,18 +141,18 @@ export default function NewProjectScreen() {
           <Text style={styles.label}>{t('projectTemplate')}</Text>
           <View style={styles.templates}>
             <Button size="lg" variant={template === 'expo' ? 'primary' : 'secondary'} accessibilityRole="radio" accessibilityState={{ disabled: availability.controlsDisabled, checked: template === 'expo' }} isDisabled={availability.controlsDisabled} onPress={() => setTemplate('expo')} style={[styles.template, template === 'expo' && styles.templateActive]}>
-              <AppIcon icon={Smartphone} color={template === 'expo' ? '#FFFFFF' : colors.accent} size={20} />
-              <View style={styles.templateCopy}>
+              <View style={styles.templateHeader}>
+                <AppIcon icon={Smartphone} color={template === 'expo' ? '#FFFFFF' : colors.accent} size={20} />
                 <Text style={[styles.templateTitle, template === 'expo' && styles.templateTitleActive]}>{t('expoTemplate')}</Text>
-                <Text style={[styles.templateDescription, template === 'expo' && styles.templateDescriptionActive]}>{t('expoTemplateDescription')}</Text>
               </View>
+              <Text style={[styles.templateDescription, template === 'expo' && styles.templateDescriptionActive]}>{t('expoTemplateDescription')}</Text>
             </Button>
             <Button size="lg" variant={template === 'web' ? 'primary' : 'secondary'} accessibilityRole="radio" accessibilityState={{ disabled: availability.controlsDisabled, checked: template === 'web' }} isDisabled={availability.controlsDisabled} onPress={() => setTemplate('web')} style={[styles.template, template === 'web' && styles.templateActive]}>
-              <AppIcon icon={Code2} color={template === 'web' ? '#FFFFFF' : colors.blue} size={20} />
-              <View style={styles.templateCopy}>
+              <View style={styles.templateHeader}>
+                <AppIcon icon={Code2} color={template === 'web' ? '#FFFFFF' : colors.blue} size={20} />
                 <Text style={[styles.templateTitle, template === 'web' && styles.templateTitleActive]}>{t('webTemplate')}</Text>
-                <Text style={[styles.templateDescription, template === 'web' && styles.templateDescriptionActive]}>{t('webTemplateDescription')}</Text>
               </View>
+              <Text style={[styles.templateDescription, template === 'web' && styles.templateDescriptionActive]}>{t('webTemplateDescription')}</Text>
             </Button>
           </View>
         </>}
@@ -213,9 +213,9 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   label: { color: colors.muted, fontSize: typeScale.micro, letterSpacing: 1.1, fontWeight: '800', marginTop: 9 },
   input: { minHeight: controlSize.prominent, color: colors.text, backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, borderRadius: radius.medium, paddingHorizontal: 13, paddingVertical: 10, fontSize: typeScale.body },
   templates: { flexDirection: 'row', gap: 9 },
-  template: { flex: 1, minHeight: 92, padding: 12, alignItems: 'flex-start', justifyContent: 'flex-start', flexDirection: 'row', gap: 9, borderWidth: 1, borderColor: colors.border, borderRadius: radius.medium, backgroundColor: colors.panel },
+  template: { flex: 1, height: 'auto', minHeight: 92, padding: 12, alignItems: 'flex-start', justifyContent: 'flex-start', flexDirection: 'column', gap: 9, borderWidth: 1, borderColor: colors.border, borderRadius: radius.medium, backgroundColor: colors.panel },
   templateActive: { borderColor: colors.accent, backgroundColor: colors.accent },
-  templateCopy: { flex: 1, gap: 4 },
+  templateHeader: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   templateTitle: { color: colors.text, fontSize: typeScale.body, fontWeight: '900' },
   templateTitleActive: { color: '#FFFFFF' },
   templateDescription: { color: colors.muted, fontSize: typeScale.caption, lineHeight: 16 },
@@ -231,7 +231,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   cloneProgressCount: { color: colors.muted, fontSize: typeScale.micro, fontVariant: ['tabular-nums'] },
   errorAlert: { width: '100%' },
   error: { color: colors.danger, fontSize: typeScale.label, lineHeight: 18 },
-  button: { minHeight: controlSize.prominent, backgroundColor: colors.accent, borderRadius: radius.medium, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 7 },
+  button: { height: 'auto', minHeight: controlSize.prominent, backgroundColor: colors.accent, borderRadius: radius.medium, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 7 },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: '#FFFFFF', fontSize: typeScale.button, fontWeight: '900' },
 }) }

@@ -625,7 +625,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   inlineCodeInverted: { color: '#FFFFFF', backgroundColor: 'rgba(255, 255, 255, 0.16)' },
   inverted: { color: '#FFFFFF' },
   reasoning: { borderLeftWidth: 2, borderLeftColor: '#9A88FF', paddingLeft: 10, gap: 7 },
-  reasoningHeader: { width: '100%', minHeight: transcriptInteractionContract.disclosureMinimumHeight, paddingHorizontal: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  reasoningHeader: { height: 'auto', width: '100%', minHeight: transcriptInteractionContract.disclosureMinimumHeight, paddingHorizontal: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   iconTitle: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
   reasoningTitle: { color: '#6C5AD9', fontSize: 11, fontWeight: '900' },
   reasoningMeta: { color: colors.muted, fontSize: 10 },

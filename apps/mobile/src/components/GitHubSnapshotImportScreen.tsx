@@ -89,7 +89,7 @@ export function GitHubSnapshotImportScreen({ initialReference, initialError }: P
         </View> : null}
         <View style={styles.actionsCard}>
           <PendingButton variant="primary" isPending={importing} isDisabled={loadStatus !== 'ready' || !runtimeReady} onPress={() => { void submitImport() }} style={styles.primaryButton}>
-            {({ isPending }) => <View style={styles.buttonContent}>{isPending || !runtimeReady ? <Spinner color="#FFFFFF" size="sm" /> : null}<Button.Label style={styles.primaryLabel}>{isPending ? t('githubImporting') : !runtimeReady ? t('githubImportWaitingForRuntime') : t('githubImportConfirm')}</Button.Label></View>}
+            {({ isPending }) => <>{isPending || !runtimeReady ? <Spinner color="#FFFFFF" size="sm" /> : null}<Button.Label style={styles.primaryLabel}>{isPending ? t('githubImporting') : !runtimeReady ? t('githubImportWaitingForRuntime') : t('githubImportConfirm')}</Button.Label></>}
           </PendingButton>
           <Button variant="secondary" isDisabled={importing} onPress={() => { void Linking.openURL(githubCommitUrl(reference)) }} style={styles.secondaryButton}>
             <AppIcon icon={ExternalLink} color={colors.accent} size={16} /><Button.Label style={styles.secondaryLabel}>{t('openGithub')}</Button.Label>
@@ -130,12 +130,11 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   progressText: { flex: 1, color: colors.text, fontSize: typeScale.label, fontWeight: '800' },
   progressPercent: { color: colors.accent, fontSize: typeScale.label, fontWeight: '900' },
   actionsCard: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.large, backgroundColor: colors.panel, padding: 12, gap: 8 },
-  primaryButton: { height: 'auto', minHeight: controlSize.prominent, borderRadius: 14, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
-  buttonContent: { minHeight: controlSize.prominent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  primaryButton: { height: 'auto', minHeight: controlSize.prominent, borderRadius: 14, backgroundColor: colors.accent, gap: 8 },
   primaryLabel: { color: '#FFFFFF', fontSize: typeScale.button, fontWeight: '900' },
   secondaryButton: { height: 'auto', minHeight: controlSize.regular, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.raised, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   secondaryLabel: { color: colors.text, fontSize: typeScale.button, fontWeight: '800' },
   footerActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 2, paddingTop: 2 },
-  footerButton: { minHeight: controlSize.compact, borderRadius: 10, paddingHorizontal: 7 },
+  footerButton: { height: 'auto', minHeight: controlSize.compact, borderRadius: 10, paddingHorizontal: 7 },
   footerLabel: { color: colors.muted, fontSize: typeScale.caption, fontWeight: '700' },
 }) }

@@ -286,7 +286,7 @@ export default function WorkspaceScreen() {
                 onPress={() => openProject(project.id, sessions)}
                 style={styles.projectOpenButton}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><ProjectIcon project={project} />
+                <ProjectIcon project={project} />
                 <View style={styles.projectCopy}>
                   <View style={styles.projectTitleRow}>
                     <Text numberOfLines={1} style={styles.projectName}>{project.name}</Text>
@@ -296,7 +296,6 @@ export default function WorkspaceScreen() {
                     {project.template ? <AppIcon icon={project.template === 'web' ? Code2 : Smartphone} color={project.template === 'web' ? colors.blue : colors.accent} size={13} /> : null}
                     <Text numberOfLines={1} style={styles.projectMeta}>{t(projectFilePaths(project).length === 1 ? 'fileCountSingular' : 'fileCount', { count: projectFilePaths(project).length })} · {sessionLoadStatus === 'loaded' ? t(sessions.length === 1 ? 'sessionCountSingular' : 'sessionCount', { count: sessions.length }) : sessionLoadStatus === 'failed' ? t('stateFailed') : t('loadingSessions')}</Text>
                   </View>
-                </View>
                 </View>
               </Button>
               <View style={styles.projectHeaderActions}>
@@ -322,7 +321,7 @@ export default function WorkspaceScreen() {
                   accessibilityRole={workspaceProjectCardAccessibilityContract.projectActionsRole}
                   accessibilityLabel={`${t('projectActions')} · ${project.name}`}
                   onPress={(event) => { event.stopPropagation(); setSelectedProjectActionTarget(projectActionTarget) }}
-                  style={[styles.projectActionButton, styles.projectActionDivider, styles.projectActionMenuButton]}
+                  style={[styles.projectActionButton, styles.projectActionDivider]}
                 >
                   <AppIcon icon={CircleEllipsis} color={colors.accent} size={17} />
                 </Button>
@@ -363,10 +362,8 @@ export default function WorkspaceScreen() {
                 onPress={(event) => { event.stopPropagation(); openSession(project.id, session.sessionId) }}
                 style={styles.sessionRow}
               >
-                <View style={styles.sessionMain}>
-                  <View style={styles.sessionCopy}><Text numberOfLines={1} style={styles.sessionTitle}>{session.title}</Text><Text numberOfLines={1} style={styles.sessionMeta}>{t(session.turnCount === 1 ? 'turnCountSingular' : 'turnCount', { count: session.turnCount })} · {formatSessionDate(session.updatedAt)}</Text></View>
-                  <AppIcon icon={ChevronRight} color={colors.muted} size={17} />
-                </View>
+                <View style={styles.sessionCopy}><Text numberOfLines={1} style={styles.sessionTitle}>{session.title}</Text><Text numberOfLines={1} style={styles.sessionMeta}>{t(session.turnCount === 1 ? 'turnCountSingular' : 'turnCount', { count: session.turnCount })} · {formatSessionDate(session.updatedAt)}</Text></View>
+                <AppIcon icon={ChevronRight} color={colors.muted} size={17} />
               </Button>)}
               {sessionLoadStatus === 'loaded' && sessions.length > WORKSPACE_COLLAPSED_SESSION_COUNT ? <Pressable
                 accessibilityRole="button"
@@ -426,11 +423,9 @@ export default function WorkspaceScreen() {
           onPress={() => { const target = selectedProjectActionTarget; setSelectedProjectActionTarget(undefined); router.push({ pathname: '/shortcut/[projectId]', params: { projectId: target.projectId } }) }}
           style={[styles.projectActionRow, styles.projectActionRowPrimary]}
         >
-          <View style={styles.projectActionRowContent}>
-            <View style={[styles.projectActionRowIcon, styles.projectActionRowPrimaryIcon]}><AppIcon icon={Smartphone} color={colors.accent} size={20} /></View>
-            <View style={styles.projectActionRowCopy}><Button.Label style={styles.projectActionRowTitle}>{t('addToHomeScreen')}</Button.Label><Text numberOfLines={2} style={styles.projectActionRowDescription}>{t('shortcutDescription')}</Text></View>
-            <AppIcon icon={ChevronRight} color={colors.accent} size={18} />
-          </View>
+          <View style={[styles.projectActionRowIcon, styles.projectActionRowPrimaryIcon]}><AppIcon icon={Smartphone} color={colors.accent} size={20} /></View>
+          <View style={styles.projectActionRowCopy}><Button.Label style={styles.projectActionRowTitle}>{t('addToHomeScreen')}</Button.Label><Text style={styles.projectActionRowDescription}>{t('shortcutDescription')}</Text></View>
+          <AppIcon icon={ChevronRight} color={colors.accent} size={18} />
         </Button>
         {renderSlot('workspace.menu', { projectId: selectedProjectActionTarget.projectId, onClose: () => setSelectedProjectActionTarget(undefined) })}
         <Button
@@ -441,11 +436,9 @@ export default function WorkspaceScreen() {
           onPress={() => { const target = selectedProjectActionTarget; setSelectedProjectActionTarget(undefined); router.push({ pathname: '/share/[projectId]', params: { projectId: target.projectId } }) }}
           style={[styles.projectActionRow, styles.projectActionRowPrimary]}
         >
-          <View style={styles.projectActionRowContent}>
-            <View style={[styles.projectActionRowIcon, styles.projectActionRowPrimaryIcon]}><AppIcon icon={Share2} color={colors.accent} size={20} /></View>
-            <View style={styles.projectActionRowCopy}><Button.Label style={styles.projectActionRowTitle}>{t('shareProject')}</Button.Label><Text numberOfLines={2} style={styles.projectActionRowDescription}>{t('shareProjectDescription')}</Text></View>
-            <AppIcon icon={ChevronRight} color={colors.accent} size={18} />
-          </View>
+          <View style={[styles.projectActionRowIcon, styles.projectActionRowPrimaryIcon]}><AppIcon icon={Share2} color={colors.accent} size={20} /></View>
+          <View style={styles.projectActionRowCopy}><Button.Label style={styles.projectActionRowTitle}>{t('shareProject')}</Button.Label><Text style={styles.projectActionRowDescription}>{t('shareProjectDescription')}</Text></View>
+          <AppIcon icon={ChevronRight} color={colors.accent} size={18} />
         </Button>
         <Button
           variant="ghost"
@@ -455,11 +448,9 @@ export default function WorkspaceScreen() {
           onPress={() => { const target = selectedProjectActionTarget; setSelectedProjectActionTarget(undefined); dispatchProjectRename({ type: 'open', target }) }}
           style={styles.projectActionRow}
         >
-          <View style={styles.projectActionRowContent}>
-            <View style={styles.projectActionRowIcon}><AppIcon icon={Pencil} color={colors.text} size={19} /></View>
-            <View style={styles.projectActionRowCopy}><Button.Label style={styles.projectActionRowTitle}>{t('rename')}</Button.Label><Text numberOfLines={2} style={styles.projectActionRowDescription}>{t('renameProjectDescription')}</Text></View>
-            <AppIcon icon={ChevronRight} color={colors.muted} size={18} />
-          </View>
+          <View style={styles.projectActionRowIcon}><AppIcon icon={Pencil} color={colors.text} size={19} /></View>
+          <View style={styles.projectActionRowCopy}><Button.Label style={styles.projectActionRowTitle}>{t('rename')}</Button.Label><Text style={styles.projectActionRowDescription}>{t('renameProjectDescription')}</Text></View>
+          <AppIcon icon={ChevronRight} color={colors.muted} size={18} />
         </Button>
         <View style={styles.projectActionSectionDivider} />
         <Button
@@ -470,11 +461,9 @@ export default function WorkspaceScreen() {
           onPress={() => { const target = selectedProjectActionTarget; setSelectedProjectActionTarget(undefined); dispatchProjectAction({ type: 'request-delete', target }) }}
           style={[styles.projectActionRow, styles.projectActionRowDanger]}
         >
-          <View style={styles.projectActionRowContent}>
-            <View style={[styles.projectActionRowIcon, styles.projectActionRowDangerIcon]}><AppIcon icon={Trash2} color={colors.danger} size={19} /></View>
-            <View style={styles.projectActionRowCopy}><Button.Label style={[styles.projectActionRowTitle, styles.projectActionRowDangerTitle]}>{t('delete')}</Button.Label><Text numberOfLines={2} style={styles.projectActionRowDescription}>{t('deleteProjectActionDescription')}</Text></View>
-            <AppIcon icon={ChevronRight} color={colors.danger} size={18} />
-          </View>
+          <View style={[styles.projectActionRowIcon, styles.projectActionRowDangerIcon]}><AppIcon icon={Trash2} color={colors.danger} size={19} /></View>
+          <View style={styles.projectActionRowCopy}><Button.Label style={[styles.projectActionRowTitle, styles.projectActionRowDangerTitle]}>{t('delete')}</Button.Label><Text style={styles.projectActionRowDescription}>{t('deleteProjectActionDescription')}</Text></View>
+          <AppIcon icon={ChevronRight} color={colors.danger} size={18} />
         </Button>
       </View> : null}
     </AppDialog>
@@ -560,7 +549,7 @@ function createStyles(colors: ThemeColors, projectCardWidth: number) { return St
   projectList: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', gap: 12 },
   projectCard: { width: projectCardWidth, padding: workspaceProjectCardLayout.cardPadding, gap: 10, borderRadius: 18, borderWidth: workspaceProjectCardLayout.cardBorderWidth, borderColor: colors.border, backgroundColor: colors.panel, alignItems: 'stretch', flexDirection: 'column', shadowColor: '#162048', shadowOpacity: 0.07, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 2 },
   projectHeader: { minHeight: workspaceProjectCardLayout.minimumTouchTarget, flexDirection: 'row', alignItems: 'center', gap: workspaceProjectCardLayout.headerGap },
-  projectOpenButton: { flex: 1, minWidth: 0, minHeight: workspaceProjectCardLayout.minimumTouchTarget, paddingHorizontal: 0, paddingVertical: 0, borderRadius: 11, alignItems: 'stretch', justifyContent: 'center' },
+  projectOpenButton: { flex: 1, minWidth: 0, height: 'auto', minHeight: workspaceProjectCardLayout.minimumTouchTarget, paddingHorizontal: 0, paddingVertical: 0, borderRadius: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 10 },
   projectTitleRow: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 7 },
   githubBadge: { width: 24, height: 24, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.raised },
   projectCopy: { flex: 1, minWidth: 0, gap: 4 },
@@ -568,12 +557,10 @@ function createStyles(colors: ThemeColors, projectCardWidth: number) { return St
   projectMetaRow: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 4 },
   projectMeta: { flexShrink: 1, color: colors.muted, fontSize: typeScale.caption },
   projectHeaderActions: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: workspaceProjectCardLayout.actionGap, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderRadius: 11, backgroundColor: colors.raised },
-  projectActionButton: { width: workspaceProjectCardLayout.minimumTouchTarget, height: workspaceProjectCardLayout.minimumTouchTarget, minWidth: workspaceProjectCardLayout.minimumTouchTarget, paddingHorizontal: 0, borderRadius: 0, alignItems: 'center', justifyContent: 'center' },
+  projectActionButton: { width: workspaceProjectCardLayout.minimumTouchTarget, height: workspaceProjectCardLayout.minimumTouchTarget, minWidth: workspaceProjectCardLayout.minimumTouchTarget, paddingHorizontal: 0, borderRadius: 0, backgroundColor: colors.raised, alignItems: 'center', justifyContent: 'center' },
   projectActionDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.border },
-  projectActionMenuButton: { backgroundColor: colors.raised },
   sessionList: { overflow: 'hidden', borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.canvas },
-  sessionRow: { minHeight: 52, paddingHorizontal: 0, borderRadius: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, alignItems: 'stretch' },
-  sessionMain: { minHeight: 52, paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sessionRow: { height: 'auto', minHeight: 52, paddingHorizontal: 11, borderRadius: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8 },
   sessionCopy: { flex: 1, gap: 3 },
   sessionTitle: { color: colors.text, fontSize: typeScale.label, fontWeight: '800' },
   sessionMeta: { color: colors.muted, fontSize: typeScale.micro },
@@ -584,7 +571,7 @@ function createStyles(colors: ThemeColors, projectCardWidth: number) { return St
   sessionLoading: { minHeight: 52, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   sessionLoadingText: { color: colors.muted, fontSize: typeScale.caption },
   sessionFailure: { padding: 10, gap: 8 },
-  sessionRetry: { alignSelf: 'flex-start', minHeight: workspaceProjectCardLayout.minimumTouchTarget },
+  sessionRetry: { height: 'auto', alignSelf: 'flex-start', minHeight: workspaceProjectCardLayout.minimumTouchTarget },
   noSessions: { color: colors.muted, fontSize: typeScale.caption, textAlign: 'center', padding: 16 },
   emptyCard: { minHeight: 170, alignItems: 'center', justifyContent: 'center', borderRadius: 18, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.panel, padding: 22 },
   emptyIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: colors.accentDeep, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
@@ -593,10 +580,9 @@ function createStyles(colors: ThemeColors, projectCardWidth: number) { return St
   errorAlert: { width: '100%' },
   error: { color: colors.danger, fontSize: typeScale.label, lineHeight: 18 },
   projectActionList: { gap: 8, paddingTop: 2 },
-  projectActionRow: { width: '100%', height: 'auto', minHeight: 70, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.panel, paddingHorizontal: 12, paddingVertical: 10, alignItems: 'stretch' },
+  projectActionRow: { width: '100%', height: 'auto', minHeight: 70, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.panel, paddingHorizontal: 12, paddingVertical: 10, gap: 11 },
   projectActionRowPrimary: { borderColor: `${colors.accent}2E`, backgroundColor: colors.accentDeep },
   projectActionRowDanger: { borderColor: `${colors.danger}26`, backgroundColor: `${colors.danger}08` },
-  projectActionRowContent: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 11 },
   projectActionRowIcon: { width: 40, height: 40, flexShrink: 0, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.raised },
   projectActionRowPrimaryIcon: { backgroundColor: colors.panel },
   projectActionRowDangerIcon: { backgroundColor: `${colors.danger}12` },

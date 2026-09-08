@@ -32,7 +32,7 @@ export function SessionRecoveryCard({ state, message, pending, onRetry, onOpenSe
     </View>
     <View style={styles.actions}>
       {credentialFailure ? <Button size="sm" variant="secondary" isDisabled={pending} onPress={onOpenSettings} testID="agent-session-credential-settings"><Button.Label>{t('openSettings')}</Button.Label></Button> : null}
-      <PendingButton size="sm" variant="secondary" accessibilityLabel={t(state === 'paused' ? 'continueSession' : 'retry')} isPending={pending} onPress={onRetry} style={styles.retry} testID="agent-session-retry">
+      <PendingButton size="sm" variant="ghost" accessibilityLabel={t(state === 'paused' ? 'continueSession' : 'retry')} isPending={pending} onPress={onRetry} style={styles.retry} testID="agent-session-retry">
         {({ isPending }) => <View pointerEvents="none" style={[styles.retryContent, { backgroundColor: colors.accentDeep }]}>
           {isPending ? <Spinner size="sm" color={colors.blue} /> : null}
           <Button.Label style={[styles.retryLabel, { color: colors.blue }]}>{t(isPending ? 'sessionRecovering' : state === 'paused' ? 'continueSession' : 'retry')}</Button.Label>

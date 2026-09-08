@@ -216,6 +216,8 @@ export interface PreviewRunInput {
 }
 
 export interface PreviewEndpoint {
+  /** Installed Web releases enforce the restricted runtime policy. */
+  restricted?: boolean
   projectId: string
   platform: PreviewPlatform
   revision: number

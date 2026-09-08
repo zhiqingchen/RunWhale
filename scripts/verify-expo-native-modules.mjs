@@ -64,7 +64,6 @@ const androidProvider = await readFile(resolve(root, 'native/node-host/android/s
 const iosProvider = await readFile(resolve(root, 'native/node-host/ios/NativePreviewExpoModulesProvider.swift'), 'utf8')
 for (const [name, androidClasses, iosClasses] of [
   ['expo-audio', ['expo.modules.audio.AudioModule'], ['AudioModule']],
-  ['expo-contacts', ['expo.modules.contacts.ContactsModule', 'expo.modules.contacts.next.ContactsNextModule'], ['ContactsModule', 'ContactAccessButtonModule', 'ContactsNextModule']],
   ['expo-file-system', ['expo.modules.filesystem.FileSystemModule', 'expo.modules.filesystem.legacy.FileSystemLegacyModule'], ['FileSystemModule', 'FileSystemLegacyModule']],
   ['expo-image-picker', ['expo.modules.imagepicker.ImagePickerModule'], ['ImagePickerModule']],
   ['expo-local-authentication', ['expo.modules.localauthentication.LocalAuthenticationModule'], ['LocalAuthenticationModule']],
@@ -80,6 +79,12 @@ for (const [name, androidClasses, iosClasses] of [
     || iosClasses.some((className) => !iosProvider.includes(`"${className}"`))) {
     throw new Error(`${name} is missing from a Native Preview platform provider`)
   }
+}
+if (androidProvider.includes('expo.modules.contacts.')
+  || /"(?:ContactsModule|ContactsNextModule|ContactAccessButtonModule)"/.test(iosProvider)
+  || !catalog.blockedModules.includes('expo-contacts')
+  || mobilePackage.dependencies['expo-contacts'] !== undefined) {
+  throw new Error('Contacts must remain unavailable in the app and Native Preview')
 }
 const androidScope = await readFile(resolve(root, 'native/node-host/android/src/main/java/com/runwhale/nodehost/NativePreviewProjectScope.kt'), 'utf8')
 const iosBridge = await readFile(resolve(root, 'native/node-host/ios/NativePreviewBridge.mm'), 'utf8')

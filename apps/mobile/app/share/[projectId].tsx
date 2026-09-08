@@ -115,7 +115,7 @@ export default function ProjectShareScreen() {
 
         <View style={styles.actionsCard}>
           <PendingButton variant="primary" isPending={publishing} isDisabled={!ready} onPress={() => { void publish() }} style={[styles.primaryButton, !ready && styles.disabledButton]}>
-            {({ isPending }) => <View style={styles.buttonContent}>{isPending ? <Spinner color="#FFFFFF" size="sm" /> : <AppIcon icon={Share2} color="#FFFFFF" size={17} />}<Button.Label style={styles.primaryLabel}>{actionLabel}</Button.Label></View>}
+            {({ isPending }) => <>{isPending ? <Spinner color="#FFFFFF" size="sm" /> : <AppIcon icon={Share2} color="#FFFFFF" size={17} />}<Button.Label style={styles.primaryLabel}>{actionLabel}</Button.Label></>}
           </PendingButton>
           <Button variant="secondary" isDisabled={publishing || loading} onPress={() => { void inspect() }} style={styles.secondaryButton}>
             <AppIcon icon={RefreshCw} color={colors.accent} size={16} /><Button.Label style={styles.secondaryLabel}>{t('checkAgain')}</Button.Label>
@@ -180,9 +180,8 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   cardTitle: { color: colors.text, fontSize: typeScale.heading, lineHeight: 20, fontWeight: '900' },
   cardBody: { color: colors.muted, fontSize: typeScale.label, lineHeight: 18 },
   actionsCard: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.large, backgroundColor: colors.panel, padding: 12, gap: 8 },
-  primaryButton: { height: 'auto', minHeight: controlSize.prominent, borderRadius: 14, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  primaryButton: { height: 'auto', minHeight: controlSize.prominent, borderRadius: 14, backgroundColor: colors.accent, gap: 8 },
   disabledButton: { opacity: 0.44 },
-  buttonContent: { minHeight: controlSize.prominent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   primaryLabel: { color: '#FFFFFF', fontSize: typeScale.button, fontWeight: '900' },
   secondaryButton: { height: 'auto', minHeight: controlSize.regular, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.raised, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   secondaryLabel: { color: colors.text, fontSize: typeScale.button, fontWeight: '800' },

@@ -68,7 +68,7 @@ static NSURL *_Nullable RunWhaleCanonicalFileURL(NSURL *url) {
 static NSError *RunWhaleNativePreviewStorageError(void) {
   return [NSError errorWithDomain:RunWhaleNativePreviewStorageErrorDomain
                              code:1
-                         userInfo:@{NSLocalizedDescriptionKey : @"Native Preview project storage could not be created."}];
+                         userInfo:@{NSLocalizedDescriptionKey : @"Preview project storage could not be created."}];
 }
 
 static BOOL RunWhaleIsValidNativePreviewProjectIdentifier(NSString *projectIdentifier) {
@@ -224,7 +224,7 @@ static void RunWhaleSetNativePreviewAppIdentifier(EXAppContext *appContext) {
 
 static void RunWhaleInstallNativePreviewAppIdentifier(facebook::jsi::Runtime &runtime) {
   auto expo = runtime.global().getProperty(runtime, "expo");
-  NSCAssert(expo.isObject(), @"Expo must install its global object before Native Preview registers modules");
+  NSCAssert(expo.isObject(), @"Expo must install its global object before Preview registers modules");
   if (!expo.isObject()) return;
   expo.asObject(runtime).setProperty(
       runtime,
@@ -269,7 +269,7 @@ static NSString *RunWhaleBoundedPreviewText(NSString *value, NSUInteger limit) {
 }
 
 static NSString *RunWhaleSanitizePreviewMessage(NSString *message) {
-  NSString *sanitized = message.length > 0 ? message : @"Native Preview failed";
+  NSString *sanitized = message.length > 0 ? message : @"Preview failed";
   sanitized = [[sanitized componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet]
       componentsJoinedByString:@" "];
   sanitized = RunWhaleBoundedPreviewText(sanitized, 2048);
@@ -459,7 +459,7 @@ static void RunWhaleInstallNativePreviewFatalReporter(
                            onComplete:^(NSError *error, RCTSource *source) {
                              if (error != nil && weakSelf.runtimeFailureHandler != nil) {
                                weakSelf.runtimeFailureHandler(
-                                   @"bundle-load", @"bundle_load_failed", @"The Native Preview bundle could not be loaded.");
+                                   @"bundle-load", @"bundle_load_failed", @"The Preview bundle could not be loaded.");
                              }
                              loadCallback(error, source);
                            }];
@@ -471,7 +471,7 @@ static void RunWhaleInstallNativePreviewFatalReporter(
   if (_previewAppContext == nil) {
     if (self.runtimeFailureHandler != nil) {
       self.runtimeFailureHandler(
-          @"host-create", @"project_storage_failed", @"Native Preview project storage could not be created.");
+          @"host-create", @"project_storage_failed", @"Preview project storage could not be created.");
     }
     return;
   }
@@ -652,7 +652,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
 - (void)addReadyHandler:(RunWhaleNativePreviewReadyHandler)readyHandler
           failureHandler:(RunWhaleNativePreviewFailureHandler)failureHandler {
   if (self.failed) {
-    NSString *message = self.lastFailureMessage ?: @"Native Preview failed";
+    NSString *message = self.lastFailureMessage ?: @"Preview failed";
     dispatch_async(dispatch_get_main_queue(), ^{
       failureHandler(message);
     });
@@ -715,7 +715,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
     [self installMinimizeControl];
     [self handleRuntimeFailureAtStage:@"startup"
                                   code:@"native_startup_exception"
-                               message:exception.reason ?: @"Native Preview could not initialize."];
+                               message:exception.reason ?: @"Preview could not initialize."];
   }
 }
 
@@ -858,7 +858,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
   dispatch_block_t block = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, ^{
     [weakSelf handleRuntimeFailureAtStage:@"first-content"
                                      code:@"first_content_timeout"
-                                  message:@"Native Preview did not mount content within 20 seconds."];
+                                  message:@"Preview did not mount content within 20 seconds."];
   });
   self.startupTimeoutBlock = block;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(RunWhaleNativePreviewStartupTimeout * NSEC_PER_SEC)),
@@ -934,7 +934,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
   [self.readyHandlers removeAllObjects];
   [self.failureHandlers removeAllObjects];
   for (RunWhaleNativePreviewFailureHandler handler in handlers) {
-    handler(@"Native Preview launch was cancelled.");
+    handler(@"Preview launch was cancelled.");
   }
 
   [self tearDownPreviewRuntime];
@@ -945,7 +945,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
   if (!self.ready && !self.failed) {
     [self handleRuntimeFailureAtStage:@"presentation"
                                  code:@"startup_cancelled"
-                              message:@"Native Preview was minimized before content mounted."];
+                              message:@"Preview was minimized before content mounted."];
     return;
   }
   [self closePreview];
@@ -970,7 +970,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
 }
 
 - (void)tearDownPreviewRuntime {
-  NSCAssert(NSThread.isMainThread, @"Native Preview runtimes must be torn down on the main thread");
+  NSCAssert(NSThread.isMainThread, @"Preview runtimes must be torn down on the main thread");
   RunWhaleNativePreviewFactory *factory = self.previewFactory;
   RunWhaleNativePreviewDelegate *delegate = self.previewDelegate;
   UIView *preview = self.previewView;
@@ -1020,7 +1020,7 @@ static UIViewController *_Nullable RunWhaleOwningViewController(UIView *view) {
 }
 
 void RunWhaleDetachNativePreviewController(UIViewController *controller) {
-  NSCAssert(NSThread.isMainThread, @"Native Preview controllers must be detached on the main thread");
+  NSCAssert(NSThread.isMainThread, @"Preview controllers must be detached on the main thread");
   if (![controller isKindOfClass:RunWhaleNativePreviewController.class]) return;
   RunWhaleNativePreviewController *previewController = (RunWhaleNativePreviewController *)controller;
   if (previewController.parentViewController == nil) return;
@@ -1061,14 +1061,14 @@ static BOOL RunWhaleEmbedNativePreviewController(
 }
 
 void RunWhaleSetNativePreviewHostView(UIView *hostView) {
-  NSCAssert(NSThread.isMainThread, @"Native Preview hosts must be registered on the main thread");
+  NSCAssert(NSThread.isMainThread, @"Preview hosts must be registered on the main thread");
   RunWhaleRegisteredNativePreviewHostView = hostView;
   RunWhaleNativePreviewController *controller = RunWhaleActiveNativePreviewController;
   if (controller != nil) RunWhaleEmbedNativePreviewController(controller, hostView);
 }
 
 void RunWhaleClearNativePreviewHostView(UIView *hostView) {
-  NSCAssert(NSThread.isMainThread, @"Native Preview hosts must be cleared on the main thread");
+  NSCAssert(NSThread.isMainThread, @"Preview hosts must be cleared on the main thread");
   if (RunWhaleRegisteredNativePreviewHostView != hostView) return;
   RunWhaleNativePreviewController *controller = RunWhaleActiveNativePreviewController;
   if (controller != nil && controller.view.superview == hostView) {
@@ -1081,7 +1081,7 @@ void RunWhaleClearNativePreviewHostView(UIView *hostView) {
 void RunWhalePresentNativePreviewController(
     UIViewController *controller,
     UIViewController *fallbackPresenter) {
-  NSCAssert(NSThread.isMainThread, @"Native Preview controllers must be presented on the main thread");
+  NSCAssert(NSThread.isMainThread, @"Preview controllers must be presented on the main thread");
   if (![controller isKindOfClass:RunWhaleNativePreviewController.class]) return;
   RunWhaleNativePreviewController *previewController = (RunWhaleNativePreviewController *)controller;
   if (previewController.launchCancelled) return;
@@ -1116,7 +1116,7 @@ UIViewController *RunWhaleCreateNativePreviewController(
     RunWhaleNativePreviewReadyHandler readyHandler,
     RunWhaleNativePreviewFailureHandler failureHandler,
     RunWhaleNativePreviewActionHandler actionHandler) {
-  NSCAssert(NSThread.isMainThread, @"Native Preview controllers must be created on the main thread");
+  NSCAssert(NSThread.isMainThread, @"Preview controllers must be created on the main thread");
   [NSUserDefaults.standardUserDefaults removeObjectForKey:RunWhaleNativePreviewDiagnosticKey];
 
   static RunWhaleNativePreviewController *controller;
@@ -1156,7 +1156,7 @@ NSString *RunWhaleTestNativePreview(NSString *projectId, NSString *sourceId, NSS
   RunWhaleNativePreviewController *controller = RunWhaleActiveNativePreviewController;
   if (!controller || !controller.ready || controller.failed || controller.crashed
       || ![controller.projectIdentifier isEqual:projectId] || ![controller.sourceIdentifier isEqual:sourceId]) {
-    return @"{\"timestamp\":0,\"error\":\"The requested Native Preview is not visible. Open the current revision.\"}";
+    return @"{\"timestamp\":0,\"error\":\"The requested Preview is not visible. Open the current revision.\"}";
   }
   return [controller.testing execute:command];
 }

@@ -35,7 +35,7 @@ internal object NativePreviewReactPackages {
       @Suppress("UNCHECKED_CAST")
       packageListClass.getMethod("getPackages").invoke(packageList) as List<ReactPackage>
     }.getOrElse { error ->
-      throw IllegalStateException("Native Preview could not read the app's linked React packages", error)
+      throw IllegalStateException("Preview could not read the app's linked React packages", error)
     }
     return buildList {
       add(MainReactPackage())
@@ -83,7 +83,7 @@ private class NativePreviewExpoModulesPackage(
       val packages = packageListClass.getMethod("getPackageList").invoke(null) as List<Package>
       packages.filter { it.javaClass.name in allowedPackageClasses }
     }.getOrElse { error ->
-      throw IllegalStateException("Native Preview could not read the app's linked Expo packages", error)
+      throw IllegalStateException("Preview could not read the app's linked Expo packages", error)
     }
   }
 }
@@ -97,8 +97,6 @@ private object NativePreviewExpoModulesProvider : ModulesProvider {
     "expo.modules.camera.CameraViewModule",
     "expo.modules.clipboard.ClipboardModule",
     "expo.modules.constants.ConstantsModule",
-    "expo.modules.contacts.ContactsModule",
-    "expo.modules.contacts.next.ContactsNextModule",
     "expo.modules.crypto.CryptoModule",
     "expo.modules.crypto.aes.AesCryptoModule",
     "expo.modules.device.DeviceModule",

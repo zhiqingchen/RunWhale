@@ -1,5 +1,5 @@
 export class NativePreviewLaunchCancelled extends Error {
-  constructor(message = 'Native Preview launch was cancelled.') {
+  constructor(message = 'Preview launch was cancelled.') {
     super(message)
     this.name = 'NativePreviewLaunchCancelled'
   }
@@ -30,7 +30,7 @@ export class NativePreviewLauncher {
   open(bundleUrl: string, requestId: string, projectId: string): Promise<{ opened: boolean }> {
     let launch = this.next
     if (!launch || launch.bundleUrl !== bundleUrl || launch.projectId !== projectId) {
-      if (launch) this.cancelLaunch(launch, 'A newer Native Preview launch replaced this request.')
+      if (launch) this.cancelLaunch(launch, 'A newer Preview launch replaced this request.')
       launch = { bundleUrl, projectId, requestId, callers: new Map() }
       this.next = launch
     }
@@ -76,7 +76,7 @@ export class NativePreviewLauncher {
         this.native.openNativePreview(launch.bundleUrl, launch.requestId, launch.projectId),
         new Promise<never>((_resolve, reject) => {
           timer = setTimeout(() => {
-            reject(new Error('Native Preview startup timed out. Try opening it again.'))
+            reject(new Error('Preview startup timed out. Try opening it again.'))
             this.native.cancelNativePreviewOpen(launch.requestId)
           }, this.timeoutMs)
         }),

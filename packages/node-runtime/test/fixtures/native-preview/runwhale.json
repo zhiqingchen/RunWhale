@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "native-preview-fixture",
-  "name": "Native Preview fixture",
+  "name": "Preview fixture",
   "runtimeAbi": {
     "android": "runwhale-expo57-android-v1",
     "ios": "runwhale-expo57-ios-v1"

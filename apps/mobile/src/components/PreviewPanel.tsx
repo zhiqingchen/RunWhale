@@ -176,7 +176,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
     Keyboard.dismiss()
     if (active?.target === 'native') {
       if (!NodeHost.closeNativePreview) throw new Error('Update the RunWhale native host to enable closing Preview.')
-      if (!await NodeHost.closeNativePreview(project.id, active.bundleUrl)) throw new Error('Native Preview changed before it could close. Inspect the current revision.')
+      if (!await NodeHost.closeNativePreview(project.id, active.bundleUrl)) throw new Error('Preview changed before it could close. Inspect the current revision.')
     } else if (active?.target === 'web') {
       webViewRef.current?.injectJavaScript("if (window.__runwhalePreviewTest) window.__runwhalePreviewTest(null, {kind:'close'}); true;")
     }

@@ -27,6 +27,7 @@ export type MetroPlatform = 'android' | 'ios' | 'web'
 
 export interface MetroBundle {
   platform: MetroPlatform
+  restricted?: boolean
   webDocument?: WebPreviewDocument
   nativeAssets?: NativeAssets
   code: string
@@ -102,13 +103,13 @@ export class MobileMetroRuntime {
       // (Expo Router does this with expo-glass-effect on Android).
       const originatesInStore = moduleRoots.some((moduleRoot) => within(moduleRoot, context.originModulePath))
       if (platform !== 'web' && !originatesInStore && catalogModule && !catalogModule.platforms.includes(platform)) {
-        throw new Error(`Native Preview exposes ${packageName} only on ${catalogModule.platforms.join(' and ')}`)
+        throw new Error(`Preview exposes ${packageName} only on ${catalogModule.platforms.join(' and ')}`)
       }
       if (platform !== 'web' && !originatesInStore && NATIVE_PREVIEW_BLOCKED_MODULES.has(packageName)) {
-        throw new Error(`Native Preview does not expose ${packageName}; use a supported v1 built-in module or Web Preview`)
+        throw new Error(`Preview does not expose ${packageName}; use a supported v1 built-in module or Web Preview`)
       }
       if (platform !== 'web' && !originatesInStore && unsupportedNativeDependencies.has(packageName)) {
-        throw new Error(`Native Preview cannot load project-native package ${packageName}; host native modules are fixed by the v1 ABI`)
+        throw new Error(`Preview cannot load project-native package ${packageName}; host native modules are fixed by the v1 ABI`)
       }
       const requestName = nativePreviewRequestName(moduleName, platform)
       // Metro's native fallback is useful on iOS and Android, but on web it
@@ -169,7 +170,7 @@ export class MobileMetroRuntime {
     const key = `${root}\0${platform}`
     if (this.bundler?.key !== key) {
       await this.bundler?.middleware.end()
-      // Native Preview consumes one immutable bundle and is explicitly rebuilt
+      // Preview consumes one immutable bundle and is explicitly rebuilt
       // on every run. Keeping Metro's Node watcher alive there opens one file
       // descriptor per directory in the shared module store on iOS. Only Web
       // Preview needs the live watcher for its HMR session.
@@ -272,6 +273,11 @@ export class MobileMetroRuntime {
     const mode = previewBundleMode(bundle.platform)
     const hot = mode.hot && Boolean(liveBundler)
     const server = createServer((request, response) => {
+      if (bundle.restricted) {
+        // Apply to every response, including HTML/SVG assets and error pages.
+        response.setHeader('content-security-policy', "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'self' data:; media-src 'self' blob:; frame-src 'none'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
+        response.setHeader('permissions-policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=(), magnetometer=()')
+      }
       const url = new URL(request.url ?? '/', 'http://localhost')
       // JSX resource URLs cannot inherit the page query string. Same-origin
       // subresource requests may present the token through their Referer instead.
@@ -303,7 +309,7 @@ export class MobileMetroRuntime {
           'content-type': 'text/html; charset=utf-8',
           'cache-control': 'no-store',
           'referrer-policy': 'same-origin',
-          'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws://127.0.0.1:*; font-src 'self' data:",
+          ...(!bundle.restricted ? { 'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws://127.0.0.1:*; font-src 'self' data:" } : {}),
         })
         response.end(renderWebDocument(bundle.webDocument, bundlePath, token))
         return

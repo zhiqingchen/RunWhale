@@ -34,11 +34,16 @@ type CredentialError = 'credentialSaveFailed' | 'credentialActivationFailed' | '
 
 type ModelDraft = { id: string; name: string; contextWindow: string; maxTokens: string; imageGeneration?: boolean; webSearch?: boolean }
 
+function maskCredential(value: string): string {
+  const normalized = value.trim()
+  return normalized.length > 12 ? `${normalized.slice(0, 8)}*****${normalized.slice(-4)}` : '*****'
+}
+
 function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: TextInput | null): void; onInputFocus(input: TextInput | null): void }) {
   const [key, setKey] = useState('')
   const [credentialAction, setCredentialAction] = useState<CredentialAction>()
   const [credentialError, setCredentialError] = useState<CredentialError>()
-  const [credentialLookup, setCredentialLookup] = useState<{ provider?: MobileModelProvider; state: CredentialLookupState }>({ state: 'loading' })
+  const [credentialLookup, setCredentialLookup] = useState<{ provider?: MobileModelProvider; state: CredentialLookupState; maskedKey?: string }>({ state: 'loading' })
   const [credentialLookupAttempt, setCredentialLookupAttempt] = useState(0)
   const [credentialRemovalProvider, setCredentialRemovalProvider] = useState<MobileModelProvider>()
   const [pendingModelProvider, setPendingModelProvider] = useState<MobileModelProvider>()
@@ -90,9 +95,14 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
       return undefined
     }
     let cancelled = false
+    let maskedKey: string | undefined
     setCredentialLookup({ provider: modelProvider, state: 'loading' })
-    void loadCredentialPresence(() => SecureStore.getItemAsync(`${modelProvider}.api-key`))
-      .then((state) => { if (!cancelled) setCredentialLookup({ provider: modelProvider, state }) })
+    void loadCredentialPresence(async () => {
+      const value = await SecureStore.getItemAsync(`${modelProvider}.api-key`)
+      if (value) maskedKey = maskCredential(value)
+      return value
+    })
+      .then((state) => { if (!cancelled) setCredentialLookup({ provider: modelProvider, state, ...(maskedKey ? { maskedKey } : {}) }) })
     return () => { cancelled = true }
   }, [credentialLookupAttempt, modelProvider, secureStoreAvailable])
 
@@ -140,12 +150,12 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
         activate: async (value) => { await runtime.request('credential.set', { provider: modelProvider, value }) },
       })
       setKey('')
-      setCredentialLookup({ provider: modelProvider, state: 'loaded-present' })
+      setCredentialLookup({ provider: modelProvider, state: 'loaded-present', maskedKey: maskCredential(key) })
       updateDraftPersistence('save-succeeded')
       setCredentialSaveAnnouncementToken((current) => current + 1)
     } catch (cause) {
       if (cause instanceof CredentialActivationError) {
-        setCredentialLookup({ provider: modelProvider, state: 'loaded-present' })
+        setCredentialLookup({ provider: modelProvider, state: 'loaded-present', maskedKey: maskCredential(key) })
         updateDraftPersistence('save-activation-failed')
         setCredentialError('credentialActivationFailed')
       } else {
@@ -225,7 +235,12 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
         </Button>
       })}
     </View>
-    <Text style={styles.cardLabel}>{t('providerApiKey', { provider: providerName(modelProvider) })}</Text>
+    <View style={styles.credentialLabelRow}>
+      <Text style={styles.cardLabel}>{t('providerApiKey', { provider: providerName(modelProvider) })}</Text>
+      {lookupPresentation.showLoading ? <View accessible accessibilityRole="progressbar" accessibilityLabel={t('loadingCredential')} accessibilityLiveRegion="polite">
+        <Spinner size="sm" color={colors.accent} />
+      </View> : null}
+    </View>
     <TextInput
       ref={keyInputRef}
       accessibilityLabel={t('providerApiKey', { provider: providerName(modelProvider) })}
@@ -245,14 +260,10 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
       autoCapitalize="none"
       autoCorrect={false}
       returnKeyType="done"
-      placeholder={saved ? t('keySaved') : 'sk-…'}
+      placeholder={saved ? credentialLookup.maskedKey ?? t('keySaved') : 'sk-…'}
       placeholderTextColor={controlColors.choiceForeground}
       style={styles.textInput}
     />
-    {lookupPresentation.showLoading ? <View accessible accessibilityRole="progressbar" accessibilityLabel={t('loadingCredential')} accessibilityLiveRegion="polite" style={styles.loadingRow}>
-      <Spinner size="sm" color={colors.accent} />
-      <Text style={styles.loadingText}>{t('loadingCredential')}</Text>
-    </View> : null}
     {lookupPresentation.showFailure ? <>
       <Alert {...actionErrorPresentation} style={styles.feedbackAlert}>
         <Alert.Indicator iconProps={{ size: 17 }} />
@@ -290,10 +301,10 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
       isDisabled={!credentialMutationReady || !keyIsValid || Boolean(credentialAction && credentialAction !== 'saving')}
       onPress={() => { void save() }}
       style={[styles.primaryButton, (!credentialMutationReady || !keyIsValid) && styles.primaryButtonDisabled]}
-    >{({ isPending }) => <View style={styles.pendingActionContent}>
+    >{({ isPending }) => <>
       {isPending ? <Spinner color={controlColors.primaryForeground} size="sm" /> : null}
       <Button.Label style={styles.primaryButtonText}>{t(isPending ? 'saving' : 'saveSecurely')}</Button.Label>
-    </View>}</PendingButton>
+    </>}</PendingButton>
     {saved ? <Button
       variant="danger-soft"
       accessibilityRole={settingsAccessibilityContract.buttonRole}
@@ -317,14 +328,12 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
       }}
       style={styles.customSettingsDisclosure}
     >
-      <View pointerEvents="none" style={styles.customSettingsDisclosureContent}>
-        <View style={[styles.customSettingsChevron, customModelSettingsOpen && styles.customSettingsChevronOpen]}>
-          <AppIcon icon={ChevronDown} color={colors.muted} size={16} />
-        </View>
-        <View style={styles.modelSettingsTitleGroup}>
-          <Button.Label style={styles.customSettingsDisclosureLabel}>{t('customModelSettings')}</Button.Label>
-          <Text style={styles.modelSettingsDescription}>{t('customModelSettingsDescription')}</Text>
-        </View>
+      <View style={[styles.customSettingsChevron, customModelSettingsOpen && styles.customSettingsChevronOpen]}>
+        <AppIcon icon={ChevronDown} color={colors.muted} size={16} />
+      </View>
+      <View style={styles.modelSettingsTitleGroup}>
+        <Button.Label style={styles.customSettingsDisclosureLabel}>{t('customModelSettings')}</Button.Label>
+        <Text style={styles.modelSettingsDescription}>{t('customModelSettingsDescription')}</Text>
       </View>
     </Button>
     {customModelSettingsOpen ? <View style={styles.customSettingsBody}>
@@ -454,10 +463,10 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
         isDisabled={modelDrafts.length >= 100}
         onPress={() => { setModelDrafts((current) => [...current, modelDraft({ id: '' })]); setModelSettingsSaved(false) }}
         style={styles.addModelButton}
-      ><View pointerEvents="none" style={styles.addModelButtonContent}>
+      >
         <AppIcon icon={Plus} color={colors.text} size={16} strokeWidth={2.2} />
         <Button.Label style={styles.addModelButtonText}>{t('addModel')}</Button.Label>
-      </View></Button>
+      </Button>
       {modelSettingsValidation.error ? <Alert accessibilityRole="alert" status="warning" style={styles.feedbackAlert}>
         <Alert.Indicator iconProps={{ size: 17 }} />
         <Alert.Content><Alert.Description style={styles.feedbackText}>{t(modelSettingsValidation.error)}</Alert.Description></Alert.Content>
@@ -494,7 +503,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
           accessibilityState={settingsRadioAccessibilityState(selected)}
           onPress={() => { setModel(option); setModelSelectionOpen(false) }}
           style={[styles.modelOption, selected && styles.modelOptionSelected]}
-        ><View pointerEvents="none" style={styles.modelOptionContent}><Button.Label style={[styles.modelOptionLabel, selected && styles.modelOptionLabelSelected]}>{option}</Button.Label></View></Button>
+        ><Button.Label style={[styles.modelOptionLabel, selected && styles.modelOptionLabelSelected]}>{option}</Button.Label></Button>
       })}
     </View>
   </AppDialog>

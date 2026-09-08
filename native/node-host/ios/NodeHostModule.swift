@@ -41,7 +41,7 @@ public final class NodeHostModule: Module {
     }.runOnQueue(.main)
     AsyncFunction("testNativePreview") { (projectId: String, bundleUrl: String, command: String) -> String in
       guard bundleUrl == self.testingBundleURL, let sourceId = self.testingSourceIdentifier else {
-        return "{\"timestamp\":0,\"error\":\"Open the current Native Preview before testing.\"}"
+        return "{\"timestamp\":0,\"error\":\"Open the current Preview before testing.\"}"
       }
       return RunWhaleTestNativePreview(projectId, sourceId, command)
     }.runOnQueue(.main)
@@ -80,7 +80,7 @@ public final class NodeHostModule: Module {
         promise.reject(nativePreviewFailure(
           stage: "preflight",
           code: "invalid_bundle_url",
-          message: "Native Preview only accepts a token-protected localhost bundle"
+          message: "Preview only accepts a token-protected localhost bundle"
         ))
         return
       }
@@ -88,17 +88,17 @@ public final class NodeHostModule: Module {
         promise.reject(nativePreviewFailure(
           stage: "preflight",
           code: "invalid_project_id",
-          message: "Native Preview requires a valid project identifier."
+          message: "Preview requires a valid project identifier."
         ))
         return
       }
       guard !requestId.isEmpty else {
-        promise.reject(NativePreviewException("Native Preview requires a request identifier."))
+        promise.reject(NativePreviewException("Preview requires a request identifier."))
         return
       }
       let launchState = self.nativePreviewLaunchState
       guard let launchToken = launchState.begin(requestId: requestId) else {
-        promise.reject(NativePreviewException("Another Native Preview launch is still in progress."))
+        promise.reject(NativePreviewException("Another Preview launch is still in progress."))
         return
       }
       _ = RunWhaleTakeNativePreviewDiagnostic()
@@ -108,7 +108,7 @@ public final class NodeHostModule: Module {
       }
       let cancelLaunch = {
         bundleRequest.cancel()
-        settlement.once { promise.reject(NativePreviewException("Native Preview launch was cancelled.")) }
+        settlement.once { promise.reject(NativePreviewException("Preview launch was cancelled.")) }
       }
       guard launchState.addCancellationHandler(for: launchToken, cancelLaunch) else {
         cancelLaunch()
@@ -117,7 +117,7 @@ public final class NodeHostModule: Module {
       bundleRequest.start(url: bundleUrl) { [weak self] result in
         switch result {
         case .failure(.cancelled):
-          settlement.once { promise.reject(NativePreviewException("Native Preview launch was cancelled.")) }
+          settlement.once { promise.reject(NativePreviewException("Preview launch was cancelled.")) }
         case let .failure(failure):
           settlement.once {
             promise.reject(nativePreviewFailure(
@@ -136,7 +136,7 @@ public final class NodeHostModule: Module {
               promise.reject(nativePreviewFailure(
                 stage: "preflight",
                 code: "bundle_cache_failed",
-                message: "Native Preview could not cache the verified bundle."
+                message: "Preview could not cache the verified bundle."
               ))
             }
             return
@@ -178,7 +178,7 @@ public final class NodeHostModule: Module {
             )
             let cancelPresentation = {
               RunWhaleCancelNativePreviewController(controller)
-              settlement.once { promise.reject(NativePreviewException("Native Preview launch was cancelled.")) }
+              settlement.once { promise.reject(NativePreviewException("Preview launch was cancelled.")) }
             }
             guard launchState.addCancellationHandler(for: launchToken, cancelPresentation) else {
               cancelPresentation()

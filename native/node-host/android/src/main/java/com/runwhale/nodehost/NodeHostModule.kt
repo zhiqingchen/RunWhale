@@ -56,7 +56,7 @@ class NodeHostModule : Module() {
       nativePreviewMainHandler.post {
         val activity = NativePreviewTesting.activeActivity()
         if (activity == null || activity.testing.projectId != projectId || bundleUrl != testingBundleUrl || activity.testing.sourceId != testingSourceId) {
-          promise.resolve(NativePreviewTesting.failure("The requested Native Preview is not visible. Open the current revision."))
+          promise.resolve(NativePreviewTesting.failure("The requested Preview is not visible. Open the current revision."))
         } else {
           try { activity.testing.execute(activity, JSONObject(command)) { promise.resolve(it) } }
           catch (error: Exception) { promise.resolve(NativePreviewTesting.failure(error.message ?: "Invalid test command")) }
@@ -108,11 +108,11 @@ class NodeHostModule : Module() {
     AsyncFunction("stop") { port: Int?, token: String? -> nodeRuntime.requestStop(port, token).toMap() }
     AsyncFunction("openNativePreview") { bundleUrl: String, requestId: String, projectId: String, promise: Promise ->
       if (!REQUEST_ID_PATTERN.matches(requestId)) {
-        promise.reject("ERR_NATIVE_PREVIEW_REQUEST", "Native Preview request identifier is invalid", null)
+        promise.reject("ERR_NATIVE_PREVIEW_REQUEST", "Preview request identifier is invalid", null)
         return@AsyncFunction
       }
       if (!NativePreviewProjectScope.PROJECT_ID_PATTERN.matches(projectId)) {
-        promise.reject("ERR_NATIVE_PREVIEW_PROJECT", "Native Preview project identifier is invalid", null)
+        promise.reject("ERR_NATIVE_PREVIEW_PROJECT", "Preview project identifier is invalid", null)
         return@AsyncFunction
       }
       val context = appContext.reactContext
@@ -123,7 +123,7 @@ class NodeHostModule : Module() {
       if (!nativePreviewRequestGate.begin(requestId)) {
         promise.reject(
           "ERR_NATIVE_PREVIEW_IN_PROGRESS",
-          "Another Native Preview launch is still in progress",
+          "Another Preview launch is still in progress",
           null,
         )
         return@AsyncFunction
@@ -137,14 +137,14 @@ class NodeHostModule : Module() {
             promise.resolve(mapOf("opened" to true))
           } else {
             val code = result.code ?: "launch_failed"
-            val message = result.message ?: "Native Preview failed before its first content draw"
+            val message = result.message ?: "Preview failed before its first content draw"
             promise.reject("ERR_NATIVE_PREVIEW_${code.uppercase()}", message, null)
           }
         }
         if (!registered) return@AsyncFunction
       } catch (error: Throwable) {
         nativePreviewRequestGate.finish(requestId)
-        promise.reject("ERR_NATIVE_PREVIEW_REQUEST", error.message ?: "Native Preview request is invalid", null)
+        promise.reject("ERR_NATIVE_PREVIEW_REQUEST", error.message ?: "Preview request is invalid", null)
         return@AsyncFunction
       }
 
@@ -158,7 +158,7 @@ class NodeHostModule : Module() {
           stage = "download",
           code = "bundle_download_failed",
           rawMessage = error.message,
-          fallbackMessage = "Native Preview could not download the Metro bundle",
+          fallbackMessage = "Preview could not download the Metro bundle",
         )
         NativePreviewLaunchCoordinator.complete(
           requestId,
@@ -206,7 +206,7 @@ class NodeHostModule : Module() {
           stage = "launch",
           code = "activity_launch_failed",
           rawMessage = error.message,
-          fallbackMessage = "Native Preview Activity could not be opened",
+          fallbackMessage = "Preview Activity could not be opened",
         )
         NativePreviewLaunchCoordinator.complete(
           requestId,
@@ -234,7 +234,7 @@ class NodeHostModule : Module() {
         uri.rawFragment == null &&
         TOKEN_QUERY_PATTERN.containsMatchIn(uri.rawQuery.orEmpty()),
     ) {
-      "Native Preview only accepts a token-protected localhost bundle"
+      "Preview only accepts a token-protected localhost bundle"
     }
 
     val requestKey = MessageDigest.getInstance("SHA-256")
@@ -246,7 +246,7 @@ class NodeHostModule : Module() {
     )
     val temporary = File(context.cacheDir, "${bundle.name}.tmp")
     if (temporary.exists()) require(temporary.delete()) {
-      "Unable to prepare the Native Preview bundle cache"
+      "Unable to prepare the Preview bundle cache"
     }
     val digest = MessageDigest.getInstance("SHA-256")
     // A fresh preview.run receives a fresh unguessable URL token and must
@@ -264,7 +264,7 @@ class NodeHostModule : Module() {
       }
       val declared = connection.contentLengthLong
       require(declared == -1L || declared <= MAX_PREVIEW_BYTES) {
-        "Native Preview bundle exceeds the 48 MiB limit"
+        "Preview bundle exceeds the 48 MiB limit"
       }
       var total = 0L
       connection.inputStream.use { input ->
@@ -272,22 +272,22 @@ class NodeHostModule : Module() {
           val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
           while (true) {
             check(NativePreviewLaunchCoordinator.isPending(requestId)) {
-              "Native Preview launch was cancelled"
+              "Preview launch was cancelled"
             }
             val count = input.read(buffer)
             if (count < 0) break
             total += count
             require(total <= MAX_PREVIEW_BYTES) {
-              "Native Preview bundle exceeds the 48 MiB limit"
+              "Preview bundle exceeds the 48 MiB limit"
             }
             digest.update(buffer, 0, count)
             output.write(buffer, 0, count)
           }
         }
       }
-      require(total > 0) { "Metro returned an empty Native Preview bundle" }
+      require(total > 0) { "Metro returned an empty Preview bundle" }
       check(NativePreviewLaunchCoordinator.isPending(requestId)) {
-        "Native Preview launch was cancelled"
+        "Preview launch was cancelled"
       }
       Os.rename(temporary.absolutePath, bundle.absolutePath)
       return DownloadedNativePreviewBundle(
@@ -314,7 +314,7 @@ class NodeHostModule : Module() {
         stage = "launch",
         code = "activity_result_timeout",
         rawMessage = null,
-        fallbackMessage = "Native Preview did not report its first content draw",
+        fallbackMessage = "Preview did not report its first content draw",
       )
       NativePreviewLaunchCoordinator.complete(
         requestId,
@@ -361,7 +361,7 @@ class NodeHostModule : Module() {
           stage = "launch",
           code = "activity_launch_failed",
           rawMessage = error.message,
-          fallbackMessage = "Native Preview Activity could not be opened",
+          fallbackMessage = "Preview Activity could not be opened",
         )
         NativePreviewLaunchCoordinator.complete(
           requestId,

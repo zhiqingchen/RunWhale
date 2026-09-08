@@ -134,10 +134,10 @@ export function SshSettings() {
     onPress={retrySshSettings}
     style={[styles.sshRetryButton, styles.secondaryButton]}
   >
-    {({ isPending }) => <View style={styles.pendingActionContent}>
+    {({ isPending }) => <>
       {isPending ? <Spinner color={colors.accent} size="sm" /> : null}
       <Button.Label style={styles.secondaryButtonText}>{t('retry')}</Button.Label>
-    </View>}
+    </>}
   </PendingButton>
 
   return <>
@@ -169,10 +169,10 @@ export function SshSettings() {
     {sshMetadata.status === 'configured' ? <>
       <View style={styles.sshActions}>
         <PendingButton size="sm" accessibilityRole={settingsAccessibilityContract.buttonRole} accessibilityHint={privateCredentialMissing ? t('sshPrivateKeyMissing') : undefined} isPending={copyPresentation.showSpinner} isDisabled={copyActionDisabled && !copyPresentation.showSpinner} onPress={() => { void copySshPublicKey() }} style={[styles.primaryButton, styles.sshActionButton, styles.sshPrimaryActionButton]}>
-          {({ isPending }) => <View style={styles.pendingActionContent}>
+          {({ isPending }) => <>
             {isPending ? <Spinner color={controlColors.primaryForeground} size="sm" /> : null}
             <Button.Label style={[styles.primaryButtonText, styles.sshActionLabel]}>{copyPresentation.showSuccess ? t('copied') : t('copyPublicKey')}</Button.Label>
-          </View>}
+          </>}
         </PendingButton>
         <Button
           size="sm"
@@ -207,10 +207,10 @@ export function SshSettings() {
       isDisabled={!sshAvailability.available}
       onPress={() => { void generateSshKey() }}
       style={[styles.primaryButton, !sshAvailability.available && styles.primaryButtonDisabled]}
-    >{({ isPending }) => <View style={styles.pendingActionContent}>
+    >{({ isPending }) => <>
       {isPending ? <Spinner color={controlColors.primaryForeground} size="sm" /> : null}
       <Button.Label style={styles.primaryButtonText}>{isPending ? t('working') : t('generateKey')}</Button.Label>
-    </View>}</PendingButton> : null}
+    </>}</PendingButton> : null}
     {sshMetadata.status === 'failed' ? <>
       <Alert accessibilityRole="alert" accessibilityLiveRegion="assertive" status="danger" style={styles.feedbackAlert}>
         <Alert.Indicator iconProps={{ size: 17 }} />

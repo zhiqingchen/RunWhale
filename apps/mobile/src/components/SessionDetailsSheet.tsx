@@ -138,7 +138,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   downloadCard: { padding: 14, gap: 14, borderRadius: 16, backgroundColor: colors.canvas, borderWidth: 1, borderColor: colors.border },
   downloadHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   downloadActions: { flexDirection: 'row', gap: 10 },
-  downloadButton: { flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: colors.accentDeep, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  downloadButton: { height: 'auto', flex: 1, minHeight: 44, borderRadius: 10, backgroundColor: colors.accentDeep, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   downloadIcon: { borderRadius: 10, backgroundColor: colors.accentDeep },
   formatBadge: { color: colors.muted, fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
   instructionsTitle: { color: colors.text, fontSize: 14, lineHeight: 20, fontWeight: '700' },
@@ -147,6 +147,6 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   instructions: { padding: 20, gap: 16 },
   prompt: { color: colors.text, fontSize: 15, lineHeight: 25 },
   error: { color: colors.danger, fontSize: 12, lineHeight: 18 },
-  copyButton: { minHeight: 44, minWidth: 76, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  copyButton: { height: 'auto', minHeight: 44, minWidth: 76, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   copyLabel: { color: colors.accent, fontSize: 12, fontWeight: '700' },
 }) }

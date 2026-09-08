@@ -44,15 +44,15 @@ enum NativePreviewBundleRequestFailure: Error, Sendable {
   var message: String {
     switch self {
     case .cancelled:
-      "Native Preview launch was cancelled."
+      "Preview launch was cancelled."
     case .requestFailed:
-      "The Native Preview bundle request failed."
+      "The Preview bundle request failed."
     case let .httpStatus(status):
       status.map { "Metro returned HTTP \($0)." } ?? "Metro did not return an HTTP response."
     case .empty:
-      "Metro returned an empty Native Preview bundle."
+      "Metro returned an empty Preview bundle."
     case .tooLarge:
-      "Native Preview bundle exceeds the 48 MiB limit."
+      "Preview bundle exceeds the 48 MiB limit."
     }
   }
 }

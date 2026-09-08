@@ -242,7 +242,7 @@ export class AppLibrary {
       throw new Error('Installed app is damaged. Download it again.')
     return {
       app: { ...data.app, temporary },
-      bundle: decodeRelease(bytes, root, data.app.platform, this.host),
+      bundle: { ...decodeRelease(bytes, root, data.app.platform, this.host), restricted: true },
     }
   }
   async remove(appId: string, temporary = false) {

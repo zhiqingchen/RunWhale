@@ -7,7 +7,7 @@ function fixture() {
   const pending = new Map<string, { resolve(result: { opened: boolean }): void; reject(error: Error): void }>()
   const native = {
     openNativePreview: vi.fn((_url: string, requestId: string, _projectId: string) => new Promise<{ opened: boolean }>((resolve, reject) => {
-      if (pending.size) throw new Error('Another Native Preview launch is still in progress')
+      if (pending.size) throw new Error('Another Preview launch is still in progress')
       pending.set(requestId, { resolve, reject })
     })),
     cancelNativePreviewOpen: vi.fn((_requestId: string) => true),
@@ -22,7 +22,7 @@ function fixture() {
   return { launcher, native, settle }
 }
 
-describe('shared Native Preview launching', () => {
+describe('shared Preview launching', () => {
   it('coalesces simultaneous opens of the same project revision and keeps surviving callers alive', async () => {
     const { launcher, native, settle } = fixture()
     const first = launcher.open('bundle-a', 'request-a', 'project-a')

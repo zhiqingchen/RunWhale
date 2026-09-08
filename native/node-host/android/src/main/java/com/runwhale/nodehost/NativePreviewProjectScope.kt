@@ -46,7 +46,7 @@ internal data class NativePreviewProjectScope(
       projectId: String,
     ): NativePreviewProjectScope {
       require(PROJECT_ID_PATTERN.matches(projectId)) {
-        "Native Preview project identifier is invalid"
+        "Preview project identifier is invalid"
       }
 
       val persistentRoot = isolatedDirectory(filesDirectory, projectId, "files")
@@ -76,12 +76,12 @@ internal data class NativePreviewProjectScope(
 
     private fun ensureDirectory(candidate: File, parent: File): File {
       if (!candidate.mkdirs() && !candidate.isDirectory) {
-        throw IllegalStateException("Native Preview could not create its project storage")
+        throw IllegalStateException("Preview could not create its project storage")
       }
       val canonical = candidate.canonicalFile
       val expected = File(parent.canonicalFile, candidate.name).absoluteFile
       require(canonical == expected) {
-        "Native Preview project storage escaped its application directory"
+        "Preview project storage escaped its application directory"
       }
       return canonical
     }
@@ -100,7 +100,7 @@ internal object NativePreviewProjectScopeContext {
   private val activeScope = ThreadLocal<NativePreviewProjectScope?>()
 
   fun requireCurrent(): NativePreviewProjectScope = requireNotNull(activeScope.get()) {
-    "Native Preview project scope is unavailable"
+    "Preview project scope is unavailable"
   }
 
   fun <Result> withScope(

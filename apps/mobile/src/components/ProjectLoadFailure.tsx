@@ -33,10 +33,10 @@ export function ProjectLoadFailure({ retrying, disabled, onRetry, testID }: {
       onPress={onRetry}
       style={styles.retry}
     >
-      {({ isPending }) => <View style={styles.retryContent}>
+      {({ isPending }) => <>
         {isPending ? <Spinner color={colors.accent} size="sm" /> : <AppIcon icon={RefreshCw} color={colors.accent} size={15} />}
         <Button.Label style={styles.retryLabel}>{t('retry')}</Button.Label>
-      </View>}
+      </>}
     </PendingButton>
   </View>
 }
@@ -48,7 +48,6 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   copy: { flex: 1, minWidth: 0, gap: 5 },
   title: { color: colors.text, fontSize: typeScale.heading, lineHeight: 21, fontWeight: '700' },
   description: { color: colors.muted, fontSize: typeScale.label, lineHeight: 18 },
-  retry: { alignSelf: 'flex-end', height: controlSize.regular, minHeight: controlSize.regular, borderRadius: 12, paddingHorizontal: 16, backgroundColor: colors.accentDeep, alignItems: 'center', justifyContent: 'center' },
-  retryContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  retry: { alignSelf: 'flex-end', height: controlSize.regular, minHeight: controlSize.regular, borderRadius: 12, paddingHorizontal: 16, backgroundColor: colors.accentDeep, alignItems: 'center', justifyContent: 'center', gap: 7 },
   retryLabel: { color: colors.accent, fontSize: typeScale.label, lineHeight: 18, fontWeight: '700' },
 }) }

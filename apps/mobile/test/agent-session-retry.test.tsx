@@ -15,7 +15,7 @@ const fixtures = vi.hoisted(() => ({
     modelProfiles: { openai: { models: [] }, deepseek: { models: [] } },
     agentPreset: 'standard', permissionMode: 'review', setModelProvider: vi.fn(),
   },
-  info: {},
+  info: {} as object | undefined,
   t: (key: string) => key,
 }))
 
@@ -98,6 +98,30 @@ async function mountQueuedSession() {
     session.setPendingDestructiveAction({ kind: 'delete-queued-message', messageId: 'queued' })
   })
 }
+
+it('keeps Continue pending while reconnecting, then reconciles the session before resuming', async () => {
+  record = { ...record, state: 'paused', failure: undefined }
+  await act(async () => { tree = create(<ObserveSession />) })
+  fixtures.info = undefined
+  await act(async () => { tree!.update(<ObserveSession />) })
+  const request = fixtures.request.getMockImplementation()!
+  let reconnect!: () => void
+  const connected = new Promise<void>((resolve) => { reconnect = resolve })
+  fixtures.request.mockImplementation(async (method: string) => {
+    await connected
+    return request(method)
+  })
+  let retry!: Promise<void>
+  await act(async () => { retry = session.retrySession() })
+  expect(session.retryPending).toBe(true)
+  expect(props.onRun).not.toHaveBeenCalled()
+  // Native foreground recovery may already have resumed the paused turn.
+  record = { ...record, state: 'running', taskId: 'native-resume' }
+  await act(async () => { reconnect(); await retry })
+  expect(session.retryPending).toBe(false)
+  expect(session.recoveryMessage).toBeUndefined()
+  expect(props.onRun).not.toHaveBeenCalled()
+})
 
 it('retires a queue row and its delete dialog across background resume, even after live events expire', async () => {
   await mountQueuedSession()

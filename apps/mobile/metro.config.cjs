@@ -3,14 +3,9 @@ const { withUniwindConfig } = require('uniwind/metro')
 
 const config = getDefaultConfig(__dirname)
 
-const appConfig = withUniwindConfig(config, {
-  cssEntryFile: './global.css',
-  dtsFile: './src/uniwind-types.d.ts',
-})
-
 // Workspace packages use NodeNext-compatible `.js` specifiers in TypeScript
 // source. Metro does not retry those explicit specifiers against `.ts` files.
-appConfig.resolver.resolveRequest = (context, moduleName, platform) => {
+config.resolver.resolveRequest = (context, moduleName, platform) => {
   try {
     return context.resolveRequest(context, moduleName, platform)
   } catch (error) {
@@ -21,4 +16,8 @@ appConfig.resolver.resolveRequest = (context, moduleName, platform) => {
   }
 }
 
-module.exports = appConfig
+// Wrap last so Uniwind can route React Native imports through its className-aware components.
+module.exports = withUniwindConfig(config, {
+  cssEntryFile: './global.css',
+  dtsFile: './src/uniwind-types.d.ts',
+})

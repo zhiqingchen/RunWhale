@@ -121,7 +121,7 @@ public final class NativePreviewStorageModule: Module {
       return [:]
     }
     guard let values = stored as? [String: String] else {
-      throw NativePreviewStorageException("Native Preview storage is corrupt.")
+      throw NativePreviewStorageException("Preview storage is corrupt.")
     }
     return values
   }
@@ -140,12 +140,12 @@ public final class NativePreviewStorageModule: Module {
       let documentDirectory = appContext?.config.documentDirectory,
       documentDirectory.lastPathComponent == "files"
     else {
-      throw NativePreviewStorageException("Native Preview project storage is unavailable.")
+      throw NativePreviewStorageException("Preview project storage is unavailable.")
     }
     let projectID = documentDirectory.deletingLastPathComponent().lastPathComponent
     try validateNativePreviewProjectIdentifier(projectID)
     guard let defaults = UserDefaults(suiteName: "runwhale-native-preview-storage-\(projectID)") else {
-      throw NativePreviewStorageException("Native Preview project storage could not be opened.")
+      throw NativePreviewStorageException("Preview project storage could not be opened.")
     }
     return defaults
   }
@@ -154,7 +154,7 @@ public final class NativePreviewStorageModule: Module {
 private func validateNativePreviewProjectIdentifier(_ projectID: String) throws {
   let range = projectID.range(of: #"^[a-z0-9][a-z0-9-]{1,62}$"#, options: .regularExpression)
   guard range?.lowerBound == projectID.startIndex, range?.upperBound == projectID.endIndex else {
-    throw NativePreviewStorageException("Native Preview project identifier is invalid.")
+    throw NativePreviewStorageException("Preview project identifier is invalid.")
   }
 }
 

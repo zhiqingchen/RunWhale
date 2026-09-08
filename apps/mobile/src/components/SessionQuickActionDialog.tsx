@@ -117,7 +117,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   options: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 16 },
   optionsSpacious: { paddingHorizontal: 18, paddingTop: sessionQuickActionDialogContract.spaciousContentPaddingTop, paddingBottom: sessionQuickActionDialogContract.spaciousContentPaddingBottom, gap: sessionQuickActionDialogContract.spaciousOptionGap },
   section: { color: colors.muted, fontSize: 9, lineHeight: 14, letterSpacing: 0.7, fontWeight: '900', paddingHorizontal: 9, paddingTop: 9, paddingBottom: 4 },
-  option: { width: '100%', minHeight: sessionQuickActionDialogContract.optionMinimumHeight, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 11, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  option: { width: '100%', height: 'auto', minHeight: sessionQuickActionDialogContract.optionMinimumHeight, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 11, flexDirection: 'row', alignItems: 'center', gap: 10 },
   optionSpacious: { minHeight: sessionQuickActionDialogContract.spaciousOptionMinimumHeight, paddingHorizontal: 12, paddingVertical: 10, gap: 12 },
   optionSelected: { backgroundColor: colors.accentDeep },
   optionIcon: { width: 34, height: 34, flexShrink: 0, borderRadius: 17, backgroundColor: colors.raised, alignItems: 'center', justifyContent: 'center' },

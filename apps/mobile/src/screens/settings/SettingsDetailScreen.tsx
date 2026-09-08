@@ -146,10 +146,10 @@ function RuntimeSettings() {
         </Alert.Content>
       </Alert>
       <PendingButton size="sm" variant="secondary" accessibilityRole={settingsAccessibilityContract.buttonRole} isPending={Boolean(retryingTarget)} onPress={retry} style={[styles.runtimeRetryButton, styles.secondaryButton]}>
-        {({ isPending }) => <View style={styles.pendingActionContent}>
+        {({ isPending }) => <>
           {isPending ? <Spinner color={colors.accent} size="sm" /> : null}
           <Button.Label style={styles.secondaryButtonText}>{t('retry')}</Button.Label>
-        </View>}
+        </>}
       </PendingButton>
     </> : null}
   </Card.Body></Card>

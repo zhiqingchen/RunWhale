@@ -6,7 +6,6 @@
     "@shopify/react-native-skia": "2.6.2",
     "expo-audio": "57.0.4",
     "expo-constants": "57.0.17",
-    "expo-contacts": "57.0.4",
     "expo-haptics": "57.0.2",
     "expo-image-picker": "57.0.15",
     "expo-linear-gradient": "57.0.1",

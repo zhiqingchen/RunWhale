@@ -62,6 +62,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   const activeProjectId = useRef<string | undefined>(undefined)
   const infoRef = useRef<HostInfo | undefined>(undefined)
   const retryBootRef = useRef<() => Promise<void>>(async () => undefined)
+  const readyHostRef = useRef<(signal?: AbortSignal) => Promise<HostInfo>>(async () => { throw new Error('Runtime connection is unavailable.') })
   const recoverImportTransportRef = useRef<(host: HostInfo) => void>(() => undefined)
   const publishHost = useCallback((hostInfo: HostInfo | undefined) => {
     publishRuntimeHost(infoRef, setInfo, hostInfo)
@@ -340,6 +341,20 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
       publishHost(undefined)
       void recoverHost(host)
     }
+    readyHostRef.current = (signal) => withClientDeadline(RUNTIME_RECONNECT_TIMEOUT_MS, async (waitingSignal) => {
+      // Lifecycle recovery owns reconnection. Wait before sending an action;
+      // never replay an RPC whose response may have been lost.
+      while (true) {
+        throwIfAgentRunAborted(waitingSignal)
+        if (!isLifecycleActive()) throw new Error('Runtime connection is unavailable.')
+        if (infoRef.current) return infoRef.current
+        const native = NodeHost.snapshot()
+        if (native.state === 'failed' || native.state === 'stopping' || (hasActivatedHost && native.state === 'stopped')) {
+          throw new Error(native.lastError ?? NODE_RELAUNCH_REQUIRED)
+        }
+        await delay(100)
+      }
+    }, () => new Error('The on-device runtime did not reconnect. Return to RunWhale and try again.'), signal)
     retryBootRef.current = () => {
       if (bootPromise) return bootPromise
       // Retire the previous recovery before its delayed responses can publish.
@@ -404,6 +419,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     return () => {
       cancelled = true
       connectionController.abort()
+      readyHostRef.current = async () => { throw new Error('Runtime connection is unavailable.') }
       retryBootRef.current = async () => undefined
       recoverImportTransportRef.current = () => undefined
       closeEventSocket()
@@ -411,6 +427,8 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
       appState.remove()
     }
   }, [publishHost])
+
+  const readyHost = useCallback((signal?: AbortSignal) => readyHostRef.current(signal), [])
 
   const retryRuntime = useCallback(async (): Promise<void> => {
     const native = NodeHost.snapshot()
@@ -432,13 +450,12 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   }, [])
 
   const request = useCallback(async <M extends MobileHostMethod>(method: M, params: MobileHostRequestMap[M]['params']) => {
-    if (!infoRef.current) throw new Error('embedded Node runtime is still starting')
     if (['agent.run', 'agent.resume', 'agent.message', 'agent.goal.create', 'agent.goal.edit', 'agent.goal.resume', 'preview.run', 'preview.open'].includes(method)) {
       const { projectId } = params as { projectId: string }
       await fileFlush.current(projectId)
     }
-    return rpc(infoRef.current, method, params)
-  }, [])
+    return rpc(await readyHost(), method, params)
+  }, [readyHost])
 
   const activateProject = useCallback(async (projectId: string): Promise<string> => {
     await fileFlush.current(projectId)
@@ -458,8 +475,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   }, [request])
 
   const cloneProject = useCallback(async (repositoryUrl: string, name?: string, onProgress?: (progress: ProjectCloneProgress) => void): Promise<StudioProject> => {
-    const hostInfo = infoRef.current
-    if (!hostInfo) throw new Error('embedded Node runtime is still starting')
+    const hostInfo = await readyHost()
     const requestId = `${Platform.OS}-clone-${Date.now()}-${Math.random().toString(36).slice(2)}`
     if (onProgress) cloneProgressListeners.current.set(requestId, onProgress)
     try {
@@ -469,11 +485,10 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     } finally {
       cloneProgressListeners.current.delete(requestId)
     }
-  }, [request])
+  }, [readyHost, request])
 
   const importGithubSnapshot = useCallback(async (reference: GitHubCommitReference, onProgress?: (progress: ProjectCloneProgress) => void): Promise<StudioProject> => {
-    const hostInfo = infoRef.current
-    if (!hostInfo) throw new Error('embedded Node runtime is still starting')
+    const hostInfo = await readyHost()
     const requestId = `${Platform.OS}-github-import-${Date.now()}-${Math.random().toString(36).slice(2)}`
     if (onProgress) cloneProgressListeners.current.set(requestId, onProgress)
     try {
@@ -496,7 +511,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     } finally {
       cloneProgressListeners.current.delete(requestId)
     }
-  }, [request])
+  }, [readyHost, request])
 
   const deleteProject = useCallback(async (projectId: string): Promise<boolean> => {
     const result = await request('project.delete', { projectId })
@@ -506,9 +521,9 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
 
   const runAgent = useCallback(async (project: StudioProject, { prompt, initialTitle, resume, sessionId, planMode, provider, model, agentPreset, permissionMode, attachments = [], signal, modelProfile }: StudioAgentRunOptions): Promise<{ sessionId: string; taskId: string }> => {
     throwIfAgentRunAborted(signal)
+    await readyHost(signal)
     const projectId = await activateProject(project.id)
     throwIfAgentRunAborted(signal)
-    if (!infoRef.current) throw new Error('embedded Node runtime is still starting')
     const uploaded = []
     for (const attachment of attachments) {
       uploaded.push(await request('project.attach', { projectId, sourcePath: attachment.sourcePath, name: attachment.name, mediaType: attachment.mediaType }))
@@ -526,9 +541,10 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     activeAgentRequest.current = { requestId, projectId, ...(sessionId ? { sessionId } : {}) }
     let result: MobileHostRequestMap['agent.run']['result']
     try {
+      const hostInfo = await readyHost(signal)
       result = resume && sessionId
-        ? await rpc(infoRef.current, 'agent.resume', { projectId, sessionId, provider, model, modelProfile, ...(continuedTaskId ? { continuedTaskId } : {}) }, requestId, undefined, signal)
-        : await rpc(infoRef.current, 'agent.run', {
+        ? await rpc(hostInfo, 'agent.resume', { projectId, sessionId, provider, model, modelProfile, ...(continuedTaskId ? { continuedTaskId } : {}) }, requestId, undefined, signal)
+        : await rpc(hostInfo, 'agent.run', {
         projectId,
         prompt,
         ...(continuedTaskId ? { continuedTaskId } : {}),
@@ -547,7 +563,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     }
     throwIfAgentRunAborted(signal)
     return { sessionId: result.sessionId, taskId: result.taskId }
-  }, [activateProject, request, t])
+  }, [activateProject, readyHost, request, t])
 
   const cancelAgent = useCallback(async (projectId: string, sessionId: string): Promise<MobileHostRequestMap['agent.cancel']['result']> => {
     const active = activeAgentRequest.current
@@ -605,7 +621,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     if (result?.opened !== true) {
       const diagnostic = NodeHost.takeNativePreviewDiagnostic()
       if (diagnostic) setNativePreviewDiagnostic(diagnostic)
-      throw new Error(diagnostic ?? 'Native Preview did not mount its first content')
+      throw new Error(diagnostic ?? 'Preview did not mount its first content')
     }
     setNativePreviewDiagnostic(undefined)
     return { opened: true }

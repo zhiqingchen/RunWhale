@@ -33,7 +33,9 @@
     "android": {
       "package": "app.runwhale.community",
       "blockedPermissions": [
-        "android.permission.ACTIVITY_RECOGNITION"
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
       ],
       "minSdkVersion": 24,
       "compileSdkVersion": 36,
@@ -63,75 +65,74 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow RunWhale previews to record audio.",
+          "microphonePermission": "RunWhale uses the microphone to test audio recording in projects you run in Preview, such as a voice recorder.",
           "recordAudioAndroid": true,
-          "enableBackgroundRecording": true,
-          "enableBackgroundPlayback": true
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": false
         }
       ],
       [
         "expo-video",
         {
-          "supportsBackgroundPlayback": true,
-          "supportsPictureInPicture": true
+          "supportsBackgroundPlayback": false,
+          "supportsPictureInPicture": false
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow RunWhale previews and attachments to use the camera."
+          "cameraPermission": "RunWhale uses the camera to take photos for Agent attachments and to test camera features in projects you run in Preview."
         }
       ],
       [
         "expo-sensors",
         {
-          "motionPermission": "Allow RunWhale previews to use motion sensors."
+          "motionPermission": "RunWhale uses device motion to test motion-responsive features in projects you run in Preview, such as tilt controls."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow RunWhale to choose photos to attach to Agent messages.",
-          "cameraPermission": "Allow RunWhale previews and attachments to use the camera."
-        }
-      ],
-      [
-        "expo-contacts",
-        {
-          "contactsPermission": "Allow RunWhale previews to access your contacts."
+          "photosPermission": "RunWhale accesses photos and videos when you test media selection in Preview. Photos you select as Agent attachments are sent with your message.",
+          "cameraPermission": "RunWhale uses the camera to take photos for Agent attachments and to test camera features in projects you run in Preview."
         }
       ],
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Allow RunWhale previews to use Face ID."
+          "faceIDPermission": false
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow RunWhale previews to use your location.",
-          "locationAlwaysAndWhenInUsePermission": "Allow RunWhale previews to use your location.",
-          "locationAlwaysPermission": "Allow RunWhale previews to use your location.",
-          "motionUsagePermission": "Allow RunWhale previews to detect your motion activity."
+          "locationWhenInUsePermission": "RunWhale uses your location while the app is in use to test location features in Preview, such as showing your position on a map.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": "RunWhale uses device motion to test motion-responsive features in projects you run in Preview, such as tilt controls."
         }
       ],
       [
         "expo-maps",
         {
           "requestLocationPermission": true,
-          "locationPermission": "Allow RunWhale previews to show your location on maps."
+          "locationPermission": "RunWhale uses your location while the app is in use to test location features in Preview, such as showing your position on a map."
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow RunWhale previews to access your media library.",
-          "savePhotosPermission": "Allow RunWhale previews to save media to your library.",
+          "photosPermission": "RunWhale accesses photos and videos when you test media selection in Preview. Photos you select as Agent attachments are sent with your message.",
+          "savePhotosPermission": "RunWhale saves photos and videos to your library when you test media export in Preview, such as saving an image created by your project.",
           "granularPermissions": ["photo", "video", "audio"]
         }
       ],

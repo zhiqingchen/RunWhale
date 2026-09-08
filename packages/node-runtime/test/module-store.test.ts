@@ -31,7 +31,7 @@ describe('embedded module store', () => {
     }
   })
 
-  it('bundles every exposed Native Preview module using only the isolated store', async () => {
+  it('bundles every exposed Preview module using only the isolated store', async () => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-module-store-runner-'))
     const runner = join(root, 'smoke.mjs')
     try {

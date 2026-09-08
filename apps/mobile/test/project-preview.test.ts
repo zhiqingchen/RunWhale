@@ -27,25 +27,25 @@ describe('project Preview configuration', () => {
   it('does not invent a Studio default for an ambiguous project', () => {
     const manifest = { entry: { web: 'src/main.tsx', android: 'index.ts' } }
     expect(projectPreviewConfiguration(project(manifest), 'android')).toEqual({
-      error: 'Project declares both Web and Native Preview entries; set preview.target in runwhale.json',
+      error: 'Project declares multiple preview entry types; set preview.target in runwhale.json',
     })
   })
 
   it('reports a selected target that is unavailable on the current platform', () => {
     const manifest = { entry: { ios: 'index.ts' }, preview: { target: 'native' } }
     expect(projectPreviewConfiguration(project(manifest), 'android')).toEqual({
-      error: 'Project selects Native Preview but does not declare entry.android',
+      error: 'Project does not declare entry.android',
     })
   })
 
-  it('ignores blank entries when selecting Native Preview and reports unavailable Web Preview', () => {
+  it('ignores blank entries when selecting Preview and reports unavailable Web Preview', () => {
     const manifest = { entry: { web: ' \t', android: 'index.tsx' } }
     expect(projectPreviewConfiguration(project(manifest), 'android')).toEqual({ target: 'native', platform: 'android' })
     expect(projectPreviewConfiguration(project({ ...manifest, preview: { target: 'web' } }), 'android')).toEqual({
       error: 'Project selects Web Preview but does not declare entry.web',
     })
     expect(projectPreviewConfiguration(project({ ...manifest, preview: { target: 'native' } }), 'web')).toEqual({
-      error: 'Native Preview is unavailable in the desktop UI',
+      error: 'This project requires iOS or Android for Preview',
     })
   })
 })

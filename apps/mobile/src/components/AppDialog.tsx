@@ -89,10 +89,10 @@ export function AppDialog({
                 onPress={action.onPress}
                 style={[styles.actionButton, action.tone === 'primary' ? styles.primaryAction : action.tone === 'danger' ? styles.dangerAction : styles.cancelAction, action.disabled && styles.disabledAction]}
               >
-                {({ isPending }) => <View style={styles.actionContent}>
-                  {isPending ? <View pointerEvents="none" style={styles.actionIndicator}><Spinner color={action.tone === 'cancel' ? colors.text : '#FFFFFF'} size="sm" /></View> : null}
+                {({ isPending }) => <>
+                  {isPending ? <Spinner color={action.tone === 'cancel' ? colors.text : '#FFFFFF'} size="sm" /> : null}
                   <Button.Label style={[styles.actionLabel, action.tone === 'cancel' ? styles.cancelActionLabel : styles.strongActionLabel]}>{action.label}</Button.Label>
-                </View>}
+                </>}
               </PendingButton>)}
             </View>
           </View>
@@ -121,10 +121,8 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   errorAlert: { width: '100%' },
   error: { color: colors.danger, fontSize: 11, lineHeight: 17 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: appDialogVisualContract.actionGap },
-  actionButton: { height: 'auto', minHeight: appDialogVisualContract.actionMinimumHeight, minWidth: appDialogVisualContract.actionMinimumWidth, flexGrow: 1, flexBasis: appDialogVisualContract.actionMinimumWidth, borderRadius: 10, paddingHorizontal: appDialogVisualContract.actionHorizontalPadding, paddingVertical: appDialogVisualContract.actionVerticalPadding, alignItems: 'center', justifyContent: 'center' },
-  actionContent: { width: '100%', alignItems: 'center', justifyContent: 'center' },
-  actionIndicator: { position: 'absolute', left: 0, top: 0, bottom: 0, justifyContent: 'center' },
-  actionLabel: { width: '100%', lineHeight: appDialogVisualContract.actionLabelLineHeight, includeFontPadding: false, textAlign: 'center', textAlignVertical: 'center' },
+  actionButton: { height: 'auto', minHeight: appDialogVisualContract.actionMinimumHeight, minWidth: appDialogVisualContract.actionMinimumWidth, flexGrow: 1, flexBasis: appDialogVisualContract.actionMinimumWidth, borderRadius: 10, paddingHorizontal: appDialogVisualContract.actionHorizontalPadding, paddingVertical: appDialogVisualContract.actionVerticalPadding, gap: 8 },
+  actionLabel: { flexShrink: 1, lineHeight: appDialogVisualContract.actionLabelLineHeight, textAlign: 'center' },
   primaryAction: { backgroundColor: colors.accent },
   dangerAction: { backgroundColor: colors.danger },
   cancelAction: { backgroundColor: colors.raised },

@@ -121,6 +121,56 @@ async function loseConnection() {
 }
 
 describe('iOS runtime connection recovery', () => {
+  it('waits for foreground activation before sending a session action exactly once', async () => {
+    await changeAppState('inactive')
+    let settled = false
+    runtime.registerFileFlush(async () => undefined)
+    const request = runtime.request('agent.resume', { projectId: 'project', sessionId: 'session' }).then(() => { settled = true })
+    await advance(500)
+    expect(settled).toBe(false)
+    expect(vi.mocked(fetch).mock.calls.some(([, init]) => JSON.parse(init!.body as string).method === 'agent.resume')).toBe(false)
+    native.hostInfo = { ...native.hostInfo, port: 4200, origin: 'http://127.0.0.1:4200' }
+    await changeAppState('active')
+    await advance(100)
+    await request
+    const resumes = vi.mocked(fetch).mock.calls.filter(([, init]) => JSON.parse(init!.body as string).method === 'agent.resume')
+    expect(resumes).toHaveLength(1)
+    expect(resumes[0]?.[0]).toBe('http://127.0.0.1:4200/rpc')
+  })
+
+  it('rechecks the connection after native background scheduling yields to iOS', async () => {
+    runtime.registerFileFlush(async () => undefined)
+    native.beginContinuedAgentTask.mockImplementation(async () => {
+      native.appState = 'inactive'
+      native.onAppState?.('inactive')
+      return null
+    })
+    let run!: Promise<unknown>
+    await act(async () => {
+      run = runtime.runAgent({ id: 'project', name: 'Project', description: '', updatedAt: 0, files: [] }, { sessionId: 'session', prompt: 'Make the change' })
+    })
+    expect(runtime.info).toBeUndefined()
+    await changeAppState('active')
+    await advance(100)
+    await run
+    expect(vi.mocked(fetch).mock.calls.filter(([, init]) => JSON.parse(init!.body as string).method === 'agent.run')).toHaveLength(1)
+  })
+
+  it('bounds connection waits and cancels an unsent agent run', async () => {
+    await changeAppState('inactive')
+    const controller = new AbortController()
+    const run = runtime.runAgent({ id: 'project', name: 'Project', description: '', updatedAt: 0, files: [] }, { prompt: 'Test', signal: controller.signal })
+    const cancelled = expect(run).rejects.toMatchObject({ code: 'ABORTED' })
+    controller.abort(Object.assign(new Error('Agent stopped by user'), { code: 'ABORTED' }))
+    await cancelled
+    const timedOut = expect(runtime.request('session.read', { projectId: 'project', sessionId: 'session' })).rejects.toThrow('did not reconnect')
+    await advance(30_000)
+    await timedOut
+    await changeAppState('active')
+    await advance(100)
+    expect(vi.mocked(fetch).mock.calls.some(([, init]) => ['session.read', 'agent.run'].includes(JSON.parse(init!.body as string).method))).toBe(false)
+  })
+
   it('recovers an interrupted import without replaying the project creation', async () => {
     const originalFetch = vi.mocked(fetch).getMockImplementation()!
     vi.mocked(fetch).mockImplementation(async (input, init) => {

@@ -19,7 +19,7 @@ export default function TabLayout() {
         backgroundColor={colors.panel}
         iconColor={{ default: colors.muted, selected: colors.accent }}
         indicatorColor={colors.accentDeep}
-        labelStyle={{ default: { color: colors.muted }, selected: { color: colors.accent } }}
+        labelStyle={{ default: { color: colors.muted, fontSize: 11, fontWeight: '700' }, selected: { color: colors.accent, fontSize: 11, fontWeight: '700' } }}
         labelVisibilityMode="labeled"
         sidebarAdaptable
         tintColor={colors.accent}

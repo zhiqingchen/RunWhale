@@ -395,7 +395,7 @@ export class RunWhaleRuntimeHost {
         const served = await this.metro.serve(bundle, { live: false })
         const projectId = `${temporary ? 'temp' : 'app'}-${appId}`
         this.preview = { projectId, platform: app.platform, revision: app.installedAt, ...served, startedAt: Date.now() }
-        return previewEndpoint(this.preview)
+        return { ...previewEndpoint(this.preview), restricted: true }
       }),
       'preview.open': async ({ projectId, platform }, { signal }) => this.openPreview(String(projectId), previewPlatform(platform), signal),
       'preview.run': async ({ projectId, platform }, { signal }) => this.runPreview(String(projectId), previewPlatform(platform), signal),

@@ -19,7 +19,7 @@ describe('project templates', () => {
     expect(projectPreviewConfiguration({ id: 'web-project', name: 'Web Project', description: '', updatedAt: 1, files }, 'android')).toEqual({ target: 'web', platform: 'web' })
   })
 
-  it('creates a runnable Expo project selected for Native Preview', () => {
+  it('creates a runnable Expo project selected for Preview', () => {
     const files = projectTemplateFiles('expo-project', 'Expo Project', 'expo')
     const manifest = JSON.parse(files.find((file) => file.path === 'runwhale.json')!.content) as Record<string, unknown>
     const packageJson = JSON.parse(files.find((file) => file.path === 'package.json')!.content) as Record<string, unknown>

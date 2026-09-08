@@ -77,6 +77,6 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   body: { color: colors.muted, fontSize: 14, lineHeight: 21, textAlign: 'center' },
   primaryLabel: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   linkLabel: { color: colors.accent, fontSize: 13, fontWeight: '600' },
-  textButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 44, paddingHorizontal: 12, gap: 8, borderRadius: 12 },
-  openButton: { backgroundColor: colors.accent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch', minHeight: 50, marginTop: 10, borderRadius: 15, gap: 8 },
+  textButton: { height: 'auto', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 44, paddingHorizontal: 12, gap: 8, borderRadius: 12 },
+  openButton: { height: 'auto', backgroundColor: colors.accent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch', minHeight: 50, marginTop: 10, borderRadius: 15, gap: 8 },
 }) }

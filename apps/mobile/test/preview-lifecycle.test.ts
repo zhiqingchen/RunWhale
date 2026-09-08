@@ -132,7 +132,7 @@ describe('Preview lifecycle', () => {
     expect(state).toBe(rebuilding)
   })
 
-  it('does not report Native Preview as opened before first content succeeds', () => {
+  it('does not report Preview as opened before first content succeeds', () => {
     let state = initialPreviewLifecycleState('native')
     state = previewLifecycleReducer(state, { type: 'run-started' })
     state = previewLifecycleReducer(state, { type: 'bundle-ready', target: 'native', bundleUrl })
@@ -148,7 +148,7 @@ describe('Preview lifecycle', () => {
     expect(selectedActivePreview(state)?.opened).toBe(true)
   })
 
-  it('turns a post-ready Native Preview failure into a recoverable error state', () => {
+  it('turns a post-ready Preview failure into a recoverable error state', () => {
     let state = previewLifecycleReducer(initialPreviewLifecycleState('native'), {
       type: 'bundle-ready',
       target: 'native',
@@ -160,11 +160,11 @@ describe('Preview lifecycle', () => {
     state = previewLifecycleReducer(state, {
       type: 'content-failed',
       bundleUrl,
-      message: 'Native Preview encountered a fatal JavaScript error',
+      message: 'Preview encountered a fatal JavaScript error',
     })
 
     expect(selectedActivePreview(state)?.opened).toBe(false)
-    expect(state.error).toBe('Native Preview encountered a fatal JavaScript error')
+    expect(state.error).toBe('Preview encountered a fatal JavaScript error')
     expect(state.operation).toBeUndefined()
 
     const failed = state

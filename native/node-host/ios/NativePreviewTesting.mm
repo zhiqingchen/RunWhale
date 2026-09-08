@@ -87,7 +87,7 @@ static NSString *RWTestImage(UIImage *image, NSDictionary *viewport) {
 - (NSString *)execute:(NSString *)command {
   NSAssert(NSThread.isMainThread, @"Preview testing must run on the main thread");
   UIView *root = self.root;
-  if (!root.window || root.hidden) return RWTestFailure(@"Keep the Native Preview visible while testing");
+  if (!root.window || root.hidden) return RWTestFailure(@"Keep the Preview visible while testing");
   NSDictionary *request = [NSJSONSerialization JSONObjectWithData:[command dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
   if (![request isKindOfClass:NSDictionary.class]) return RWTestFailure(@"Invalid Preview test command");
   NSString *kind = request[@"kind"];

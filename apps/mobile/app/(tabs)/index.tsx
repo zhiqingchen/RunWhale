@@ -151,47 +151,45 @@ export default function HomeScreen() {
               onPress={() => router.push(continueModel.target)}
               style={styles.continueMain}
             >
-              <View style={styles.continueBody}>
-                <View style={styles.projectLine}>
-                  <View style={styles.projectIdentity}>
-                    <ProjectIcon project={continueModel.project} size={28} />
-                    <Text numberOfLines={1} style={styles.projectName}>{continueModel.project.name}</Text>
-                  </View>
-                  {continueRefreshing ? <Spinner color={colors.accent} size="sm" /> : continueModel.status ? <View style={[
-                    styles.statusBadge,
-                    continueModel.status.tone === 'active' && styles.statusBadgeActive,
-                    continueModel.status.tone === 'warning' && styles.statusBadgeWarning,
-                    continueModel.status.tone === 'danger' && styles.statusBadgeDanger,
-                  ]}>
-                    <View style={[
-                      styles.statusDot,
-                      continueModel.status.tone === 'active' && styles.statusDotActive,
-                      continueModel.status.tone === 'warning' && styles.statusDotWarning,
-                      continueModel.status.tone === 'danger' && styles.statusDotDanger,
-                    ]} />
-                    <Text style={[
-                      styles.statusText,
-                      continueModel.status.tone === 'active' && styles.statusTextActive,
-                      continueModel.status.tone === 'warning' && styles.statusTextWarning,
-                      continueModel.status.tone === 'danger' && styles.statusTextDanger,
-                    ]}>{t(continueModel.status.labelKey)}</Text>
-                  </View> : null}
+              <View style={styles.projectLine}>
+                <View style={styles.projectIdentity}>
+                  <ProjectIcon project={continueModel.project} size={28} />
+                  <Text numberOfLines={1} style={styles.projectName}>{continueModel.project.name}</Text>
                 </View>
-                <View style={styles.sessionHeading}>
-                  <Text numberOfLines={2} style={styles.sessionTitle}>{continueModel.session?.title ?? (continueRefreshing ? t('loadingSessions') : sessionUnavailable ? t('continueWorkingSessionLoadFailed') : t('noSessions'))}</Text>
-                  <AppIcon icon={ChevronRight} color={colors.muted} size={18} />
-                </View>
-                {continueModel.session ? <Text numberOfLines={2} style={styles.sessionPreview}>{continueModel.session.preview.trim() || t('sessionNoMessages')}</Text>
-                  : !continueRefreshing ? <Text numberOfLines={2} style={styles.sessionPreview}>{sessionUnavailable ? t('continueWorkingSessionUnavailable') : t('continueWorkingNoSession')}</Text> : null}
-                <View style={styles.sessionMeta}>
-                  {continueModel.session ? <Text style={styles.sessionMetaText}>{t(continueModel.session.turnCount === 1 ? 'turnCountSingular' : 'turnCount', { count: continueModel.session.turnCount })}</Text> : null}
-                  <Text style={styles.sessionMetaText}>{t('updatedAt', { date: formatHomeDate(continueModel.session?.updatedAt ?? continueModel.project.updatedAt, language) })}</Text>
-                </View>
+                {continueRefreshing ? <Spinner color={colors.accent} size="sm" /> : continueModel.status ? <View style={[
+                  styles.statusBadge,
+                  continueModel.status.tone === 'active' && styles.statusBadgeActive,
+                  continueModel.status.tone === 'warning' && styles.statusBadgeWarning,
+                  continueModel.status.tone === 'danger' && styles.statusBadgeDanger,
+                ]}>
+                  <View style={[
+                    styles.statusDot,
+                    continueModel.status.tone === 'active' && styles.statusDotActive,
+                    continueModel.status.tone === 'warning' && styles.statusDotWarning,
+                    continueModel.status.tone === 'danger' && styles.statusDotDanger,
+                  ]} />
+                  <Text style={[
+                    styles.statusText,
+                    continueModel.status.tone === 'active' && styles.statusTextActive,
+                    continueModel.status.tone === 'warning' && styles.statusTextWarning,
+                    continueModel.status.tone === 'danger' && styles.statusTextDanger,
+                  ]}>{t(continueModel.status.labelKey)}</Text>
+                </View> : null}
+              </View>
+              <View style={styles.sessionHeading}>
+                <Text numberOfLines={2} style={styles.sessionTitle}>{continueModel.session?.title ?? (continueRefreshing ? t('loadingSessions') : sessionUnavailable ? t('continueWorkingSessionLoadFailed') : t('noSessions'))}</Text>
+                <AppIcon icon={ChevronRight} color={colors.muted} size={18} />
+              </View>
+              {continueModel.session ? <Text numberOfLines={2} style={styles.sessionPreview}>{continueModel.session.preview.trim() || t('sessionNoMessages')}</Text>
+                : !continueRefreshing ? <Text numberOfLines={2} style={styles.sessionPreview}>{sessionUnavailable ? t('continueWorkingSessionUnavailable') : t('continueWorkingNoSession')}</Text> : null}
+              <View style={styles.sessionMeta}>
+                {continueModel.session ? <Text style={styles.sessionMetaText}>{t(continueModel.session.turnCount === 1 ? 'turnCountSingular' : 'turnCount', { count: continueModel.session.turnCount })}</Text> : null}
+                <Text style={styles.sessionMetaText}>{t('updatedAt', { date: formatHomeDate(continueModel.session?.updatedAt ?? continueModel.project.updatedAt, language) })}</Text>
               </View>
             </Button>
             {continueModel.previewActive && continueModel.previewTarget ? <View style={styles.previewFooter}>
               <View accessible accessibilityLabel={t('previewActive')} style={styles.previewBadge}><View style={styles.previewDot} /><Text style={styles.previewBadgeText}>{t('previewActive')}</Text></View>
-              <Button size="sm" variant="secondary" accessibilityLabel={`${t('openActivePreview')} · ${continueModel.project.name}`} onPress={() => router.push(continueModel.previewTarget!)} style={styles.previewButton}>
+              <Button size="sm" variant="ghost" accessibilityLabel={`${t('openActivePreview')} · ${continueModel.project.name}`} onPress={() => router.push(continueModel.previewTarget!)} style={styles.previewButton}>
                 <View style={styles.previewButtonSurface}><AppIcon icon={Play} color={colors.accent} size={13} /><Button.Label style={styles.previewButtonText}>{t('openActivePreview')}</Button.Label></View>
               </Button>
             </View> : null}
@@ -229,8 +227,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   continueSection: { gap: 8, marginTop: 2 },
   sectionTitle: { color: colors.muted, fontSize: typeScale.label, fontWeight: '900', letterSpacing: 0.2 },
   continueCard: { overflow: 'hidden', borderRadius: 18, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.panel, shadowColor: '#162048', shadowOpacity: 0.07, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 2 },
-  continueMain: { minHeight: 142, paddingHorizontal: 0, paddingVertical: 0, borderRadius: 17, alignItems: 'stretch', justifyContent: 'center' },
-  continueBody: { padding: 14, gap: 8 },
+  continueMain: { height: 'auto', minHeight: 142, padding: 14, gap: 8, borderRadius: 17, flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center' },
   projectLine: { minHeight: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 9 },
   projectIdentity: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   projectIcon: { width: 28, height: 28, flexShrink: 0, borderRadius: 9, backgroundColor: colors.accentDeep, alignItems: 'center', justifyContent: 'center' },
@@ -256,7 +253,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   previewBadge: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   previewDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accent },
   previewBadgeText: { minWidth: 0, flexShrink: 1, color: colors.accent, fontSize: typeScale.caption, fontWeight: '900' },
-  previewButton: { minHeight: controlSize.regular, flexShrink: 0, paddingHorizontal: 0, alignItems: 'center', justifyContent: 'center' },
+  previewButton: { height: 'auto', minHeight: controlSize.regular, flexShrink: 0, paddingHorizontal: 0, alignItems: 'center', justifyContent: 'center' },
   previewButtonSurface: { height: 32, borderRadius: 9, backgroundColor: colors.accentDeep, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10 },
   previewButtonText: { color: colors.accent, fontSize: typeScale.caption, fontWeight: '900' },
 }) }

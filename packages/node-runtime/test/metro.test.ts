@@ -96,7 +96,7 @@ describe('MobileMetroRuntime', () => {
     expect((metro as any).bundler).toBeUndefined()
   })
 
-  it('bundles every Native Preview acceptance signal for both native platforms in production', async () => {
+  it('bundles every Preview acceptance signal for both native platforms in production', async () => {
     const previousEnvironment = process.env.NODE_ENV
     process.env.NODE_ENV = 'development'
     const repository = resolve(import.meta.dirname, '../../..')
@@ -234,7 +234,7 @@ describe('MobileMetroRuntime', () => {
     }
   }, 120_000)
 
-  it('routes Native Preview storage through the project-scoped host modules', async () => {
+  it('routes Preview storage through the project-scoped host modules', async () => {
     const repository = resolve(import.meta.dirname, '../../..')
     const project = await mkdtemp(join(tmpdir(), 'runwhale-native-module-policy-'))
     await Promise.all([
@@ -256,7 +256,7 @@ describe('MobileMetroRuntime', () => {
     }
   }, 30_000)
 
-  it('does not let a project override a Native Preview ABI package', async () => {
+  it('does not let a project override a Preview ABI package', async () => {
     const repository = resolve(import.meta.dirname, '../../..')
     const project = await mkdtemp(join(tmpdir(), 'runwhale-native-module-pin-'))
     await mkdir(join(project, 'node_modules/expo-haptics'), { recursive: true })
@@ -408,9 +408,9 @@ async function createExpoTestProject(): Promise<string> {
 }
 
 function expectNativePreviewAcceptanceSignals(code: string): void {
-  const crashMessage = 'Native Preview acceptance crash after first content'
+  const crashMessage = 'Preview acceptance crash after first content'
   for (const marker of [
-    'Native Preview fixture ready',
+    'Preview fixture ready',
     'native-preview-dimensions',
     'native-preview-lottie',
     'LottieAnimationView',
@@ -418,7 +418,7 @@ function expectNativePreviewAcceptanceSignals(code: string): void {
     'native-preview-tap',
     'native-preview-drag',
     'native-preview-scroll',
-    'Native Preview bottom marker',
+    'Preview bottom marker',
     'native-preview-crash',
     crashMessage,
   ]) expect(code).toContain(marker)

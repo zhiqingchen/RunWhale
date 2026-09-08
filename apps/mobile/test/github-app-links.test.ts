@@ -12,31 +12,46 @@ describe('GitHub share native link configuration', () => {
     })
   })
 
-  it('integrates expo-camera for developer Native Preview without an in-app scanner route', () => {
+  it('integrates expo-camera for developer Preview without an in-app scanner route', () => {
     expect(appConfig.expo.plugins).toContainEqual([
       'expo-camera',
       expect.objectContaining({
-        cameraPermission: 'Allow RunWhale previews and attachments to use the camera.',
+        cameraPermission: 'RunWhale uses the camera to take photos for Agent attachments and to test camera features in projects you run in Preview.',
       }),
     ])
   })
 
-  it('fully enables audio and video capabilities for Native Preview', () => {
+  it('enables foreground audio and video without declaring background media capabilities', () => {
     expect(appConfig.expo.plugins).toContainEqual([
       'expo-audio',
       {
-        microphonePermission: 'Allow RunWhale previews to record audio.',
+        microphonePermission: 'RunWhale uses the microphone to test audio recording in projects you run in Preview, such as a voice recorder.',
         recordAudioAndroid: true,
-        enableBackgroundRecording: true,
-        enableBackgroundPlayback: true,
+        enableBackgroundRecording: false,
+        enableBackgroundPlayback: false,
       },
     ])
     expect(appConfig.expo.plugins).toContainEqual([
       'expo-video',
       {
-        supportsBackgroundPlayback: true,
-        supportsPictureInPicture: true,
+        supportsBackgroundPlayback: false,
+        supportsPictureInPicture: false,
       },
     ])
+  })
+
+  it('limits location to foreground use and omits contacts access', () => {
+    expect(appConfig.expo.plugins).toContainEqual([
+      'expo-location',
+      expect.objectContaining({
+        locationAlwaysAndWhenInUsePermission: false,
+        locationAlwaysPermission: false,
+      }),
+    ])
+    expect(appConfig.expo.plugins.some((plugin) => Array.isArray(plugin) && plugin[0] === 'expo-contacts')).toBe(false)
+    expect(appConfig.expo.android.blockedPermissions).toEqual(expect.arrayContaining([
+      'android.permission.READ_CONTACTS',
+      'android.permission.WRITE_CONTACTS',
+    ]))
   })
 })

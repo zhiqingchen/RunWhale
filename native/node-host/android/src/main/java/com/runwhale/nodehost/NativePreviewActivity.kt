@@ -96,10 +96,10 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
 
     try {
       val sourceId = requireNotNull(intent.getStringExtra(EXTRA_SOURCE_ID)) {
-        "Native Preview source identifier is unavailable"
+        "Preview source identifier is unavailable"
       }
       require(SOURCE_ID_PATTERN.matches(sourceId)) {
-        "Native Preview source identifier is invalid"
+        "Preview source identifier is invalid"
       }
       val projectId = requireNativePreviewProjectId(intent, savedInstanceState)
       val expectedBundle = requireNativePreviewBundle(intent)
@@ -114,7 +114,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
         stage = "host-create",
         code = "host_create_failed",
         rawMessage = error.message,
-        fallbackMessage = "Native Preview could not create its isolated React host",
+        fallbackMessage = "Preview could not create its isolated React host",
       )
     }
   }
@@ -169,7 +169,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
               stage = "surface-start",
               code = "surface_start_timeout",
               rawMessage = null,
-              fallbackMessage = "Native Preview timed out while starting React Native",
+              fallbackMessage = "Preview timed out while starting React Native",
             )
           }
           return@execute
@@ -181,13 +181,13 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
               stage = "surface-start",
               code = "surface_start_cancelled",
               rawMessage = null,
-              fallbackMessage = "React Native cancelled the Native Preview surface",
+              fallbackMessage = "React Native cancelled the Preview surface",
             )
             error != null -> failStartup(
               stage = "surface-start",
               code = "surface_start_failed",
               rawMessage = error.message,
-              fallbackMessage = "React Native failed to start the Native Preview surface",
+              fallbackMessage = "React Native failed to start the Preview surface",
             )
             else -> {
               surfaceStarted = true
@@ -203,7 +203,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
               stage = "surface-start",
               code = "surface_start_interrupted",
               rawMessage = null,
-              fallbackMessage = "Native Preview startup was interrupted",
+              fallbackMessage = "Preview startup was interrupted",
             )
           }
         }
@@ -234,9 +234,9 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
         code = if (surfaceStarted) "content_mount_timeout" else "surface_start_timeout",
         rawMessage = null,
         fallbackMessage = if (surfaceStarted) {
-          "Native Preview started React Native but no content was drawn"
+          "Preview started React Native but no content was drawn"
         } else {
-          "Native Preview timed out while starting React Native"
+          "Preview timed out while starting React Native"
         },
       )
     }
@@ -278,7 +278,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
       stage = "runtime",
       code = "runtime_exception",
       rawMessage = rawMessage,
-      fallbackMessage = "Native Preview encountered a fatal JavaScript error",
+      fallbackMessage = "Preview encountered a fatal JavaScript error",
     )
     if (!contentReady && !startupFailed) {
       startupFailed = true
@@ -347,7 +347,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
           NativePreviewLaunchResult(
             opened = false,
             code = "invalid_launch_request",
-            message = "Native Preview launch request is invalid",
+            message = "Preview launch request is invalid",
           ),
         )
       }
@@ -388,7 +388,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
         stage = "launch",
         code = "launch_superseded",
         rawMessage = null,
-        fallbackMessage = "Native Preview startup was replaced by a newer bundle",
+        fallbackMessage = "Preview startup was replaced by a newer bundle",
       )
       completePendingRequests(
         NativePreviewLaunchResult(
@@ -474,7 +474,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
         stage = "lifecycle",
         code = "activity_destroyed",
         rawMessage = null,
-        fallbackMessage = "Native Preview closed before its first content draw",
+        fallbackMessage = "Preview closed before its first content draw",
       )
       completePendingRequests(
         NativePreviewLaunchResult(
@@ -507,21 +507,21 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
     savedInstanceState: Bundle?,
   ): String {
     val projectId = requireNotNull(sourceIntent.getStringExtra(EXTRA_PROJECT_ID)) {
-      "Native Preview project identifier is unavailable"
+      "Preview project identifier is unavailable"
     }
     require(NativePreviewProjectScope.PROJECT_ID_PATTERN.matches(projectId)) {
-      "Native Preview project identifier is invalid"
+      "Preview project identifier is invalid"
     }
     val savedProjectId = savedInstanceState?.getString(STATE_PROJECT_ID)
     require(savedProjectId == null || savedProjectId == projectId) {
-      "Native Preview project identifier changed during restoration"
+      "Preview project identifier changed during restoration"
     }
     return projectId
   }
 
   private fun requireNativePreviewBundle(sourceIntent: Intent): File {
     val bundlePath = requireNotNull(sourceIntent.getStringExtra(EXTRA_BUNDLE_PATH)) {
-      "Native Preview bundle is unavailable"
+      "Preview bundle is unavailable"
     }
     val candidate = File(bundlePath).canonicalFile
     val expectedParent = cacheDir.canonicalFile
@@ -530,7 +530,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
         PREVIEW_BUNDLE_NAME_PATTERN.matches(candidate.name) &&
         candidate.isFile,
     ) {
-      "Native Preview bundle is unavailable"
+      "Preview bundle is unavailable"
     }
     return candidate
   }
@@ -708,7 +708,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
         stage = "lifecycle",
         code = "minimized_before_ready",
         rawMessage = null,
-        fallbackMessage = "Native Preview was minimized before its first content draw",
+        fallbackMessage = "Preview was minimized before its first content draw",
         returnToStudio = false,
       )
     }

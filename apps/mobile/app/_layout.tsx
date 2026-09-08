@@ -99,10 +99,10 @@ function RuntimeStartupBoundary({ children }: PropsWithChildren) {
         </Alert.Content>
       </Alert>
       <PendingButton size="sm" variant="primary" isPending={retrying} onPress={retry} style={styles.retry}>
-        {({ isPending }) => <View style={styles.retryContent}>
+        {({ isPending }) => <>
           {isPending ? <Spinner color="#FFFFFF" size="sm" /> : null}
           <Button.Label style={styles.retryText}>{t('retry')}</Button.Label>
-        </View>}
+        </>}
       </PendingButton>
     </View>
   </View>
@@ -150,10 +150,9 @@ function createStartupStyles(colors: ThemeColors) { return StyleSheet.create({
   app: { flex: 1, backgroundColor: colors.canvas },
   screen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: colors.canvas },
   card: { width: '100%', maxWidth: 440, borderWidth: 1, borderColor: colors.border, borderRadius: 18, backgroundColor: colors.panel, padding: 22, gap: 12 },
-  alert: { width: '100%' },
+  alert: { width: '100%', padding: 0, backgroundColor: 'transparent', boxShadow: 'none' },
   title: { color: colors.text, fontSize: 18, fontWeight: '900' },
   body: { color: colors.muted, fontSize: 13, lineHeight: 19 },
-  retry: { height: controlSize.prominent, alignSelf: 'flex-start', borderRadius: 8, backgroundColor: colors.accent, paddingHorizontal: 18 },
-  retryContent: { height: controlSize.prominent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  retry: { height: controlSize.prominent, alignSelf: 'flex-start', borderRadius: 8, backgroundColor: colors.accent, paddingHorizontal: 18, gap: 6 },
   retryText: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
 }) }

@@ -15,7 +15,6 @@
     { "name": "expo-checkbox", "version": "57.0.0", "platforms": ["android", "ios"] },
     { "name": "expo-clipboard", "version": "57.0.1", "platforms": ["android", "ios"] },
     { "name": "expo-constants", "version": "57.0.17", "platforms": ["android", "ios"] },
-    { "name": "expo-contacts", "version": "57.0.4", "platforms": ["android", "ios"] },
     { "name": "expo-crypto", "version": "57.0.2", "platforms": ["android", "ios"] },
     { "name": "expo-device", "version": "57.0.1", "platforms": ["android", "ios"] },
     { "name": "expo-document-picker", "version": "57.0.1", "platforms": ["android", "ios"] },
@@ -65,6 +64,7 @@
   "blockedModules": [
     "@runwhale/node-host",
     "expo-background-fetch",
+    "expo-contacts",
     "expo-notifications",
     "expo-secure-store",
     "expo-splash-screen",

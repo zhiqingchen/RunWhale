@@ -24,7 +24,7 @@ internal object NativePreviewLaunchCoordinator {
   fun register(requestId: String, callback: (NativePreviewLaunchResult) -> Unit): Boolean {
     val cancelled = synchronized(lock) {
       check(requestId !in callbacks && requestId !in finishedRequests) {
-        "Native Preview launch request is already registered"
+        "Preview launch request is already registered"
       }
       if (cancellationsBeforeRegistration.remove(requestId)) {
         rememberFinished(requestId)
@@ -110,7 +110,7 @@ internal object NativePreviewLaunchCoordinator {
   private fun cancelledLaunchResult() = NativePreviewLaunchResult(
     opened = false,
     code = "launch_cancelled",
-    message = "Native Preview launch was cancelled",
+    message = "Preview launch was cancelled",
   )
 
   private const val MAX_REMEMBERED_REQUESTS = 64

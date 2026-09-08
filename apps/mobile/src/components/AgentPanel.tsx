@@ -363,8 +363,8 @@ function AgentToolApprovalPopover({ event, busy, pendingAction, error, onApprove
       <Text style={isPackageInstall ? styles.packageChange : styles.toolApprovalName}>{isPackageInstall ? reason || toolName : toolName}</Text>
       {error ? <InlineError message={error} /> : null}
       <View style={styles.approvalActions}>
-        <PendingButton accessibilityLabel={t('reject')} size="sm" variant="danger-soft" isPending={pendingAction === 'reject'} isDisabled={busy} onPress={onReject} style={styles.reject}>{({ isPending }) => <View style={styles.approvalActionContent}>{isPending ? <Spinner color={colors.danger} size="sm" /> : null}<Button.Label style={styles.rejectText}>{t('reject')}</Button.Label></View>}</PendingButton>
-        <PendingButton accessibilityLabel={t('approveOnce')} size="sm" variant="primary" isPending={pendingAction === 'approve'} isDisabled={busy} onPress={onApprove} style={styles.approve}>{({ isPending }) => <View style={styles.approvalActionContent}>{isPending ? <Spinner color="#FFFFFF" size="sm" /> : null}<Button.Label style={styles.approveText}>{isPending ? t('working') : t('approveOnce')}</Button.Label></View>}</PendingButton>
+        <PendingButton accessibilityLabel={t('reject')} size="sm" variant="danger-soft" isPending={pendingAction === 'reject'} isDisabled={busy} onPress={onReject} style={styles.reject}>{({ isPending }) => <>{isPending ? <Spinner color={colors.danger} size="sm" /> : null}<Button.Label style={styles.rejectText}>{t('reject')}</Button.Label></>}</PendingButton>
+        <PendingButton accessibilityLabel={t('approveOnce')} size="sm" variant="primary" isPending={pendingAction === 'approve'} isDisabled={busy} onPress={onApprove} style={styles.approve}>{({ isPending }) => <>{isPending ? <Spinner color="#FFFFFF" size="sm" /> : null}<Button.Label style={styles.approveText}>{isPending ? t('working') : t('approveOnce')}</Button.Label></>}</PendingButton>
       </View>
     </View>
   </View>
@@ -421,7 +421,7 @@ function QuestionCard({ event, busy, pendingAction, onInputFocus, onInputBlur, o
       })}</View>
       <TextInput multiline editable={!busy} accessibilityLabel={question.question} accessibilityState={{ disabled: busy }} value={custom[question.id] ?? ''} onFocus={onInputFocus} onBlur={onInputBlur} onChangeText={(text) => { if (!busy) setCustom((current) => ({ ...current, [question.id]: text })) }} placeholder={t('otherAnswer')} placeholderTextColor={colors.muted} style={styles.questionInput} />
     </View>)}
-    <View style={styles.approvalActions}><PendingButton size="sm" variant="primary" isPending={pendingAction === 'answer'} isDisabled={busy || !ready} onPress={submit} style={[styles.approve, (busy || !ready) && styles.questionControlDimmed]}>{({ isPending }) => <View pointerEvents="none" style={styles.approvalActionContent}>{isPending ? <Spinner color="#FFFFFF" size="sm" /> : null}<Button.Label style={styles.approveText}>{isPending ? t('working') : t('submitAnswer')}</Button.Label></View>}</PendingButton></View>
+    <View style={styles.approvalActions}><PendingButton size="sm" variant="primary" isPending={pendingAction === 'answer'} isDisabled={busy || !ready} onPress={submit} style={[styles.approve, (busy || !ready) && styles.questionControlDimmed]}>{({ isPending }) => <>{isPending ? <Spinner color="#FFFFFF" size="sm" /> : null}<Button.Label style={styles.approveText}>{isPending ? t('working') : t('submitAnswer')}</Button.Label></>}</PendingButton></View>
   </View>
 }
 
@@ -435,7 +435,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   historyLoading: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
   historyLoadingText: { color: colors.muted, lineHeight: 20 },
   historyError: { gap: 8, paddingVertical: 8 },
-  historyRetry: { minHeight: agentPanelInteractionContract.minimumTouchTarget, alignSelf: 'flex-start' },
+  historyRetry: { height: 'auto', minHeight: agentPanelInteractionContract.minimumTouchTarget, alignSelf: 'flex-start' },
   inlineProgress: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   working: { padding: 12, backgroundColor: colors.panel, borderRadius: radius.small },
   workingText: { color: colors.muted, fontSize: 12 },
@@ -471,11 +471,10 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   questionInput: { minHeight: agentPanelInteractionContract.minimumTouchTarget, maxHeight: 90, borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.panel, color: colors.text, padding: 8, fontSize: 11, textAlignVertical: 'top' },
   questionKeyboardClearance: { height: agentQuestionKeyboardClearance(Platform.OS) },
   approvalActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
-  approvalActionContent: { height: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  reject: { height: agentPanelInteractionContract.minimumTouchTarget, minHeight: agentPanelInteractionContract.minimumTouchTarget, paddingHorizontal: 14, paddingVertical: 0, borderRadius: radius.small, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.panel, alignItems: 'center', justifyContent: 'center' },
-  rejectText: { color: colors.muted, fontSize: 12, lineHeight: 18, fontWeight: '800', includeFontPadding: false },
-  approve: { height: agentPanelInteractionContract.minimumTouchTarget, minHeight: agentPanelInteractionContract.minimumTouchTarget, paddingHorizontal: 14, paddingVertical: 0, borderRadius: radius.small, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
-  approveText: { color: '#FFFFFF', fontSize: 12, lineHeight: 18, fontWeight: '900', includeFontPadding: false },
+  reject: { height: agentPanelInteractionContract.minimumTouchTarget, minHeight: agentPanelInteractionContract.minimumTouchTarget, paddingHorizontal: 14, paddingVertical: 0, borderRadius: radius.small, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.panel, gap: 6 },
+  rejectText: { color: colors.muted, fontSize: 12, lineHeight: 18, fontWeight: '800' },
+  approve: { height: agentPanelInteractionContract.minimumTouchTarget, minHeight: agentPanelInteractionContract.minimumTouchTarget, paddingHorizontal: 14, paddingVertical: 0, borderRadius: radius.small, backgroundColor: colors.accent, gap: 6 },
+  approveText: { color: '#FFFFFF', fontSize: 12, lineHeight: 18, fontWeight: '900' },
   composer: { paddingHorizontal: agentPanelInteractionContract.composerHorizontalPadding, paddingTop: agentPanelInteractionContract.composerTopPadding, gap: agentPanelInteractionContract.composerSectionGap, backgroundColor: colors.canvas },
   composerCard: { padding: agentPanelInteractionContract.composerCardPadding, gap: agentPanelInteractionContract.composerCardGap, borderWidth: agentPanelInteractionContract.composerCardBorderWidth, borderColor: colors.border, borderRadius: agentPanelInteractionContract.composerCardRadius, backgroundColor: colors.panel, shadowColor: '#15336A', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 4 },
   attachmentList: { gap: 8, paddingTop: 6, paddingRight: 6 },
@@ -484,7 +483,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   attachmentDelete: { position: 'absolute', top: -12, right: -12, width: agentPanelInteractionContract.minimumTouchTarget, height: agentPanelInteractionContract.minimumTouchTarget, minWidth: agentPanelInteractionContract.minimumTouchTarget, paddingHorizontal: 0, alignItems: 'center', justifyContent: 'center' },
   attachmentDeleteSurface: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.canvas, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center' },
   composerShortcuts: { minHeight: agentPanelInteractionContract.minimumTouchTarget, flexDirection: 'row', alignItems: 'center', gap: agentPanelInteractionContract.composerActionGap, paddingRight: 4 },
-  shortcutChip: { height: agentPanelInteractionContract.minimumTouchTarget, maxWidth: 132, paddingHorizontal: 0, alignItems: 'center', justifyContent: 'center' },
+  shortcutChip: { height: agentPanelInteractionContract.minimumTouchTarget, borderRadius: 9, maxWidth: 132, paddingHorizontal: 0, alignItems: 'center', justifyContent: 'center' },
   shortcutSurface: { height: agentPanelInteractionContract.composerControlVisualSize, maxWidth: '100%', paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 1, borderColor: colors.border, borderRadius: 9, backgroundColor: colors.panel },
   shortcutSurfaceActive: { borderColor: colors.accent, backgroundColor: colors.accentDeep },
   shortcutIcon: { width: agentPanelInteractionContract.minimumTouchTarget },
@@ -498,7 +497,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   addButtonSurface: { width: agentPanelInteractionContract.composerControlVisualSize, height: agentPanelInteractionContract.composerControlVisualSize, borderRadius: agentPanelInteractionContract.composerControlVisualSize / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.raised },
   commandSlash: { color: colors.text, fontSize: 13, fontWeight: '900' },
   composerSpacer: { flex: 1, minWidth: 0 },
-  composerModelPicker: { height: agentPanelInteractionContract.minimumTouchTarget, paddingHorizontal: 0, flexShrink: 1, alignItems: 'center', justifyContent: 'center' },
+  composerModelPicker: { height: agentPanelInteractionContract.minimumTouchTarget, borderRadius: 9, paddingHorizontal: 0, flexShrink: 1, alignItems: 'center', justifyContent: 'center' },
   composerModelPickerSurface: { width: '100%', height: agentPanelInteractionContract.composerControlVisualSize, paddingHorizontal: 7, borderWidth: 1, borderColor: colors.border, borderRadius: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: colors.panel },
   composerModelPickerText: { minWidth: 0, flexShrink: 1, color: colors.muted, fontSize: 9, fontWeight: '700' },
   send: { width: agentPanelInteractionContract.minimumTouchTarget, height: agentPanelInteractionContract.minimumTouchTarget, paddingHorizontal: 0, alignItems: 'center', justifyContent: 'center' },

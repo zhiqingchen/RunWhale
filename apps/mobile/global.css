@@ -11,3 +11,37 @@
   --color-whale-ink: #101a3a;
   --color-whale-canvas: #f7f9ff;
 }
+
+/* Keep HeroUI defaults aligned with the Studio palette in src/theme/palettes.ts. */
+@layer theme {
+  :root {
+    @variant light {
+      --background: #F7F9FF;
+      --foreground: #101A3A;
+      --surface: #FFFFFF;
+      --overlay: #FFFFFF;
+      --muted: #68749A;
+      --default: #F0F3FF;
+      --default-foreground: #101A3A;
+      --accent: #356CFF;
+      --accent-foreground: #FFFFFF;
+      --border: #E1E7F5;
+      --danger: #D64363;
+      --danger-foreground: #FFFFFF;
+    }
+    @variant dark {
+      --background: #090E1D;
+      --foreground: #F4F7FF;
+      --surface: #11182B;
+      --overlay: #11182B;
+      --muted: #98A5C8;
+      --default: #1A2340;
+      --default-foreground: #F4F7FF;
+      --accent: #6D91FF;
+      --accent-foreground: #FFFFFF;
+      --border: #293554;
+      --danger: #FF718D;
+      --danger-foreground: #FFFFFF;
+    }
+  }
+}

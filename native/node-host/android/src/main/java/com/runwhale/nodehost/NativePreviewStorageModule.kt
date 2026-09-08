@@ -102,7 +102,7 @@ private fun requireStoragePair(entry: List<String>): Pair<String, String> {
 }
 
 private fun SharedPreferences.Editor.commitOrThrow() {
-  check(commit()) { "Native Preview could not persist AsyncStorage data" }
+  check(commit()) { "Preview could not persist AsyncStorage data" }
 }
 
 internal fun mergeNativePreviewStorageValues(current: String?, incoming: String): String {

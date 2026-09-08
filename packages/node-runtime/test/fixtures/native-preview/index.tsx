@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react'
 import { AppRegistry, PanResponder, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import Constants from 'expo-constants'
 import * as Audio from 'expo-audio'
-import * as Contacts from 'expo-contacts'
 import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -15,7 +14,7 @@ import { Canvas, Circle } from '@shopify/react-native-skia'
 import LottieView from 'lottie-react-native'
 import animation from './animation.json'
 
-const POST_READY_CRASH_MESSAGE = 'Native Preview acceptance crash after first content'
+const POST_READY_CRASH_MESSAGE = 'Preview acceptance crash after first content'
 
 function scheduleFatalCrashAfterReady(): void {
   setTimeout(() => {
@@ -37,11 +36,11 @@ function NativePreviewFixture() {
   }), [])
 
   return <LinearGradient colors={['#07182A', '#123B58']} style={styles.screen}>
-    <Text accessibilityRole="header" style={styles.title}>Native Preview fixture ready</Text>
+    <Text accessibilityRole="header" style={styles.title}>Preview fixture ready</Text>
     <Text style={styles.dimensions}>Expo {Constants.expoConfig?.sdkVersion ?? '57'}</Text>
     <Text style={styles.dimensions}>Media modules: {Object.keys(Audio).length}/{Object.keys(Video).length}</Text>
-    <Text style={styles.dimensions}>Project modules: {[Contacts, ImagePicker, LocalAuthentication, Location, Maps, MediaLibrary].filter(Boolean).length}</Text>
-    <Canvas accessibilityLabel="Native Preview Skia canvas" style={styles.skia} testID="native-preview-skia">
+    <Text style={styles.dimensions}>Project modules: {[ImagePicker, LocalAuthentication, Location, Maps, MediaLibrary].filter(Boolean).length}</Text>
+    <Canvas accessibilityLabel="Preview Skia canvas" style={styles.skia} testID="native-preview-skia">
       <Circle cx={14} cy={14} r={12} color="#62E6C7" />
     </Canvas>
     <LottieView
@@ -57,7 +56,7 @@ function NativePreviewFixture() {
     />
     <Text style={styles.dimensions} testID="native-preview-lottie-status">Lottie: {animationStatus}</Text>
     <Text
-      accessibilityLabel={`Native Preview viewport ${orientation}, ${dimensions}`}
+      accessibilityLabel={`Preview viewport ${orientation}, ${dimensions}`}
       style={styles.dimensions}
       testID="native-preview-dimensions"
     >
@@ -78,7 +77,7 @@ function NativePreviewFixture() {
       <Text style={styles.buttonText}>Tap count: {tapCount}</Text>
     </Pressable>
     <Pressable
-      accessibilityHint="Raises the deterministic Native Preview acceptance error"
+      accessibilityHint="Raises the deterministic Preview acceptance error"
       accessibilityLabel="Trigger post-ready crash"
       accessibilityRole="button"
       onPress={scheduleFatalCrashAfterReady}
@@ -97,13 +96,13 @@ function NativePreviewFixture() {
       <Text style={styles.dragText}>Drag horizontally: {dragDistance}</Text>
     </View>
     <ScrollView
-      accessibilityLabel="Native Preview vertical scroll"
+      accessibilityLabel="Preview vertical scroll"
       contentContainerStyle={styles.scrollContent}
       style={styles.scroll}
       testID="native-preview-scroll"
     >
       {Array.from({ length: 40 }, (_, index) => <Text key={index} style={styles.row}>Scrollable row {index + 1}</Text>)}
-      <Text accessibilityLabel="Native Preview bottom marker" style={styles.bottom}>Bottom marker</Text>
+      <Text accessibilityLabel="Preview bottom marker" style={styles.bottom}>Bottom marker</Text>
     </ScrollView>
   </LinearGradient>
 }

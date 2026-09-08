@@ -15,12 +15,12 @@ export function resolveProjectPreviewPlatform(manifest: { entry?: unknown; previ
     return 'web'
   }
   if (selected === 'native') {
-    if (!nativePlatform) throw new Error('Native Preview is unavailable in the desktop UI')
-    if (!hasNative) throw new Error(`Project selects Native Preview but does not declare entry.${nativePlatform}`)
+    if (!nativePlatform) throw new Error('This project requires iOS or Android for Preview')
+    if (!hasNative) throw new Error(`Project does not declare entry.${nativePlatform}`)
     return nativePlatform
   }
   if (hasWeb && hasNative) {
-    throw new Error('Project declares both Web and Native Preview entries; set preview.target in runwhale.json')
+    throw new Error('Project declares multiple preview entry types; set preview.target in runwhale.json')
   }
   if (hasNative) return nativePlatform
   if (hasWeb) return 'web'

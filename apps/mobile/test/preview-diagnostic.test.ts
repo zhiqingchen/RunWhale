@@ -4,7 +4,7 @@ import {
   previewRepairMessage,
 } from '../src/utils/preview-diagnostic'
 
-describe('Native Preview diagnostic summary', () => {
+describe('Preview diagnostic summary', () => {
   it('extracts structured stage diagnostics without exposing the source URL', () => {
     expect(nativePreviewDiagnosticSummary(JSON.stringify({
       stage: 'content-mount',
@@ -26,7 +26,7 @@ describe('Native Preview diagnostic summary', () => {
   it('offers repair for manifest and Metro errors with their source location', () => {
     for (const message of [
       'Project does not contain runwhale.json',
-      'Project selects Native Preview but does not declare entry.ios',
+      'Project does not declare entry.ios',
       'SyntaxError: /projects/game/app/index.tsx:19:7 Unexpected token',
       'Unable to resolve module ./missing from app/index.tsx',
     ]) expect(previewRepairMessage(message)).toBe(message)
@@ -47,11 +47,11 @@ describe('Native Preview diagnostic summary', () => {
   })
 
   it('keeps host and connection failures available for Agent diagnosis', () => {
-    for (const message of ['Runtime is not running', 'TypeError: Network request failed', 'Native Preview is unavailable in the desktop UI']) {
+    for (const message of ['Runtime is not running', 'TypeError: Network request failed', 'This project requires iOS or Android for Preview']) {
       expect(previewRepairMessage(message)).toBe(message)
     }
-    expect(previewRepairMessage(JSON.stringify({ code: 'presenter_unavailable', message: 'Native Preview could not open' })))
-      .toBe('presenter_unavailable: Native Preview could not open')
+    expect(previewRepairMessage(JSON.stringify({ code: 'presenter_unavailable', message: 'Preview could not open' })))
+      .toBe('presenter_unavailable: Preview could not open')
   })
 
   it('omits empty failures', () => {
