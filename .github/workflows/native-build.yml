@@ -26,6 +26,7 @@ permissions:
   contents: read
 
 env:
+  BUNDLE_ID: ${{ vars.BUNDLE_ID || 'app.runwhale.community' }}
   NODE_VERSION: 24.19.0
   PNPM_VERSION: 11.25.0
   JAVA_VERSION: '17'
@@ -217,11 +218,11 @@ jobs:
           app='apps/mobile/ios/build/manual-derived/Build/Products/Debug-iphonesimulator/RunWhale.app'
           entitlements='apps/mobile/ios/build/manual-derived/Build/Intermediates.noindex/RunWhale.build/Debug-iphonesimulator/RunWhale.build/RunWhale.app-Simulated.xcent'
           test -d "$app/_CodeSignature"
-          codesign --verify --deep --strict --test-requirement='=identifier "app.runwhale.community"' "$app"
+          codesign --verify --deep --strict --test-requirement="=identifier \"$BUNDLE_ID\"" "$app"
 
           application_identifier="$(plutil -extract application-identifier raw -o - "$entitlements")"
           case "$application_identifier" in
-            app.runwhale.community|*.app.runwhale.community) ;;
+            "$BUNDLE_ID"|*."$BUNDLE_ID") ;;
             *) echo "Invalid simulator application identifier: $application_identifier" >&2; exit 1 ;;
           esac
 

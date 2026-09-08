@@ -1,3 +1,5 @@
+import { additionalHandlers } from '#extensions'
+import { isMobileModelProvider } from '@runwhale/mobile-protocol'
 import type { AgentDriver, AgentCancellationResult, AgentImageInput } from './agent-driver.js'
 export type { AgentDriver, AgentRunOptions, AgentCancellationResult, AgentImageInput } from './agent-driver.js'
 import { AgentSessionExecution } from './session-execution.js'
@@ -57,8 +59,9 @@ import { MobileProjectFileSystem } from '@runwhale/mobile-runtime/sandbox'
 import { MobileTaskRunner } from '@runwhale/mobile-runtime/task-runner'
 import { MobileMetroRuntime } from './metro-runtime.js'
 import { readPreviewArtifact, writePreviewArtifact } from './preview-artifact.js'
+import { AppLibrary } from './app-library.js'
 import { emptyProjectFiles, emptyProjectManifest } from './project-manifest.js'
-import { providerCredentialRef } from './provider-credential.js'
+import { providerCredentialRef, providerHasManagedCredential } from './provider-credential.js'
 
 const WORKSPACE_MUTATION_TOOLS = new Set(['write_file', 'write_files', 'node_task', 'typescript_program', 'generate_image'])
 
@@ -88,6 +91,7 @@ type ContinuedAgentWork = {
 }
 
 export class RunWhaleRuntimeHost {
+  private readonly library: AppLibrary
   private readonly projectsRoot: string
   private readonly server: MobileHostServer
   private readonly metro: MobileMetroRuntime
@@ -117,6 +121,7 @@ export class RunWhaleRuntimeHost {
   private readonly previewTesting = new PreviewTesting(() => this.preview, (request) => this.server.emit('preview.test.request', request))
 
   constructor(private readonly options: RuntimeHostOptions) {
+    this.library = new AppLibrary(resolve(options.root, 'app-library'), options.platform)
     this.projectsRoot = resolve(options.root, 'projects')
     // Mobile Node's recursive fs.watch support varies by OS release. Keep a
     // bounded project-only poller active while Preview is open so Metro HMR
@@ -131,6 +136,7 @@ export class RunWhaleRuntimeHost {
       lastEventSequence: 0,
     }
     this.server = new MobileHostServer({
+      ...additionalHandlers,
       'host.start': async ({ projectRoot }) => this.activateProject(String(projectRoot)),
       'host.suspend': async () => this.suspend(),
       'host.background': async ({ revision, graceMs }) => this.background(revision, graceMs),
@@ -157,7 +163,7 @@ export class RunWhaleRuntimeHost {
       },
       'credential.status': async ({ provider }) => {
         const selected = mobileModelProvider(provider)
-        return { configured: Boolean(await this.options.secrets?.get(providerCredentialRef(selected))) }
+        return { configured: providerHasManagedCredential(selected) || Boolean(await this.options.secrets?.get(providerCredentialRef(selected))) }
       },
       'ssh.generate': async () => {
         if (!this.options.secrets) throw new Error('native credential bridge is unavailable')
@@ -368,6 +374,29 @@ export class RunWhaleRuntimeHost {
         return { rejected }
       },
       'package.cancel': async ({ installId }) => ({ cancelled: await this.options.packageInstaller?.cancel(String(installId)) ?? false }),
+      'release.export': async ({ projectId, platform }, { signal }) => this.enqueuePreviewOperation(signal, async () => {
+        await this.assertExistingProjectDirectory(projectId)
+        await this.ensureModuleStore()
+        const bundle = await this.metro.bundle(this.projectRoot(projectId), previewPlatform(platform))
+        return this.library.export(bundle)
+      }),
+      'release.read': async ({ id, offset }) => this.library.read(id, offset),
+      'release.discard': async ({ id }) => this.library.discard(id),
+      'library.begin': async (input) => this.library.begin(input),
+      'library.chunk': async ({ id, offset, chunk }) => this.library.chunk(id, offset, chunk),
+      'library.commit': async ({ id }) => this.library.commit(id),
+      'library.list': async () => this.library.list(),
+      'library.remove': async ({ appId, temporary }) => this.library.remove(appId, temporary),
+      'library.open': async ({ appId, temporary }, { signal }) => this.enqueuePreviewOperation(signal, async () => {
+        if (this.backgrounded) throw new Error('Open RunWhale to launch an app')
+        const { app, bundle } = await this.library.open(appId, temporary)
+        this.previewTesting.cancelAll()
+        this.preview = undefined
+        const served = await this.metro.serve(bundle, { live: false })
+        const projectId = `${temporary ? 'temp' : 'app'}-${appId}`
+        this.preview = { projectId, platform: app.platform, revision: app.installedAt, ...served, startedAt: Date.now() }
+        return previewEndpoint(this.preview)
+      }),
       'preview.open': async ({ projectId, platform }, { signal }) => this.openPreview(String(projectId), previewPlatform(platform), signal),
       'preview.run': async ({ projectId, platform }, { signal }) => this.runPreview(String(projectId), previewPlatform(platform), signal),
       'preview.reload': async ({ projectId }, { signal }) => ({ reloaded: await this.reloadPreview(String(projectId), signal) }),
@@ -2275,7 +2304,7 @@ function validateAgentQuestionAnswers(questions: AgentQuestion[], raw: AgentQues
 }
 
 function mobileModelProvider(value: unknown): MobileModelProvider {
-  if (value === 'deepseek' || value === 'openai' || value === 'anthropic' || value === 'google') return value
+  if (isMobileModelProvider(value)) return value
   throw new Error('unsupported model provider')
 }
 
@@ -2301,7 +2330,9 @@ function mobileModelProviderProfile(value: unknown): MobileModelProviderProfile 
     const maxTokens = optionalPositiveSafeInteger(entry.maxTokens, `model ${id} output cap`)
     if (entry.imageGeneration !== undefined && typeof entry.imageGeneration !== 'boolean') throw new Error('invalid image generation capability')
     if (entry.webSearch !== undefined && typeof entry.webSearch !== 'boolean') throw new Error('invalid web search capability')
-    return { id, ...(entry.webSearch === undefined ? {} : { webSearch: entry.webSearch }), ...(entry.imageGeneration === undefined ? {} : { imageGeneration: entry.imageGeneration }), ...(name ? { name } : {}), ...(contextWindow ? { contextWindow } : {}), ...(maxTokens ? { maxTokens } : {}) }
+    if (entry.input !== undefined && (!Array.isArray(entry.input) || !entry.input.every(item => item === 'text' || item === 'image'))) throw new Error('invalid model input modalities')
+    const input = entry.input as ('text' | 'image')[] | undefined
+    return { id, ...(input ? { input } : {}), ...(entry.webSearch === undefined ? {} : { webSearch: entry.webSearch }), ...(entry.imageGeneration === undefined ? {} : { imageGeneration: entry.imageGeneration }), ...(name ? { name } : {}), ...(contextWindow ? { contextWindow } : {}), ...(maxTokens ? { maxTokens } : {}) }
   })
   return { ...(baseURL ? { baseURL } : {}), models }
 }

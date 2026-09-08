@@ -1,3 +1,5 @@
+import { initializeRuntime } from '#extensions'
+import { resolveProviderCredential } from './provider-credential.js'
 import { mkdir, rename, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import type { MobileHarnessOptions } from '@runwhale/dsh-mobile'
@@ -12,6 +14,7 @@ import { watchTransportRecovery } from './transport-recovery.js'
 const runtimeRoot = resolve(process.argv[2] ?? process.cwd())
 const agentRuntimeUrl = new URL('./runwhale-agent-runtime.mjs', import.meta.url).href
 installJitlessFetch()
+initializeRuntime()
 const moduleStore = resolve(process.argv[3] ?? join(runtimeRoot, 'node_modules'))
 await mkdir(join(runtimeRoot, '.runwhale'), { recursive: true })
 const npmRoot = join(runtimeRoot, '.runwhale', 'npm')
@@ -23,7 +26,7 @@ const packageInstaller = new MobilePackageInstaller({
 const values = new Map<string, string>()
 let host: RunWhaleRuntimeHost | undefined
 const secrets = {
-  async get(key: string): Promise<string | undefined> { return values.get(key) },
+  async get(key: string): Promise<string | undefined> { return resolveProviderCredential(key) ?? values.get(key) },
   async set(key: string, value: string): Promise<void> { values.set(key, value) },
   async delete(key: string): Promise<void> { values.delete(key) },
 }

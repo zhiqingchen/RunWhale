@@ -1,4 +1,4 @@
-import { MOBILE_DEFAULT_MODELS, type MobileModelProvider, type MobileModelProviderProfile } from '@runwhale/mobile-protocol'
+import { MOBILE_DEFAULT_MODELS, MOBILE_PROVIDERS, type MobileModelProvider, type MobileModelProviderProfile } from '@runwhale/mobile-protocol'
 import { DEEPSEEK_MODELS } from '@earendil-works/pi-ai/providers/deepseek.models'
 import { OPENAI_MODELS } from '@earendil-works/pi-ai/providers/openai.models'
 import { ANTHROPIC_MODELS } from '@earendil-works/pi-ai/providers/anthropic.models'
@@ -12,7 +12,7 @@ const catalog = { deepseek: DEEPSEEK_MODELS, openai: OPENAI_MODELS, anthropic: A
 
 /** Installed harness models, with the product's preferred selection first. */
 export const MOBILE_DEFAULT_MODEL_PROFILES = Object.fromEntries<MobileModelProviderProfile>(providers.map((provider) => {
-  const models = Object.values(catalog[provider])
+  const models = Object.values(catalog[provider as keyof typeof catalog] ?? {})
     .map(({ id, name }) => ({ id, name }))
     .sort((a, b) => Number(b.id === MOBILE_DEFAULT_MODELS[provider]) - Number(a.id === MOBILE_DEFAULT_MODELS[provider]))
   return [provider, { models }]
@@ -29,6 +29,7 @@ export function restoreModelProfiles(value: unknown, version: unknown): Record<M
   const profiles = cloneDefaultModelProfiles()
   if (!value || typeof value !== 'object' || Array.isArray(value)) return profiles
   for (const provider of providers) {
+    if (MOBILE_PROVIDERS[provider].managed) continue
     const candidate = (value as Record<string, unknown>)[provider]
     if (candidate === undefined) continue
     // Legacy bundled catalogs may reset, but never discard a user's custom endpoint.
@@ -43,6 +44,6 @@ export function restoreModelProfiles(value: unknown, version: unknown): Record<M
 /** Persist only customizations so future harness upgrades can refresh defaults. */
 export function modelProfileOverrides(profiles: Readonly<Record<MobileModelProvider, MobileModelProviderProfile>>): Partial<Record<MobileModelProvider, MobileModelProviderProfile>> {
   return Object.fromEntries(providers.filter((provider) =>
-    JSON.stringify(profiles[provider]) !== JSON.stringify(MOBILE_DEFAULT_MODEL_PROFILES[provider]),
+    !MOBILE_PROVIDERS[provider].managed && JSON.stringify(profiles[provider]) !== JSON.stringify(MOBILE_DEFAULT_MODEL_PROFILES[provider]),
   ).map((provider) => [provider, profiles[provider]]))
 }

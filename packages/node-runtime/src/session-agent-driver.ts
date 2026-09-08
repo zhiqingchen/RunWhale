@@ -1,7 +1,7 @@
 import type { MobileHarness, MobileHarnessOptions, MobileImageInput } from '@runwhale/dsh-mobile'
 import { MOBILE_DEFAULT_MODELS, type MobileAgentPreset, type MobileModelProvider, type MobileModelProviderProfile } from '@runwhale/mobile-protocol'
 import type { AgentDriver, AgentRunOptions, AgentSessionLoadOptions } from './agent-driver.js'
-import { providerCredentialRef } from './provider-credential.js'
+import { providerCredentialRef, providerHasManagedCredential } from './provider-credential.js'
 
 interface SessionAgentDriverOptions {
   createHarness(options: MobileHarnessOptions): Promise<MobileHarness>
@@ -66,7 +66,7 @@ export function createSessionAgentDriver(options: SessionAgentDriverOptions) {
   const agent = {
     async loadSession(input: AgentSessionLoadOptions) {
       if (await sessionHarness(input.sessionId)) return
-      const hasCredential = Boolean(await secrets.get(providerCredentialRef(input.provider ?? 'deepseek')))
+      const hasCredential = providerHasManagedCredential(input.provider ?? 'deepseek') || Boolean(await secrets.get(providerCredentialRef(input.provider ?? 'deepseek')))
       const mode = !hasCredential && options.deterministicReplay ? 'deterministic' : 'deepseek'
       const harness = await configureSession(input, mode)
       await harness.loadSession(input)
@@ -95,7 +95,7 @@ export function createSessionAgentDriver(options: SessionAgentDriverOptions) {
       if (startPaused) backgroundPaused.add(sessionId)
       else backgroundPaused.delete(sessionId)
       const selectedModel = model?.trim() || MOBILE_DEFAULT_MODELS[provider]
-      const hasCredential = Boolean(await secrets.get(providerCredentialRef(provider)))
+      const hasCredential = providerHasManagedCredential(provider) || Boolean(await secrets.get(providerCredentialRef(provider)))
       const testReplayEnabled = options.deterministicReplay === true
       if (!hasCredential && !testReplayEnabled) {
         // Admission failed before a harness could restore the durable seed.

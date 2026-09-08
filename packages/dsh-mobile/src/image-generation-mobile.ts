@@ -12,10 +12,10 @@ export interface ModelImageRequest {
 
 /** The agent chooses the prompt; the configured provider's Images API creates the asset. */
 export async function generateModelImage(
-  configuration: { baseURL?: string | undefined; apiKey: string },
+  configuration: { baseURL?: string | undefined; apiKey: string; timeoutMs?: number | undefined },
   request: ModelImageRequest,
 ): Promise<Uint8Array> {
-  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(5 * 60_000)])
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(configuration.timeoutMs ?? 5 * 60_000)])
   const base = new URL(configuration.baseURL ?? 'https://api.openai.com/v1')
   if (!['https:', 'http:'].includes(base.protocol) || base.username || base.password || base.search || base.hash) throw new Error('Invalid image generation endpoint')
   const prefix = base.pathname.replace(/\/$/, '') || '/v1'

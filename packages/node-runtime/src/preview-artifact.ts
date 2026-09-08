@@ -1,9 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { lstat, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import type { MetroBundle, MetroPlatform } from './metro-runtime.js'
+import { isNativeAssets, nativeAssetDirectory } from './native-assets.js'
 
-const PREVIEW_ARTIFACT_SCHEMA_VERSION = 3
+const PREVIEW_ARTIFACT_SCHEMA_VERSION = 4
 const MAX_PREVIEW_BUNDLE_BYTES = 64 * 1024 * 1024
 const MAX_PREVIEW_ARTIFACT_BYTES = 128 * 1024 * 1024
 
@@ -31,6 +32,7 @@ interface SerializedPreviewArtifact {
   requestPath: string
   webDocument?: MetroBundle['webDocument']
   webDocumentSha256?: string
+  nativeAssets?: MetroBundle['nativeAssets']
   code: string
   codeBytes: number
   codeSha256: string
@@ -64,6 +66,7 @@ export async function writePreviewArtifact(
     durationMs: bundle.durationMs,
     requestPath: bundle.requestPath,
     ...(bundle.webDocument ? { webDocument: bundle.webDocument, webDocumentSha256: sha256(Buffer.from(JSON.stringify(bundle.webDocument))) } : {}),
+    ...(bundle.nativeAssets ? { nativeAssets: bundle.nativeAssets } : {}),
     code: code.toString('utf8'),
     codeBytes: code.byteLength,
     codeSha256: sha256(code),
@@ -97,6 +100,9 @@ export async function readPreviewArtifact(
     if (!info.isFile() || info.size > MAX_PREVIEW_ARTIFACT_BYTES) return undefined
     const parsed = JSON.parse(await readFile(path, 'utf8')) as unknown
     if (!isSerializedPreviewArtifact(parsed, key)) return undefined
+    // Asset URIs in the immutable bundle belong to this sandbox. Rebuild if the
+    // project moved (including an iOS container relocation) instead of using stale paths.
+    if (parsed.nativeAssets && parsed.nativeAssets.directory !== nativeAssetDirectory(await realpath(projectRoot))) return undefined
     if (parsed.webDocument && sha256(Buffer.from(JSON.stringify(parsed.webDocument))) !== parsed.webDocumentSha256) return undefined
     const codeBytes = Buffer.from(parsed.code)
     const mapBytes = Buffer.from(parsed.map)
@@ -111,6 +117,7 @@ export async function readPreviewArtifact(
     return {
       platform: parsed.platform,
       ...(parsed.webDocument ? { webDocument: parsed.webDocument } : {}),
+      ...(parsed.nativeAssets ? { nativeAssets: parsed.nativeAssets } : {}),
       code: parsed.code,
       map: parsed.map,
       codeBytes,
@@ -144,6 +151,7 @@ function isSerializedPreviewArtifact(value: unknown, key: PreviewArtifactKey): v
     && isNonNegativeInteger(value.builtAt)
     && isNonNegativeInteger(value.durationMs)
     && (value.webDocument === undefined || (isWebDocument(value.webDocument) && isSha256(value.webDocumentSha256)))
+    && (value.nativeAssets === undefined || isNativeAssets(value.nativeAssets))
     && typeof value.code === 'string'
     && isNonNegativeInteger(value.codeBytes)
     && isSha256(value.codeSha256)

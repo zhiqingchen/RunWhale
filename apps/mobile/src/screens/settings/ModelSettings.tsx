@@ -1,3 +1,5 @@
+import { renderSlot } from '#extensions'
+import { MOBILE_PROVIDERS, type MobileModelProvider } from '@runwhale/mobile-protocol'
 import { AppDialog } from '@/components/AppDialog'
 import { AppIcon } from '@/components/AppIcon'
 import { PendingButton } from '@/components/PendingButton'
@@ -17,7 +19,7 @@ import { credentialDraftPersistenceReducer, credentialEditPresentation, credenti
 import { settingsDestructiveActionContract } from '@/utils/settings-feedback'
 import { settingsProviderColumnCount } from '@/utils/settings-layout'
 import { supportsModelWebSearch, supportsModelImageGeneration } from '@runwhale/mobile-protocol'
-import type { MobileModelDefinition, MobileModelProvider, MobileModelProviderProfile } from '@runwhale/mobile-protocol'
+import type { MobileModelDefinition, MobileModelProviderProfile } from '@runwhale/mobile-protocol'
 import * as SecureStore from 'expo-secure-store'
 import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
@@ -32,7 +34,7 @@ type CredentialError = 'credentialSaveFailed' | 'credentialActivationFailed' | '
 
 type ModelDraft = { id: string; name: string; contextWindow: string; maxTokens: string; imageGeneration?: boolean; webSearch?: boolean }
 
-export function ModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: TextInput | null): void; onInputFocus(input: TextInput | null): void }) {
+function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: TextInput | null): void; onInputFocus(input: TextInput | null): void }) {
   const [key, setKey] = useState('')
   const [credentialAction, setCredentialAction] = useState<CredentialAction>()
   const [credentialError, setCredentialError] = useState<CredentialError>()
@@ -537,10 +539,7 @@ export function ModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input
 }
 
 function providerName(provider: MobileModelProvider): string {
-  if (provider === 'openai') return 'OpenAI'
-  if (provider === 'anthropic') return 'Anthropic'
-  if (provider === 'google') return 'Google'
-  return 'DeepSeek'
+  return MOBILE_PROVIDERS[provider].name
 }
 
 function modelDraft(model: MobileModelDefinition): ModelDraft {
@@ -579,4 +578,9 @@ function validOptionalPositiveInteger(value: string): boolean {
   if (!value.trim()) return true
   const parsed = Number(value)
   return Number.isSafeInteger(parsed) && parsed > 0
+}
+
+export function ModelSettings(props: Parameters<typeof ByokModelSettings>[0]) {
+  const content = <ByokModelSettings {...props} />
+  return renderSlot('settings.models', { children: content }) ?? content
 }

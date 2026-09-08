@@ -99,7 +99,7 @@ Before the first release, repository administrators must add a GitHub tag rulese
 
 Keep the Android signing material in the `production` Environment as `ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD` secrets. Set `ANDROID_SIGNING_CERT_SHA256` to the expected public certificate fingerprint as an Environment variable; the workflow rejects an APK signed by any other identity.
 
-For iOS, create the `app.runwhale.community` App ID and App Store Connect app, an Apple Distribution certificate, an App Store provisioning profile, and an App Store Connect API key. Configure the `app-store` Environment with:
+For iOS, create an App ID, App Store Connect app, and App Store provisioning profile matching `BUNDLE_ID`, plus an Apple Distribution certificate and App Store Connect API key. Configure the `app-store` Environment with:
 
 | Kind | Name |
 | --- | --- |
@@ -113,7 +113,9 @@ For iOS, create the `app.runwhale.community` App ID and App Store Connect app, a
 
 `apps/mobile/app.json` intentionally declares `ITSAppUsesNonExemptEncryption` as the Boolean value `false`. This is an export-compliance owner decision covering the complete app and linked libraries, not an inference made by CI. Reconfirm it before the next tag whenever the embedded Node/OpenSSL runtime, SSH support, `node:crypto`, or other user-accessible encryption capability changes. If the classification changes, update the declaration and complete Apple's encryption declaration process before releasing.
 
-This repository builds the standalone community app (`app.runwhale.community`, scheme `runwhale-community`).
+The community app defaults to `app.runwhale.community` (scheme `runwhale-community`). Override both platform identifiers with the GitHub Actions repository variable `BUNDLE_ID`; release Environment variables in `production` (Android) or `app-store` (iOS) take precedence. Unset or empty values use the default.
+
+Locally, keep `BUNDLE_ID` exported through prebuild, build, validation, and Simulator installation. Regenerate native projects after changing it; `apps/mobile/app.config.js` also updates Keychain and background-task identifiers.
 
 ## Repository Layout
 

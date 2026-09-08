@@ -4,8 +4,11 @@ import { access, mkdir, readFile, readdir, realpath, stat, writeFile } from 'nod
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { nativePreviewConsoleSource } from './preview-console.js'
+import { collectNativeAssets, materializeNativeAssets, nativeAssetPluginPath, nativeAssetSource, type NativeAssets } from './native-assets.js'
 import { webPreviewTestingScript } from '@runwhale/mobile-protocol'
 import type { MetroMiddleWare } from '@expo/metro/metro'
+import type { ConfigT } from '@expo/metro/metro-config'
+import type { SourcePathsMode } from '@expo/metro/metro/shared/types'
 import {
   isNativePreviewBuiltIn,
   nativePreviewPackageName,
@@ -25,6 +28,7 @@ export type MetroPlatform = 'android' | 'ios' | 'web'
 export interface MetroBundle {
   platform: MetroPlatform
   webDocument?: WebPreviewDocument
+  nativeAssets?: NativeAssets
   code: string
   map: string
   durationMs: number
@@ -85,7 +89,7 @@ export class MobileMetroRuntime {
     const moduleRoots = [store, ...this.additionalWatchRoots.map((path) => resolve(path)), ...linkedInternalModuleRoots]
     const watchRoots = [root, ...moduleRoots]
     try { watchRoots.push(await realpath(resolve(store, '.pnpm'))) } catch { /* hoisted stores may not expose a virtual store */ }
-    const base = getDefaultConfig(root)
+    const base: ConfigT = getDefaultConfig(root)
     const originalResolve = base.resolver.resolveRequest
     const unsupportedNativeDependencies = platform === 'web'
       ? new Set<string>()
@@ -139,6 +143,11 @@ export class MobileMetroRuntime {
       // back to unsupported child processes.
       maxWorkers: 1,
       transformerPath: platform === 'web' ? await webTransformerPath(store, base.transformerPath) : base.transformerPath,
+      transformer: platform === 'web' ? base.transformer : {
+        ...base.transformer,
+        assetRegistryPath: 'react-native/Libraries/Image/AssetRegistry',
+        assetPlugins: [...base.transformer.assetPlugins, await nativeAssetPluginPath(store, root, watchRoots)],
+      },
       watchFolders: watchRoots,
       resolver: {
         ...base.resolver,
@@ -173,7 +182,7 @@ export class MobileMetroRuntime {
       // that the platform watcher wins the race.
       await this.synchronizeProjectChanges(root)
     }
-    const build = () => outputBundle.build(this.bundler!.middleware.metroServer, {
+    const buildOptions = {
       entryFile: entry,
       platform,
       dev: previewBundleMode(platform).dev,
@@ -182,8 +191,24 @@ export class MobileMetroRuntime {
       createModuleIdFactory: config.serializer.createModuleIdFactory,
       customResolverOptions: {},
       customTransformOptions: { routerRoot: 'app' },
-      unstable_transformProfile: 'default',
-    })
+      unstable_transformProfile: 'default' as const,
+    }
+    const build = async () => {
+      const server = this.bundler!.middleware.metroServer
+      const result = await outputBundle.build(server, buildOptions)
+      const nativeAssets = platform === 'web' ? undefined : await collectNativeAssets(root, await server.getAssets({
+        ...buildOptions,
+        onProgress: null,
+        excludeSource: false,
+        lazy: false,
+        modulesOnly: false,
+        runModule: true,
+        shallow: false,
+        sourceMapUrl: null,
+        sourcePaths: 'absolute' as SourcePathsMode,
+      }))
+      return { ...result, nativeAssets }
+    }
     let sourceAtBuildStart = new Map(this.changeSnapshot)
     let result = await build()
     for (let retry = 0; retry < 2; retry += 1) {
@@ -225,6 +250,7 @@ export class MobileMetroRuntime {
     return {
       platform,
       ...(platform === 'web' ? { webDocument: await readWebDocument(root) } : {}),
+      ...(result.nativeAssets ? { nativeAssets: result.nativeAssets } : {}),
       code: result.code,
       map: result.map ?? '',
       durationMs: Date.now() - started,
@@ -236,6 +262,7 @@ export class MobileMetroRuntime {
 
   async serve(bundle: MetroBundle, options: { live?: boolean } = {}): Promise<{ port: number; token: string; bundleUrl: string }> {
     await this.stopServing()
+    if (bundle.nativeAssets) await materializeNativeAssets(bundle.nativeAssets)
     const token = randomBytes(32).toString('base64url')
     const code = bundle.codeBytes ? Buffer.from(bundle.codeBytes) : Buffer.from(bundle.code)
     const map = bundle.mapBytes ? Buffer.from(bundle.mapBytes) : Buffer.from(bundle.map)
@@ -525,7 +552,7 @@ async function writePreviewEntry(root: string, platform: MetroPlatform): Promise
   const source = projectEntry.kind === 'expo-router'
     ? `${fastRefresh}import { AppRegistry } from 'react-native'\nimport App from '../app/index'\nAppRegistry.registerComponent('main', () => App)\n${platform === 'web' ? `AppRegistry.runApplication('main', { rootTag: document.getElementById('root') })\n` : ''}`
     : `${fastRefresh}import '../${projectEntry.path}'\n`
-  await writeFile(resolve(directory, 'preview-testing.js'), platform === 'web' ? webPreviewTestingScript : nativePreviewConsoleSource)
+  await writeFile(resolve(directory, 'preview-testing.js'), platform === 'web' ? webPreviewTestingScript : nativePreviewConsoleSource + nativeAssetSource)
   await writeFile(path, `import './preview-testing'\n${source}`)
   return path
 }

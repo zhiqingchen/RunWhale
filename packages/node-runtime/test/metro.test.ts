@@ -1,12 +1,61 @@
 import { join, resolve } from 'node:path'
 import { connect } from 'node:net'
-import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 import { describe, expect, it, vi } from 'vitest'
 import { WebSocket } from 'ws'
 import { MobileMetroRuntime } from '../src/metro-runtime.js'
+import { readPreviewArtifact, writePreviewArtifact } from '../src/preview-artifact.js'
 
 describe('MobileMetroRuntime', () => {
+  it('delivers native image densities and restores their bytes after project images are removed', async () => {
+    const repository = resolve(import.meta.dirname, '../../..')
+    const project = await createExpoTestProject()
+    const metro = new MobileMetroRuntime(resolve(repository, 'packages/runtime-module-store/node_modules'), [resolve(repository, 'node_modules/.pnpm')])
+    const images = [
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgOGMMAAHPAQB9pBXTAAAAAElFTkSuQmCC',
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAD0lEQVR4nGNgOGMMQhAKABsmA/0TLRAQAAAAAElFTkSuQmCC',
+      'iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAIAAADZSiLoAAAAD0lEQVR4nGNgOGMMRVhYAITMCPj9ggIrAAAAAElFTkSuQmCC',
+    ]
+    try {
+      await writeFile(join(project, 'app/index.tsx'), "import { Image } from 'react-native'\nexport default function App() { return <Image source={require('../assets/黄瓜 player.png')} style={{ width: 160, height: 160 }} /> }\n")
+      for (const platform of ['ios', 'android'] as const) {
+        await mkdir(join(project, 'assets'), { recursive: true })
+        for (const [index, content] of images.entries()) {
+          await writeFile(join(project, `assets/黄瓜 player${index === 0 ? '' : `@${index + 1}x`}.png`), Buffer.from(content, 'base64'))
+        }
+        const bundle = await metro.bundle(project, platform)
+        expect(Object.values(bundle.nativeAssets!.files)).toEqual(expect.arrayContaining(images))
+        expect(bundle.code).toContain('runwhaleLocalAsset')
+        expect(bundle.code).not.toContain(images[0])
+        const uris = [...bundle.code.matchAll(/file:\/\/[^"\s]+\/[a-f0-9]{64}\.png/g)].map(match => match[0])
+        expect(uris.length).toBeGreaterThanOrEqual(3)
+        const key = { projectId: 'runtime-test-project', platform, runtimeAbi: 'test-v1' }
+        await writePreviewArtifact(project, key, bundle, 1)
+        await metro.serve(bundle)
+        for (const uri of uris) expect(images).toContain((await readFile(fileURLToPath(uri))).toString('base64'))
+        const replacement = join(project, 'assets/replacement.tmp')
+        await writeFile(replacement, Buffer.from(images[1]!, 'base64'))
+        await rename(replacement, join(project, 'assets/黄瓜 player.png'))
+        const updated = await metro.bundle(project, platform)
+        expect(updated.code).not.toBe(bundle.code)
+        expect(Object.values(updated.nativeAssets!.files)).not.toContain(images[0])
+        await metro.stop()
+        await rm(join(project, 'assets'), { recursive: true })
+        await rm(bundle.nativeAssets!.directory, { recursive: true })
+        const restored = await readPreviewArtifact(project, key)
+        expect(restored?.code).toBe(bundle.code)
+        await metro.serve(restored!, { live: false })
+        for (const uri of uris) expect(images).toContain((await readFile(fileURLToPath(uri))).toString('base64'))
+        await metro.stop()
+      }
+    } finally {
+      await metro.stop()
+      await rm(project, { recursive: true, force: true })
+    }
+  }, 180_000)
+
   it('publishes an immediate atomic source replacement before the next build', async () => {
     const project = await mkdtemp(join(tmpdir(), 'runwhale-metro-atomic-'))
     const source = join(project, 'app.tsx')

@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
+import resolveAppConfig from '../apps/mobile/app.config.js'
 
 const requested = (process.argv[2] || process.env.RELEASE_VERSION || process.env.GITHUB_REF_NAME || '').replace(/^v/u, '')
 assert.match(requested, /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/u, 'Provide an App Store release version such as 0.1.0')
 
-const appConfig = JSON.parse(readFileSync('apps/mobile/app.json', 'utf8'))
+const appConfig = { expo: resolveAppConfig({ config: JSON.parse(readFileSync('apps/mobile/app.json', 'utf8')).expo }) }
 const androidPath = 'apps/mobile/android/app/build.gradle'
 const iosPath = 'apps/mobile/ios/RunWhale.xcodeproj/project.pbxproj'
 const androidVersion = existsSync(androidPath) ? readFileSync(androidPath, 'utf8').match(/versionName\s+["']([^"']+)["']/u)?.[1] : undefined

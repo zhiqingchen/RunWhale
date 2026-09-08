@@ -1,3 +1,7 @@
+import type { AdditionalHostRequests } from '#extensions'
+import type { MobileModelProvider } from './model-providers.js'
+export { MOBILE_DEFAULT_MODELS, type MobileModelProvider } from './model-providers.js'
+import type { LibraryApp, LibraryInstallInput, ReleaseTransfer } from './app-library.js'
 import type { PreviewTestCommand, PreviewTestResult } from './preview-testing.js'
 
 export const MOBILE_HOST_PROTOCOL_VERSION = 1 as const
@@ -13,12 +17,12 @@ export const DEFAULT_PROTOCOL_LIMITS = {
 
 export type RuntimePlatform = 'android' | 'ios'
 export type PreviewPlatform = RuntimePlatform | 'web'
-export type MobileModelProvider = 'deepseek' | 'openai' | 'anthropic' | 'google'
 export interface MobileModelDefinition {
   id: string
   name?: string
   contextWindow?: number
   maxTokens?: number
+  input?: ('text' | 'image')[]
   imageGeneration?: boolean
   webSearch?: boolean
 }
@@ -33,12 +37,6 @@ export function isMobilePermissionMode(value: unknown): value is MobilePermissio
   return typeof value === 'string' && (MOBILE_PERMISSION_MODES as readonly string[]).includes(value)
 }
 export type MobileImageMediaType = 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'
-export const MOBILE_DEFAULT_MODELS: Readonly<Record<MobileModelProvider, string>> = Object.freeze({
-  deepseek: 'deepseek-v4-flash',
-  openai: 'gpt-5.4-mini',
-  anthropic: 'claude-sonnet-4-6',
-  google: 'gemini-3.5-flash',
-})
 export type HostState = 'stopped' | 'starting' | 'running' | 'stopping' | 'failed'
 
 export interface HostSnapshot {
@@ -244,7 +242,7 @@ export interface AgentQueuedMessage {
   mode: AgentMessageMode
 }
 
-export interface MobileHostRequestMap {
+export interface MobileHostRequestMap extends AdditionalHostRequests {
   'host.start': { params: { projectRoot: string }; result: HostSnapshot }
   'host.suspend': { params: Record<string, never>; result: { suspended: true } }
   'host.background': { params: { revision: number; graceMs: number }; result: { suspended: boolean } }
@@ -303,6 +301,15 @@ export interface MobileHostRequestMap {
   'package.install': { params: { planId: string }; result: { installId: string } }
   'package.reject': { params: { planId: string }; result: { rejected: boolean } }
   'package.cancel': { params: { installId: string }; result: { cancelled: boolean } }
+  'release.export': { params: { projectId: string; platform: PreviewPlatform }; result: ReleaseTransfer }
+  'release.read': { params: { id: string; offset: number }; result: { chunk: string; done: boolean } }
+  'release.discard': { params: { id: string }; result: { discarded: true } }
+  'library.begin': { params: LibraryInstallInput; result: { id: string } }
+  'library.chunk': { params: { id: string; offset: number; chunk: string }; result: { offset: number } }
+  'library.commit': { params: { id: string }; result: LibraryApp }
+  'library.list': { params: Record<string, never>; result: LibraryApp[] }
+  'library.open': { params: { appId: string; temporary?: boolean }; result: PreviewEndpoint }
+  'library.remove': { params: { appId: string; temporary?: boolean }; result: { removed: true } }
   'preview.open': { params: PreviewRunInput; result: PreviewOpenResult }
   'preview.run': { params: PreviewRunInput; result: PreviewEndpoint }
   'preview.reload': { params: { projectId: string }; result: { reloaded: boolean } }

@@ -1,3 +1,5 @@
+import { renderSlot } from '#extensions'
+import { MOBILE_PROVIDERS, type MobileModelProvider } from '@runwhale/mobile-protocol'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as SecureStore from 'expo-secure-store'
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -49,7 +51,7 @@ export default function SettingsScreen() {
 
   return <SafeAreaView style={styles.safe} edges={['top']}>
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.pageHeader}><Text accessibilityRole="header" style={styles.pageTitle}>{t('settings')}</Text></View>
+      <View style={styles.pageHeader}><Text accessibilityRole="header" style={styles.pageTitle}>{t('settings')}</Text>{renderSlot('settings.header')}</View>
       <SectionTitle>{t('deepSeekHarness')}</SectionTitle>
       <View style={styles.settingsGroup}>
         <SettingsLink icon={SlidersHorizontal} label={t('general')} description={t('generalSettingsSummary')} onPress={() => router.push(settingsDetailRoutes.general)} />
@@ -108,11 +110,8 @@ function SectionTitle({ children }: { children: string }) {
   return <Text accessibilityRole="header" style={styles.section}>{children}</Text>
 }
 
-function providerName(provider: 'deepseek' | 'openai' | 'anthropic' | 'google'): string {
-  if (provider === 'openai') return 'OpenAI'
-  if (provider === 'anthropic') return 'Anthropic'
-  if (provider === 'google') return 'Google'
-  return 'DeepSeek'
+function providerName(provider: MobileModelProvider): string {
+  return MOBILE_PROVIDERS[provider].name
 }
 
 function localizedRuntimeState(state: string, t: ReturnType<typeof useI18n>['t']): string {
@@ -133,7 +132,7 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   content: { width: '100%', maxWidth: deviceLayout.readableContentMaximumWidth, alignSelf: 'center', paddingHorizontal: 18, paddingTop: topLevelScreenLayout.topPadding, paddingBottom: 34, gap: 9 },
-  pageHeader: { minHeight: topLevelScreenLayout.headerMinHeight },
+  pageHeader: { minHeight: topLevelScreenLayout.headerMinHeight, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pageTitle: { color: colors.text, ...topLevelPageTitleStyle },
   section: { color: controlColors.choiceForeground, fontSize: typeScale.micro, letterSpacing: 1, fontWeight: '900', marginTop: 9, marginBottom: 2 },
   settingsGroup: { overflow: 'hidden', borderRadius: 18, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.panel },

@@ -1,3 +1,4 @@
+import { renderSlot } from '#extensions'
 import { Tabs } from 'expo-router'
 import { NativeTabs } from 'expo-router/unstable-native-tabs'
 import { Platform } from 'react-native'
@@ -37,6 +38,7 @@ export default function TabLayout() {
           />
           <NativeTabs.Trigger.Label>{t('workspace')}</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
+        {renderSlot('tabs.native')}
         <NativeTabs.Trigger name="settings">
           <NativeTabs.Trigger.Icon
             sf={{ default: 'gearshape', selected: 'gearshape.fill' }}
@@ -59,6 +61,7 @@ export default function TabLayout() {
     }}>
       <Tabs.Screen name="index" options={{ title: t('home'), tabBarIcon: ({ color }) => <AppIcon icon={Home} color={color} size={20} /> }} />
       <Tabs.Screen name="workspace" options={{ title: t('workspace'), tabBarIcon: ({ color }) => <AppIcon icon={FolderTree} color={color} size={20} /> }} />
+      {renderSlot('tabs.web')}
       <Tabs.Screen name="settings" options={{ title: t('settings'), tabBarIcon: ({ color }) => <AppIcon icon={Settings} color={color} size={20} /> }} />
     </Tabs>
   )

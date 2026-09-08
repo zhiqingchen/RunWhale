@@ -1,3 +1,4 @@
+#import "NativePreviewPolicy.h"
 #import "NativePreviewBridge.h"
 #import "NativePreviewSurface.h"
 
@@ -560,6 +561,14 @@ static void RunWhaleInstallNativePreviewFatalReporter(
 @end
 
 @implementation RunWhaleNativePreviewDelegate
+
+- (NSArray<id<RCTBridgeModule>> *)extraModulesForBridge:(RCTBridge *)bridge {
+  return RunWhalePreviewExtraModules(bridge);
+}
+
+- (Class)getModuleClassFromName:(const char *)name {
+  return RunWhalePreviewModuleClass(name) ?: [super getModuleClassFromName:name];
+}
 
 - (id<RCTTurboModule>)getModuleInstanceFromClass:(Class)moduleClass {
   if (moduleClass == RCTExceptionsManager.class) {

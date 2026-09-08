@@ -1,4 +1,4 @@
-import type { MobileModelProvider } from '@runwhale/mobile-protocol'
+export { isMobileModelProvider } from '@runwhale/mobile-protocol'
 
 export const agentModelSelectorContract = {
   widthRatio: 0.42,
@@ -15,8 +15,4 @@ export function agentModelSelectorWidth(viewportWidth: number): number {
       Math.min(agentModelSelectorContract.maximumWidth, Math.round(boundedViewportWidth * agentModelSelectorContract.widthRatio)),
     ),
   )
-}
-
-export function isMobileModelProvider(value: string): value is MobileModelProvider {
-  return value === 'deepseek' || value === 'openai' || value === 'anthropic' || value === 'google'
 }

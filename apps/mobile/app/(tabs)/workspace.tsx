@@ -1,3 +1,4 @@
+import { renderSlot } from '#extensions'
 import { ProjectIcon } from '@/components/ProjectIcon'
 import { ProjectLoadFailure } from '@/components/ProjectLoadFailure'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -431,6 +432,7 @@ export default function WorkspaceScreen() {
             <AppIcon icon={ChevronRight} color={colors.accent} size={18} />
           </View>
         </Button>
+        {renderSlot('workspace.menu', { projectId: selectedProjectActionTarget.projectId, onClose: () => setSelectedProjectActionTarget(undefined) })}
         <Button
           variant="ghost"
           feedbackVariant="scale-highlight"

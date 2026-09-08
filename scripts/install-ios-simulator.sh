@@ -64,7 +64,7 @@ xcodebuild -quiet \
   build
 
 APP_PATH="$DERIVED_DATA_DIR/Build/Products/Debug-iphonesimulator/RunWhale.app"
-BUNDLE_ID="$(node -p "require(process.argv[1]).expo.ios.bundleIdentifier" "$REPOSITORY_DIR/apps/mobile/app.json")"
+BUNDLE_ID="$(node -p "require(process.argv[1])({ config: require(process.argv[2]).expo }).ios.bundleIdentifier" "$REPOSITORY_DIR/apps/mobile/app.config.js" "$REPOSITORY_DIR/apps/mobile/app.json")"
 SIGNING_INFO="$(codesign -dv --verbose=4 "$APP_PATH" 2>&1)"
 
 if [[ "$SIGNING_INFO" != *"Identifier=$BUNDLE_ID"* || "$SIGNING_INFO" == *"linker-signed"* ]]; then

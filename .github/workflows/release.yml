@@ -186,6 +186,8 @@ jobs:
     needs: validate
     runs-on: ubuntu-24.04
     environment: production
+    env:
+      BUNDLE_ID: ${{ vars.BUNDLE_ID || 'app.runwhale.community' }}
     outputs:
       artifact_name: ${{ steps.artifact.outputs.artifact_name }}
       sha256: ${{ steps.artifact.outputs.sha256 }}
@@ -318,7 +320,7 @@ jobs:
           fi
 
           badging="$($aapt_path dump badging "$source_apk" | sed -n '1p')"
-          [[ "$badging" == *"name='app.runwhale.community'"* ]]
+          [[ "$badging" == *"name='$BUNDLE_ID'"* ]]
           [[ "$badging" == *"versionName='$VERSION'"* ]]
           [[ "$badging" == *"versionCode='$BUILD_NUMBER'"* ]]
           unzip -Z1 "$source_apk" >"$RUNNER_TEMP/android-release-apk-entries.txt"

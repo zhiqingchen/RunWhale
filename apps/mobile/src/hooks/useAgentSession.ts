@@ -1,3 +1,4 @@
+import { useModelAccess } from '#extensions'
 import { type SessionQuickActionOption } from '@/components/SessionQuickActionDialog'
 import { Camera, File, Image as ImageIcon, ListPlus, Target } from '@/components/icons'
 import { useI18n } from '@/i18n'
@@ -30,9 +31,10 @@ import { useAgentComposer } from './useAgentComposer'
 
 export function useAgentSession({ projectId, initialSessionId, sessionSummaries, sessionSummariesRefreshing, sessionSummaryStatus, events = [], liveEvents = events, promptInsertion, onPromptInserted, onRun, onSessionChange, onRunningChange }: AgentPanelProps) {
   const router = useRouter()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const runtime = useRuntime()
   const { busyMessageMode, modelProvider, model, modelProfiles, setModelProvider, agentPreset: defaultAgentPreset, permissionMode: defaultPermissionMode } = usePreferences()
+  const modelAccess = useModelAccess({ modelProfiles, language })
   const [submittedPrompt, setSubmittedPrompt] = useState<SubmittedTranscriptPrompt>()
   const submittedPromptRevision = useRef(0)
   const [localRunActive, setLocalRunActive] = useState(false)
@@ -383,7 +385,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
         label: providerLabel(provider),
         section: t('provider'),
         selected: sessionProvider === provider,
-        disabled: false,
+        disabled: !modelAccess.canSelectProvider(provider),
       })),
       ...configuredModels.map((modelOption) => ({
         id: `model:${modelOption}`,
@@ -394,7 +396,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
       })),
     ]
     return []
-  }, [configuredModels, goalMutationAction, ongoingGoal, planMode, planModeSubmitting, projectPaths, quickAction, sessionAgentPreset, sessionModel, sessionPermissionMode, sessionProvider, sessionSummaries, t])
+  }, [modelAccess, configuredModels, goalMutationAction, ongoingGoal, planMode, planModeSubmitting, projectPaths, quickAction, sessionAgentPreset, sessionModel, sessionPermissionMode, sessionProvider, sessionSummaries, t])
   const runPrompt = async (value: string, requestedPlanMode = planMode, draftToConsume = value, recover = false) => {
     if (runSubmissionGuard.current) return
     let resume = false
@@ -418,6 +420,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
           nextPrompt = resume ? '' : lastHumanUserPrompt(latest.events)
           if (!resume && !nextPrompt) throw new Error(t('sessionRetryPromptMissing'))
         }
+        await modelAccess.beforeRun(sessionProvider, sessionModel)
         const credential = await runtime.request('credential.status', { provider: sessionProvider })
         if (!credential.configured) {
           setCredentialSetup(sessionProvider)
@@ -795,6 +798,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
       if (option.id.startsWith('provider:')) {
         const nextProvider = option.id.slice('provider:'.length)
         if (!isMobileModelProvider(nextProvider) || nextProvider === sessionProvider) return
+        if (!modelAccess.selectProvider(nextProvider)) return
         setSessionProvider(nextProvider)
         setSessionModel(modelProfiles[nextProvider].models[0]?.id ?? MOBILE_DEFAULT_MODELS[nextProvider])
         return

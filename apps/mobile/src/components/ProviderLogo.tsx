@@ -1,3 +1,4 @@
+import { renderSlot } from '#extensions'
 import type { MobileModelProvider } from '@runwhale/mobile-protocol'
 import { Anthropic, DeepSeek, Google, OpenAI, type RNIconProps } from '@lobehub/icons-rn'
 import type { ComponentType } from 'react'
@@ -13,10 +14,14 @@ const providerIcons = {
   deepseek: { ColorIcon: DeepSeek.Color, Icon: DeepSeek, color: DeepSeek.colorPrimary },
   google: { ColorIcon: Google.Color, Icon: Google, color: Google.colorPrimary },
   openai: { Icon: OpenAI, color: OpenAI.colorPrimary },
-} satisfies Record<MobileModelProvider, ProviderIconDefinition>
+} satisfies Partial<Record<MobileModelProvider, ProviderIconDefinition>>
 
 export function ProviderLogo({ provider, size = 18, color }: { provider: MobileModelProvider; size?: number; color?: string }) {
-  const { ColorIcon, Icon, color: defaultColor } = providerIcons[provider] as ProviderIconDefinition
+  const custom = renderSlot('model.icon', { provider, size, color })
+  if (custom) return custom
+  const definition = providerIcons[provider as keyof typeof providerIcons]
+  if (!definition) return null
+  const { ColorIcon, Icon, color: defaultColor } = definition as ProviderIconDefinition
   const Logo = color || !ColorIcon ? Icon : ColorIcon
 
   return <Logo accessibilityLabel={provider} color={color ?? (ColorIcon ? undefined : defaultColor)} size={size} />

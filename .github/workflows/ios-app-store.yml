@@ -32,7 +32,7 @@ env:
   XCODE_BUILD: 17F113
   IOS_SDK_VERSION: '26.5'
   IOS_SDK_NAME: iphoneos26.5
-  BUNDLE_ID: app.runwhale.community
+  BUNDLE_ID: ${{ vars.BUNDLE_ID || 'app.runwhale.community' }}
   MINIMUM_IOS_VERSION: '16.4'
   BUILD_TIME_ZONE: Asia/Shanghai
 
@@ -238,6 +238,7 @@ jobs:
       artifact_name: ${{ steps.build-number.outputs.artifact-name }}
       build_number: ${{ steps.build-number.outputs.value }}
     env:
+      BUNDLE_ID: ${{ vars.BUNDLE_ID || 'app.runwhale.community' }}
       RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
       RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
       RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}

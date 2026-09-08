@@ -1,6 +1,7 @@
+import { MOBILE_PROVIDERS, type MobileModelProvider } from '@runwhale/mobile-protocol'
 import type { StudioAgentRunOptions } from '@/utils/agent-run'
 import { type SessionRefreshPresentationStatus } from '@/utils/session-actions'
-import type { AgentSessionSummary, HostEvent, MobileModelProvider } from '@runwhale/mobile-protocol'
+import type { AgentSessionSummary, HostEvent } from '@runwhale/mobile-protocol'
 
 export interface AgentPanelProps {
   projectId: string
@@ -32,10 +33,7 @@ export type ApprovalResponseAction = 'approve' | 'reject' | 'answer'
 export type AgentAttachmentSource = 'files' | 'photos' | 'camera'
 
 export function providerLabel(provider: MobileModelProvider): string {
-  if (provider === 'openai') return 'OpenAI'
-  if (provider === 'anthropic') return 'Claude'
-  if (provider === 'google') return 'Gemini'
-  return 'DeepSeek'
+  return MOBILE_PROVIDERS[provider].agentName ?? MOBILE_PROVIDERS[provider].name
 }
 
 export const QUICK_ACTION_DISMISS_DELAY_MS = 200

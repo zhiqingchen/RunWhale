@@ -34,5 +34,8 @@
     "@types/ws": "8.18.1",
     "esbuild": "0.27.7",
     "vitest": "4.1.11"
+  },
+  "imports": {
+    "#extensions": "./src/extensions.ts"
   }
 }

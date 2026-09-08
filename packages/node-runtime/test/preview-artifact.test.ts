@@ -1,8 +1,10 @@
-import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { MetroBundle } from '../src/metro-runtime.js'
+import { nativeAssetDirectory } from '../src/native-assets.js'
 import {
   previewArtifactPath,
   readPreviewArtifact,
@@ -14,6 +16,25 @@ const projects: string[] = []
 afterEach(async () => { await Promise.all(projects.splice(0).map((project) => rm(project, { recursive: true, force: true }))) })
 
 describe('Preview artifacts', () => {
+  it('rejects corrupted image snapshots and asset paths from another project', async () => {
+    const project = await temporaryProject()
+    const key: PreviewArtifactKey = { projectId: 'cached-project', platform: 'ios', runtimeAbi: 'runtime-v1' }
+    const bytes = Buffer.from('asset fixture')
+    const name = `${createHash('sha256').update(bytes).digest('hex')}.png`
+    const bundle: MetroBundle = {
+      ...previewBundle('ios', 'globalThis.image = 1'),
+      nativeAssets: { directory: nativeAssetDirectory(await realpath(project)), files: { [name]: bytes.toString('base64') } },
+    }
+    await writePreviewArtifact(project, key, bundle, 1)
+    await expect(readPreviewArtifact(project, key)).resolves.toMatchObject({ nativeAssets: bundle.nativeAssets })
+    const path = previewArtifactPath(project, 'ios')
+    const original = JSON.parse(await readFile(path, 'utf8'))
+    await writeFile(path, JSON.stringify({ ...original, nativeAssets: { ...original.nativeAssets, files: { [name]: Buffer.from('changed').toString('base64') } } }))
+    await expect(readPreviewArtifact(project, key)).resolves.toBeUndefined()
+    await writeFile(path, JSON.stringify({ ...original, nativeAssets: { ...original.nativeAssets, directory: nativeAssetDirectory(await temporaryProject()) } }))
+    await expect(readPreviewArtifact(project, key)).resolves.toBeUndefined()
+  })
+
   it('restores the exact successful bundle after project source changes', async () => {
     const project = await temporaryProject()
     const key: PreviewArtifactKey = { projectId: 'cached-project', platform: 'ios', runtimeAbi: 'ios-runtime-v1' }

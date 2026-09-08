@@ -1,12 +1,13 @@
-import type { MobileModelProvider } from '@runwhale/mobile-protocol'
-
-const PROVIDER_CREDENTIAL_REFERENCES = {
-  deepseek: 'ref:DEEPSEEK_API_KEY',
-  openai: 'ref:OPENAI_API_KEY',
-  anthropic: 'ref:ANTHROPIC_API_KEY',
-  google: 'ref:GOOGLE_API_KEY',
-} as const satisfies Record<MobileModelProvider, string>
+import { MOBILE_PROVIDERS, type MobileModelProvider } from '@runwhale/mobile-protocol'
 
 export function providerCredentialRef(provider: MobileModelProvider): string {
-  return PROVIDER_CREDENTIAL_REFERENCES[provider]
+  return `ref:${MOBILE_PROVIDERS[provider].credentialKey}`
+}
+
+export function providerHasManagedCredential(provider: MobileModelProvider): boolean {
+  return MOBILE_PROVIDERS[provider].managed === true
+}
+
+export function resolveProviderCredential(key: string): string | undefined {
+  return Object.values(MOBILE_PROVIDERS).find(provider => `ref:${provider.credentialKey}` === key)?.credentialValue
 }

@@ -1,3 +1,5 @@
+import { providerAdapter } from '#extensions'
+import { MOBILE_PROVIDERS } from '@runwhale/mobile-protocol'
 import { Context } from '@deepseek-ai/cordis'
 import type { ImageMediaType } from '@deepseek-ai/dsh-attachment'
 import AgentRegistry, { type Agent } from '@deepseek-ai/dsh-agent'
@@ -479,6 +481,7 @@ export async function createMobileHarness(options: MobileHarnessOptions): Promis
   const ctx = new Context()
   const workspaces = new Map<string, string>()
   const currentProvider = options.provider ?? 'deepseek'
+  const adapter = providerAdapter(currentProvider)
   const agentModel = options.model?.trim() || MOBILE_PROVIDER_DEFAULT_MODELS[currentProvider]
   const imageGeneration = options.mode !== 'deterministic' && supportsModelImageGeneration(currentProvider, agentModel, options.modelProfile)
   if (options.attachmentRoot) await ctx.plugin(MobileImageAttachmentStore, { root: options.attachmentRoot })
@@ -530,9 +533,9 @@ export async function createMobileHarness(options: MobileHarnessOptions): Promis
   registerMobileWorkspaceTools(ctx, (sessionId) => workspaces.get(sessionId), {
     ...options.workspaceServices,
     ...(imageGeneration ? { generateImage: async (request: import('./image-generation-mobile.js').ModelImageRequest) => {
-      const credential = await ctx.credentials.resolve(credentialRef('OPENAI_API_KEY'))
+      const credential = await ctx.credentials.resolve(credentialRef(MOBILE_PROVIDERS[currentProvider].credentialKey))
       if (!credential) throw new Error('Configure the current OpenAI API key before generating images')
-      return generateModelImage({ baseURL: options.modelProfile?.baseURL, apiKey: credential.value }, request)
+      return generateModelImage({ baseURL: options.modelProfile?.baseURL, apiKey: credential.value, timeoutMs: adapter?.imageTimeoutMs }, request)
     } } : {}),
     ...(options.requestPackageInstall ? { requestPackageInstall: options.requestPackageInstall } : {}),
   })
@@ -540,10 +543,10 @@ export async function createMobileHarness(options: MobileHarnessOptions): Promis
     await ctx.plugin(WebRuntime, { searchProvider: currentProvider })
     ctx.web.registerSearchProvider(mobileWebSearchProvider({
       provider: currentProvider, model: agentModel, baseURL: options.modelProfile?.baseURL,
-      resolveApiKey: async () => (await ctx.credentials.resolve(credentialRef(({ openai: 'OPENAI_API_KEY', deepseek: 'DEEPSEEK_API_KEY', anthropic: 'ANTHROPIC_API_KEY', google: 'GOOGLE_API_KEY' } as const)[currentProvider])))?.value,
+      resolveApiKey: async () => (await ctx.credentials.resolve(credentialRef(MOBILE_PROVIDERS[currentProvider].credentialKey)))?.value,
     }))
     if (currentProvider === 'google') registerGoogleSearchTool(ctx)
-    else await ctx.plugin(ToolWeb, { search: true, fetch: false, searchMaxQueries: 2, searchMaxResults: 6, searchTimeoutMs: 180_000 })
+    else await ctx.plugin(ToolWeb, { search: true, fetch: false, searchMaxQueries: 2, searchMaxResults: 6, searchTimeoutMs: adapter?.searchTimeoutMs ?? 180_000 })
     ctx.systemPrompt.section({ name: 'mobile-web-search', order: 1240, text: 'Web search uses the currently selected provider and model with the existing account. Use it for current facts, research, and documentation; it is available during planning and read-only work. Cite returned source URLs as clickable markdown links. If search fails, disclose the failure and continue only with information you can support; do not retry automatically or claim that unsourced text was verified. Never put credentials in a search query.' })
   }
   if (imageGeneration) ctx.systemPrompt.section({ name: 'project-image-generation', order: 1250, text: 'Use generate_image whenever the project needs generated raster assets. It uses gpt-image-2 through your configured provider and API key. You remain the agent model and choose the image prompt from the project context. During the first implementation turn, once the project purpose and visual direction are clear, reuse a suitable existing icon by setting runwhale.json icon, or generate one with projectIcon=true if the manifest has no icon. Use a simple square composition, an opaque background, and generous edge spacing for home-screen cropping. Keep the subject centered; some providers return a different aspect ratio and icon surfaces center-crop it. Do not generate icons in planning/read-only work or unrelated maintenance, replace an existing icon without user intent, or repeatedly retry failed image generation. Continue the main task if image generation is unavailable or fails.' })
@@ -576,22 +579,19 @@ export async function createMobileHarness(options: MobileHarnessOptions): Promis
 
   const provider = options.provider ?? 'deepseek'
   const modelProfile = options.modelProfile
-  const providers: Record<MobileModelProvider, LlmPiAi.PiAiProviderProfile> = {
-    deepseek: { apiKeyEnv: 'DEEPSEEK_API_KEY' },
-    openai: {
-      apiKeyEnv: 'OPENAI_API_KEY',
-      requestImageMaxBytes: OPENAI_MOBILE_REQUEST_IMAGE_MAX_BYTES,
-      requestImagePixelBudget: OPENAI_MOBILE_REQUEST_IMAGE_PIXEL_BUDGET,
-    },
-    anthropic: { apiKeyEnv: 'ANTHROPIC_API_KEY' },
-    google: { apiKeyEnv: 'GOOGLE_API_KEY' },
-  }
+  const providers = Object.fromEntries<LlmPiAi.PiAiProviderProfile>(Object.entries(MOBILE_PROVIDERS)
+    .filter(([, definition]) => !definition.managed)
+    .map(([id, definition]) => [id, {
+      apiKeyEnv: definition.credentialKey,
+      ...(id === 'openai' ? { requestImageMaxBytes: OPENAI_MOBILE_REQUEST_IMAGE_MAX_BYTES, requestImagePixelBudget: OPENAI_MOBILE_REQUEST_IMAGE_PIXEL_BUDGET } : {}),
+    }]))
   providers[provider] = {
-    ...providers[provider],
+    ...(adapter?.profile ?? providers[provider]),
     ...(modelProfile?.baseURL ? { baseURL: modelProfile.baseURL } : {}),
-    ...(modelProfile ? { models: modelProfile.models.map(({ imageGeneration: _imageGeneration, webSearch: _webSearch, ...entry }) => entry) } : {}),
+    ...(modelProfile ? { models: modelProfile.models.map(({ imageGeneration: _imageGeneration, webSearch: _webSearch, ...entry }) => adapter?.mapModel?.(entry) ?? entry) } : {}),
   }
-  await ctx.plugin(LlmPiAi, { providers })
+  if (adapter?.requireCatalog && !modelProfile?.models.length) throw new Error(`${MOBILE_PROVIDERS[provider].name} models are unavailable. Refresh the model catalog or choose another provider.`)
+  await ctx.plugin(LlmPiAi, { providers: adapter?.exclusive ? { [provider]: providers[provider]! } : providers })
   const model = options.model?.trim() || MOBILE_PROVIDER_DEFAULT_MODELS[provider]
   if (!(await ctx.llm.listModels(provider)).some((entry) => entry.id === model)) throw new Error(`model ${provider}/${model} is not in the configured mobile catalog`)
   return new MobileHarness(ctx, provider, model, workspaces, options.workspaceServices?.permissionModeFor ?? (() => 'review'))

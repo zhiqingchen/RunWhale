@@ -1,3 +1,5 @@
+import { providerAdapter } from '#extensions'
+import { MOBILE_PROVIDERS } from '@runwhale/mobile-protocol'
 import type { MobileModelProvider } from '@runwhale/mobile-protocol'
 import { DeepSeekSearchProvider } from '@deepseek-ai/dsh-web-search-deepseek'
 import { WebError, type WebSearchProvider, type WebSearchResult, type WebSearchSource } from '@deepseek-ai/dsh-web'
@@ -11,15 +13,17 @@ export interface MobileWebSearchOptions {
 
 /** Provider-native search calls behind the shared harness web service. */
 export function mobileWebSearchProvider(options: MobileWebSearchOptions): WebSearchProvider {
+  const adapter = providerAdapter(options.provider)
+  const provider = adapter?.searchProvider?.(options.model) ?? options.provider
   return {
     id: options.provider,
     available: () => true,
     async search(request, cancellation) {
-      const signal = AbortSignal.any([...(cancellation ? [cancellation] : []), AbortSignal.timeout(180_000)])
+      const signal = AbortSignal.any([...(cancellation ? [cancellation] : []), AbortSignal.timeout(adapter?.searchTimeoutMs ?? 180_000)])
       signal.throwIfAborted()
       if (!request.query.trim() || request.query.length > 4_000) throw new WebError('Search query must contain 1–4000 characters.', 'WEB_INVALID_QUERY')
       let endpoint: URL
-      try { endpoint = new URL(options.baseURL ?? ({ openai: 'https://api.openai.com/v1', deepseek: 'https://api.deepseek.com', anthropic: 'https://api.anthropic.com/v1', google: 'https://generativelanguage.googleapis.com/v1beta' })[options.provider]) }
+      try { endpoint = new URL(options.baseURL ?? MOBILE_PROVIDERS[options.provider].baseURL) }
       catch { throw new WebError('Invalid configured search endpoint.', 'WEB_INVALID_ENDPOINT') }
       if (!['https:', 'http:'].includes(endpoint.protocol) || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) {
         throw new WebError('Invalid configured search endpoint.', 'WEB_INVALID_ENDPOINT')
@@ -28,8 +32,8 @@ export function mobileWebSearchProvider(options: MobileWebSearchOptions): WebSea
       const apiKey = await options.resolveApiKey()
       if (!apiKey) throw new WebError(`Configure the current ${options.provider} API key before searching.`, 'WEB_PROVIDER_CREDENTIAL_MISSING')
       signal.throwIfAborted()
-      if (options.provider === 'anthropic' || options.provider === 'google') return searchAdditionalProvider(options, endpoint, configuredPath, apiKey, request.query, signal)
-      if (options.provider === 'deepseek') {
+      if (provider === 'anthropic' || provider === 'google') return searchAdditionalProvider({ ...options, provider }, endpoint, configuredPath, apiKey, request.query, signal)
+      if (provider === 'deepseek') {
         // DeepSeek Responses omits structured citations; its native Messages search returns them.
         endpoint.pathname = endpoint.hostname === 'api.deepseek.com' && ['', '/v1'].includes(configuredPath)
           ? '/anthropic/v1' : configuredPath || '/v1'
@@ -66,7 +70,7 @@ export function mobileWebSearchProvider(options: MobileWebSearchOptions): WebSea
             tools: [{ type: 'web_search' }], tool_choice: 'required',
             max_output_tokens: 4096,
             ...(/^(gpt-[56]|o[34]|deepseek-)/.test(options.model) ? { reasoning: { effort: 'low' } } : {}),
-            ...(options.provider === 'openai' ? { store: false, include: ['web_search_call.action.sources'] } : {}),
+            ...(provider === 'openai' ? { store: false, include: ['web_search_call.action.sources'] } : {}),
           }),
         })
       } catch {

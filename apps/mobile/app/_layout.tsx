@@ -1,3 +1,4 @@
+import { renderSlot } from '#extensions'
 import * as SplashScreen from 'expo-splash-screen'
 import { router, Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -29,7 +30,7 @@ void SplashScreen.preventAutoHideAsync().catch(() => undefined)
 export default function RootLayout() {
   const onRootLayout = useCallback(() => { void SplashScreen.hideAsync().catch(() => undefined) }, [])
   return (
-    <GestureHandlerRootView onLayout={onRootLayout} style={{ flex: 1 }}><SafeAreaProvider><HeroUINativeProvider><I18nProvider><PreferencesProvider><RuntimeProvider><RuntimeProjectProvider>
+    <GestureHandlerRootView onLayout={onRootLayout} style={{ flex: 1 }}><SafeAreaProvider><HeroUINativeProvider><I18nProvider><PreferencesProvider><RuntimeProvider>{renderSlot('runtime')}<RuntimeProjectProvider>
       {/* Project state stays mounted while the runtime boundary presents recovery UI. */}
       <RuntimeStartupBoundary><AppNavigator /></RuntimeStartupBoundary>
       <LocalPersistenceFeedback />
