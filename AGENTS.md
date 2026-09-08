@@ -8,7 +8,7 @@
 
 - Treat the standalone `https://github.com/zhiqingchen/nodejs-mobile.git` repository as the canonical owner of the Node Mobile source port and `@runwhale/node-mobile-runtime` releases. Consume its prebuilt artifacts at an exact version and keep their release provenance aligned with `upstreams.lock.json`.
 - Studio uses computer Metro on `8081` or `8082`; user Preview uses embedded Metro on a random token-protected localhost port.
-- Rebuild the app only for native-host, embedded-runtime, or Native Preview changes. Use Fast Refresh for Studio UI work.
+- Rebuild the app only for native-host, embedded-runtime, or Native Preview changes. Validate Studio UI with a Debug client, Metro, and Fast Refresh; first look for a reusable Debug client, and do not repackage Release JS bundles for UI checks or screenshots.
 - User projects must never trigger Xcode, Gradle, EAS, IPA, or APK builds.
 - Preserve Android arm64, iPhone arm64, and iOS Simulator arm64/x86_64 support.
 

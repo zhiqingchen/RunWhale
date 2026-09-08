@@ -2,7 +2,7 @@ import { AppDialog } from '@/components/AppDialog'
 import { AppIcon } from '@/components/AppIcon'
 import { PendingButton } from '@/components/PendingButton'
 import { ProviderLogo } from '@/components/ProviderLogo'
-import { ChevronDown, CircleCheck, Plus } from '@/components/icons'
+import { ChevronDown, CircleCheck, Globe, Image, Plus, Trash2 } from '@/components/icons'
 import { useI18n } from '@/i18n'
 import { usePreferences } from '@/state/preferences'
 import { MOBILE_DEFAULT_MODEL_PROFILES } from '@/utils/model-catalog'
@@ -23,7 +23,7 @@ import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
 import { Spinner } from 'heroui-native/spinner'
 import { useEffect, useReducer, useRef, useState } from 'react'
-import { AccessibilityInfo, Keyboard, Platform, Text, TextInput, View, Switch, useWindowDimensions } from 'react-native'
+import { AccessibilityInfo, Keyboard, Platform, Text, TextInput, View, useWindowDimensions } from 'react-native'
 import { useSettingsStyles } from './settings-styles'
 
 type CredentialAction = 'saving' | 'removing'
@@ -371,74 +371,79 @@ export function ModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input
         <Text style={styles.modelCount}>{modelDrafts.length}</Text>
       </View>
       <View style={styles.modelEditorList}>
-        {modelDrafts.map((entry, index) => <View key={`model-${index}`} style={styles.modelEditorRow}>
-          <View style={styles.modelEditorHeader}>
-            <Text style={styles.modelEditorTitle}>{entry.name.trim() || entry.id.trim() || t('newModel')}</Text>
-            <Button
-              size="sm"
-              variant="danger-soft"
-              accessibilityRole={settingsAccessibilityContract.buttonRole}
-              accessibilityLabel={`${t('remove')} ${entry.id || t('newModel')}`}
-              isDisabled={modelDrafts.length === 1}
-              onPress={() => { setModelDrafts((current) => current.filter((_, entryIndex) => entryIndex !== index)); setModelSettingsSaved(false) }}
-              style={styles.compactButton}
-            ><Button.Label style={styles.dangerButtonText}>{t('remove')}</Button.Label></Button>
-          </View>
-          <TextInput
-            accessibilityLabel={t('modelId')}
-            value={entry.id}
-            onChangeText={(value) => updateModelDraft(index, { id: value })}
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder={t('modelId')}
-            placeholderTextColor={controlColors.choiceForeground}
-            style={styles.textInput}
-          />
-          <TextInput
-            accessibilityLabel={t('modelDisplayNameOptional')}
-            value={entry.name}
-            onChangeText={(value) => updateModelDraft(index, { name: value })}
-            autoCapitalize="words"
-            autoCorrect={false}
-            placeholder={t('modelDisplayNameOptional')}
-            placeholderTextColor={controlColors.choiceForeground}
-            style={styles.textInput}
-          />
-          <View>
-            <View style={styles.modelCapacityRow}>
-              <Text style={styles.fieldLabel}>{t('modelWebSearch')}</Text>
-              <Switch accessibilityLabel={`${t('modelWebSearch')} · ${entry.id}`} value={entry.webSearch ?? supportsModelWebSearch(modelProvider, entry.id)} onValueChange={(value) => updateModelDraft(index, { webSearch: value })} />
+        {modelDrafts.map((entry, index) => {
+          const webSearch = entry.webSearch ?? supportsModelWebSearch(modelProvider, entry.id)
+          const imageGeneration = entry.imageGeneration ?? supportsModelImageGeneration(modelProvider, entry.id)
+          return <View key={`model-${index}`} style={styles.modelEditorRow}>
+            <View style={styles.modelEditorHeader}>
+              <Text style={styles.modelEditorTitle}>{entry.name.trim() || entry.id.trim() || t('newModel')}</Text>
+              <View style={styles.modelCapabilities}>
+                <View
+                  accessible
+                  accessibilityRole="image"
+                  accessibilityLabel={t(webSearch ? 'modelCapabilityAvailable' : 'modelCapabilityUnavailable', { capability: t('modelWebSearch') })}
+                  style={styles.modelCapabilityIcon}
+                ><AppIcon icon={Globe} size={18} color={webSearch ? controlColors.choiceSelectedForeground : colors.muted} /></View>
+                <View
+                  accessible
+                  accessibilityRole="image"
+                  accessibilityLabel={t(imageGeneration ? 'modelCapabilityAvailable' : 'modelCapabilityUnavailable', { capability: t('modelImageGeneration') })}
+                  style={styles.modelCapabilityIcon}
+                ><AppIcon icon={Image} size={18} color={imageGeneration ? controlColors.choiceSelectedForeground : colors.muted} /></View>
+              </View>
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                accessibilityRole={settingsAccessibilityContract.buttonRole}
+                accessibilityLabel={`${t('remove')} ${entry.id || t('newModel')}`}
+                isDisabled={modelDrafts.length === 1}
+                onPress={() => { setModelDrafts((current) => current.filter((_, entryIndex) => entryIndex !== index)); setModelSettingsSaved(false) }}
+                style={styles.modelRemoveButton}
+              ><AppIcon icon={Trash2} size={18} color={controlColors.dangerSoftForeground} /></Button>
             </View>
-            <Text style={styles.fieldLabel}>{t('modelWebSearchHint')}</Text>
-          </View>
-          {modelProvider === 'openai' ? <View>
-            <View style={styles.modelCapacityRow}>
-              <Text style={styles.fieldLabel}>{t('modelImageGeneration')}</Text>
-              <Switch accessibilityLabel={`${t('modelImageGeneration')} · ${entry.id}`} value={entry.imageGeneration ?? supportsModelImageGeneration(modelProvider, entry.id)} onValueChange={(value) => updateModelDraft(index, { imageGeneration: value })} />
-            </View>
-            <Text style={styles.fieldLabel}>{t('modelImageGenerationHint')}</Text>
-          </View> : null}
-          <View style={styles.modelCapacityRow}>
             <TextInput
-              accessibilityLabel={t('contextWindowOptional')}
-              value={entry.contextWindow}
-              onChangeText={(value) => updateModelDraft(index, { contextWindow: value })}
-              keyboardType="number-pad"
-              placeholder={t('contextWindowOptional')}
+              accessibilityLabel={t('modelId')}
+              value={entry.id}
+              onChangeText={(value) => updateModelDraft(index, { id: value })}
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder={t('modelId')}
               placeholderTextColor={controlColors.choiceForeground}
-              style={[styles.textInput, styles.modelCapacityInput]}
+              style={styles.textInput}
             />
             <TextInput
-              accessibilityLabel={t('maxOutputTokensOptional')}
-              value={entry.maxTokens}
-              onChangeText={(value) => updateModelDraft(index, { maxTokens: value })}
-              keyboardType="number-pad"
-              placeholder={t('maxOutputTokensOptional')}
+              accessibilityLabel={t('modelDisplayNameOptional')}
+              value={entry.name}
+              onChangeText={(value) => updateModelDraft(index, { name: value })}
+              autoCapitalize="words"
+              autoCorrect={false}
+              placeholder={t('modelDisplayNameOptional')}
               placeholderTextColor={controlColors.choiceForeground}
-              style={[styles.textInput, styles.modelCapacityInput]}
+              style={styles.textInput}
             />
+            <View style={styles.modelCapacityRow}>
+              <TextInput
+                accessibilityLabel={t('contextWindowOptional')}
+                value={entry.contextWindow}
+                onChangeText={(value) => updateModelDraft(index, { contextWindow: value })}
+                keyboardType="number-pad"
+                placeholder={t('contextWindowOptional')}
+                placeholderTextColor={controlColors.choiceForeground}
+                style={[styles.textInput, styles.modelCapacityInput]}
+              />
+              <TextInput
+                accessibilityLabel={t('maxOutputTokensOptional')}
+                value={entry.maxTokens}
+                onChangeText={(value) => updateModelDraft(index, { maxTokens: value })}
+                keyboardType="number-pad"
+                placeholder={t('maxOutputTokensOptional')}
+                placeholderTextColor={controlColors.choiceForeground}
+                style={[styles.textInput, styles.modelCapacityInput]}
+              />
+            </View>
           </View>
-        </View>)}
+        })}
       </View>
       <Button
         size="sm"
