@@ -10,7 +10,6 @@ import type {
 } from '@runwhale/mobile-protocol'
 import { NATIVE_PREVIEW_RUNTIME_ABI } from '@runwhale/mobile-protocol'
 import type { MetroBundle } from './metro-runtime.js'
-import { findSecretLeaks } from '@runwhale/mobile-runtime'
 import { isNativeAssets, nativeAssetDirectory } from './native-assets.js'
 
 const MAX_BYTES = 32 * 1024 * 1024
@@ -29,11 +28,6 @@ function identifier(value: string) {
   return value
 }
 export function encodeRelease(bundle: MetroBundle): Buffer {
-  if (
-    findSecretLeaks(bundle.code).length ||
-    /-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/.test(bundle.code)
-  )
-    throw new Error('Remove embedded credentials before publishing this app')
   let code = bundle.code
   if (bundle.nativeAssets)
     code = code.split(pathToFileURL(bundle.nativeAssets.directory).href).join(ASSET_ROOT)

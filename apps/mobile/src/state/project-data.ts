@@ -1,5 +1,4 @@
 import { NATIVE_PREVIEW_RUNTIME_ABI, NATIVE_PREVIEW_TEMPLATE_DEPENDENCIES, type ProjectImage } from '@runwhale/mobile-protocol'
-import { readTextProjectFiles } from '../utils/project-text-files'
 
 export interface ProjectFile {
   path: string
@@ -183,29 +182,6 @@ export async function loadProjectsWithRuntimeRecovery(
   }
 }
 
-export interface RuntimeProjectRecoverySource {
-  listProjects(): Promise<Array<{ id: string; name: string; updatedAt: number }>>
-  listFiles(projectId: string): Promise<readonly string[]>
-  readFile(projectId: string, path: string): Promise<{ content: string }>
-}
-
-export async function recoverProjectsFromRuntime(source: RuntimeProjectRecoverySource): Promise<StudioProject[]> {
-  const summaries = await source.listProjects()
-  return Promise.all(summaries.map(async (summary) => {
-    const paths = await source.listFiles(summary.id)
-    const files = await readTextProjectFiles(paths, (path) => source.readFile(summary.id, path))
-    const template = inferProjectTemplate(files)
-    return {
-      id: summary.id,
-      name: summary.name,
-      description: '',
-      updatedAt: summary.updatedAt,
-      ...(template ? { template } : {}),
-      files,
-    }
-  }))
-}
-
 function splitProjectSnapshot(value: string): string[] {
   const chunks: string[] = []
   let start = 0
@@ -235,17 +211,6 @@ async function previousProjectChunkCount(storage: ProjectSnapshotStorage): Promi
   const value = await storage.getItem(STORAGE_MANIFEST_KEY)
   if (value === null) return 0
   try { return parseProjectStorageManifest(value).chunks } catch { return 0 }
-}
-
-function inferProjectTemplate(files: readonly ProjectFile[]): ProjectTemplate | undefined {
-  const manifest = files.find((file) => file.path === 'runwhale.json')
-  if (!manifest) return undefined
-  try {
-    const parsed = JSON.parse(manifest.content) as { preview?: { target?: unknown } }
-    if (parsed.preview?.target === 'web') return 'web'
-    if (parsed.preview?.target === 'native') return 'expo'
-  } catch { /* damaged manifests remain recoverable */ }
-  return undefined
 }
 
 function createOrderedSerializedProjectWriter(write: (value: string) => Promise<void>): (value: string) => Promise<void> {

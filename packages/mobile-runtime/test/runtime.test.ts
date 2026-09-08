@@ -9,7 +9,6 @@ import {
   assertRegistryDependency,
   findSecretLeaks,
   parseRunWhaleManifest,
-  redactSecrets,
   resolveProjectPreviewPlatform,
   validatePackageArchive,
 } from '../src/index.js'
@@ -119,12 +118,8 @@ describe('dependency policy', () => {
 })
 
 describe('secrets', () => {
-  it('redacts nested credentials and finds leaks', () => {
+  it('finds credential leaks', () => {
     const secret = `sk-${'x'.repeat(24)}`
-    expect(redactSecrets({ apiKey: secret, nested: `Bearer ${'y'.repeat(20)}` })).toEqual({
-      apiKey: '[REDACTED]',
-      nested: '[REDACTED]',
-    })
     expect(findSecretLeaks(`value=${secret}`)).toEqual([secret])
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createChunkedProjectSnapshotStorage, createProjectDraft, createProjectLoader, createProjectPersistenceCoordinator, deserializeProjects, isGitHubImportedProject, loadProjectsWithRuntimeRecovery, PROJECT_STORAGE_CHUNK_LENGTH, recoverProjectsFromRuntime, removeProjectFromList, runtimeProjectFileContent, type ProjectPersistenceFailure, type ProjectSnapshotStorage } from '../src/state/project-data'
+import { createChunkedProjectSnapshotStorage, createProjectDraft, createProjectLoader, createProjectPersistenceCoordinator, deserializeProjects, isGitHubImportedProject, loadProjectsWithRuntimeRecovery, PROJECT_STORAGE_CHUNK_LENGTH, removeProjectFromList, runtimeProjectFileContent, type ProjectPersistenceFailure, type ProjectSnapshotStorage } from '../src/state/project-data'
 
 describe('project persistence', () => {
   it('stores large snapshots in bounded rows without splitting surrogate pairs', async () => {
@@ -54,29 +54,6 @@ describe('project persistence', () => {
 
     expect(values.has('runwhale.projects.v1')).toBe(false)
     await expect(snapshots.read()).resolves.toContain('Recovered')
-  })
-
-  it('rebuilds unreadable project metadata and text files from runtime storage', async () => {
-    const projects = await recoverProjectsFromRuntime({
-      listProjects: async () => [{ id: 'native-project', name: 'Native project', updatedAt: 42 }],
-      listFiles: async () => ['runwhale.json', 'index.tsx', 'image.png'],
-      readFile: async (_projectId, path) => {
-        if (path === 'image.png') throw new Error('binary files cannot be read as text')
-        return { content: path === 'runwhale.json' ? JSON.stringify({ preview: { target: 'native' } }) : 'export default null\n' }
-      },
-    })
-
-    expect(projects).toEqual([{
-      id: 'native-project',
-      name: 'Native project',
-      description: '',
-      updatedAt: 42,
-      template: 'expo',
-      files: [
-        { path: 'runwhale.json', content: JSON.stringify({ preview: { target: 'native' } }) },
-        { path: 'index.tsx', content: 'export default null\n' },
-      ],
-    }])
   })
 
   it('keeps an initial read failure distinct from a ready empty project list', async () => {
