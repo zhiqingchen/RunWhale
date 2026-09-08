@@ -1,4 +1,4 @@
-import type { ProjectImage } from '@runwhale/mobile-protocol'
+import { validatedProjectName, type ProjectImage } from '@runwhale/mobile-protocol'
 import { deserializeProjects, type ProjectFile, type StudioProject } from './project-data'
 
 export type ProjectMetadata = Omit<StudioProject, 'files' | 'filePaths' | 'icon'>
@@ -199,6 +199,19 @@ export class NativeProjectStore {
     void this.persist().catch(() => undefined)
   }
 
+  private updateManifestName(projectId: string, content: string): boolean {
+    let name: string
+    try {
+      const manifest = JSON.parse(content) as { name?: unknown } | null
+      if (typeof manifest?.name !== 'string') return false
+      name = validatedProjectName(manifest.name)
+    } catch { return false } // Keep the last title while the manifest is incomplete or invalid.
+    const project = this.projects.find((item) => item.id === projectId)
+    if (!project || project.name === name) return false
+    this.projects = this.projects.map((item) => item.id === projectId ? { ...item, name } : item)
+    return true
+  }
+
   async refresh(projectId: string, path?: string): Promise<void> {
     const epoch = (this.epochs.get(projectId) ?? 0) + 1
     this.epochs.set(projectId, epoch)
@@ -208,9 +221,14 @@ export class NativeProjectStore {
     this.publish()
     const [paths, appearance] = await Promise.all([this.runtime.listFiles(projectId), this.runtime.readProjectIcon?.(projectId)])
     if (this.epochs.get(projectId) !== epoch) return
+    const manifest = (!path || path === 'runwhale.json') && paths.includes('runwhale.json')
+      ? await this.runtime.readFile(projectId, 'runwhale.json') : undefined
+    if (this.epochs.get(projectId) !== epoch) return
+    const renamed = manifest ? this.updateManifestName(projectId, manifest.content) : false
     const pending = this.drafts.filter((draft) => draft.projectId === projectId).map((draft) => draft.path)
     this.projects = this.projects.map((item) => item.id === projectId ? { ...item, icon: appearance?.icon, filePaths: [...new Set([...paths, ...pending])].sort() } : item)
     this.publish()
+    if (renamed) await this.persist()
   }
 
   async loadFile(projectId: string, path: string): Promise<ProjectFile> {
@@ -255,6 +273,7 @@ export class NativeProjectStore {
   private async save(draft: EditorDraft): Promise<void> {
     try {
       const result = await this.runtime.writeFile(draft.projectId, draft.path, draft.content, draft.baseVersion)
+      if (draft.path === 'runwhale.json') this.updateManifestName(draft.projectId, draft.content)
       this.contents.set(keyOf(draft.projectId, draft.path), { content: draft.content, version: result.version })
       this.drafts = this.drafts.flatMap((current) => {
         if (current.projectId !== draft.projectId || current.path !== draft.path) return [current]

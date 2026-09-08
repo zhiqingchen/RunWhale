@@ -28,6 +28,38 @@ function fixture(initial: Record<string, Record<string, string>> = { 'project-1'
 afterEach(() => vi.useRealTimers())
 
 describe('native project ownership', () => {
+  it('synchronizes agent manifest renames on file and terminal refreshes and repairs stale titles on restart', async () => {
+    const f = fixture({ 'project-1': { 'runwhale.json': JSON.stringify({ name: 'Original' }) } })
+    await f.store.load(async () => null)
+    expect(f.store.projects[0]?.name).toBe('Original')
+    f.files.get('project-1')!.set('runwhale.json', JSON.stringify({ name: 'Star Pop' }))
+    await f.store.refresh('project-1', 'runwhale.json')
+    expect(f.store.projects[0]?.name).toBe('Star Pop')
+    expect(f.saved().projects).toEqual([expect.objectContaining({ name: 'Star Pop' })])
+    f.files.get('project-1')!.set('runwhale.json', JSON.stringify({ name: 'Final name' }))
+    await f.store.refresh('project-1')
+    expect(f.store.projects[0]?.name).toBe('Final name')
+    await f.store.rename('project-1', 'Stale cached title')
+    const restarted = new NativeProjectStore(f.storage, f.runtime)
+    await restarted.load(async () => null)
+    expect(restarted.projects[0]?.name).toBe('Final name')
+  })
+
+  it('uses saved manifest names without letting unsaved or invalid edits replace the title', async () => {
+    const f = fixture({ 'project-1': { 'runwhale.json': JSON.stringify({ name: 'Original' }) } })
+    await f.store.load(async () => null)
+    await f.store.loadFile('project-1', 'runwhale.json')
+    f.store.edit('project-1', 'runwhale.json', JSON.stringify({ name: 'Edited name' }))
+    expect(f.store.projects[0]?.name).toBe('Original')
+    await f.store.flush('project-1')
+    expect(f.store.projects[0]?.name).toBe('Edited name')
+    for (const content of ['{', 'null', '{}', '{"name":42}', '{"name":" "}']) {
+      f.files.get('project-1')!.set('runwhale.json', content)
+      await f.store.refresh('project-1', 'runwhale.json')
+      expect(f.store.projects[0]?.name).toBe('Edited name')
+    }
+  })
+
   it('refreshes workspace icon versions without persisting container image URLs', async () => {
     const f = fixture()
     const icon = { path: 'assets/icon.png', uri: 'file:///container/assets/icon.png', version: 'first' }
