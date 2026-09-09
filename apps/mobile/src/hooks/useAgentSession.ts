@@ -47,7 +47,9 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
   const [stopping, setStopping] = useState(false)
   const stoppingRef = useRef(false)
   const directStopGuard = useRef(false)
-  const [error, setError] = useState<string>()
+  const [actionError, setError] = useState<string>()
+  const [runError, setRunError] = useState<{ message: string; sessionId: string; previousTaskId?: string; afterSequence: number }>()
+  const error = actionError ?? runError?.message
   const [runConnectionIssue, setRunConnectionIssue] = useState<{ sessionId: string; previousTaskId?: string; afterSequence: number }>()
   const [credentialSetup, setCredentialSetup] = useState<MobileModelProvider>()
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId)
@@ -167,6 +169,10 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
           retireEndedAgentRun(observedRun, record.state)
         }
         setRunConnectionIssue((current) => current?.sessionId === selected && agentRunTransportRecovered(record, current.previousTaskId) ? undefined : current)
+        // Run failures can outlive background recovery. Only fresh evidence of
+        // a running/completed attempt clears them; composer errors stay local.
+        setRunError((current) => current?.sessionId === selected && (record.state === 'running' || record.state === 'completed')
+          && agentRunTransportRecovered(record, current.previousTaskId) ? undefined : current)
         setQueued(pending.messages.map((message) => ({ messageId: message.messageId, text: message.text, mode: message.mode })))
         setSessionHistoryState('ready')
         reconcileSubmittedPrompt(selected, record, settleRevision)
@@ -195,6 +201,11 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
     return reading
   }, [projectId, reconcileSubmittedPrompt, runtime.info, runtime.lastError, runtime.request, sessionId, sessionSummaries, sessionSummariesRefreshing, sessionSummaryStatus])
   const refreshHistoryFromEvent = useEffectEvent((selected?: string) => { void refreshSessionHistory(selected).catch(() => undefined) })
+  useEffect(() => {
+    if (!runError) return
+    const state = latestAgentLifecycleState(events, projectId, sessionId, runError.afterSequence)
+    if (runError.sessionId !== sessionId || state === 'running' || state === 'completed') setRunError(undefined)
+  }, [events, projectId, runError, sessionId])
   useEffect(() => {
     if (!runConnectionIssue) return
     if (runConnectionIssue.sessionId !== sessionId || latestAgentLifecycleState(events, projectId, sessionId, runConnectionIssue.afterSequence)) {
@@ -408,6 +419,7 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
       setRunSubmitting(true)
       if (recover) setRecoveryAttempt(recoveryState)
       setError(undefined)
+      setRunError(undefined)
       setRunConnectionIssue(undefined)
       try {
         let previousTaskId = sessionRecord?.taskId
@@ -469,7 +481,9 @@ export function useAgentSession({ projectId, initialSessionId, sessionSummaries,
             if (isMissingCredentialFailure(cause)) {
               if (!recover) updatePrompt(nextPrompt)
               setCredentialSetup(sessionProvider)
-            } else if ((cause as { code?: unknown })?.code !== 'ABORTED') setError(cause instanceof Error ? cause.message : String(cause))
+            } else if ((cause as { code?: unknown })?.code !== 'ABORTED') {
+              setRunError({ message: cause instanceof Error ? cause.message : String(cause), sessionId: targetSessionId, previousTaskId, afterSequence: latestEventSequence.current })
+            }
             void refreshSessionHistory(targetSessionId, submissionRevision).catch(() => undefined)
           },
           finish: () => {

@@ -201,6 +201,64 @@ it('keeps Retry available after another authentication failure and opens model s
   expect(props.onRun).toHaveBeenCalledTimes(2)
 })
 
+it.each(['running', 'completed'] as const)('clears a stale run error when fresh history confirms the current task is %s', async state => {
+  record.taskId = 'previous-task'
+  props.onRun = vi.fn(async () => {
+    record = { ...record, taskId: 'current-task', state: 'failed', failure: { code: 'PI_AI_ERROR', message: 'stream_read_error' } }
+    throw new Error('PI_AI_ERROR: stream_read_error')
+  })
+  await act(async () => { tree = create(<ObserveSession />) })
+  await act(async () => { await session.runPrompt(session.retryPrompt) })
+  expect(session.error).toBe('PI_AI_ERROR: stream_read_error')
+  expect(session.sessionRetryAvailable).toBe(true)
+
+  record = { ...record, state, failure: undefined }
+  await act(async () => { await session.refreshSessionHistory() })
+  expect(session.error).toBeUndefined()
+  expect(session.recoveryMessage).toBeUndefined()
+  expect(session.sessionRetryAvailable).toBe(false)
+  expect(props.onRun).toHaveBeenCalledOnce()
+})
+
+it.each(['running', 'completed'] as const)('clears a stale run error on a later %s event even when history is unavailable', async state => {
+  props.onRun = vi.fn(async () => { throw new Error('PI_AI_ERROR: stream_read_error') })
+  await act(async () => { tree = create(<ObserveSession />) })
+  await act(async () => { await session.runPrompt(session.retryPrompt) })
+  expect(session.error).toBe('PI_AI_ERROR: stream_read_error')
+
+  fixtures.request.mockRejectedValue(new Error('History unavailable'))
+  props.events = [lifecycle(1, state)]
+  await act(async () => { tree!.update(<ObserveSession />) })
+  expect(session.error).toBeUndefined()
+  expect(session.recoveryMessage).toBeUndefined()
+})
+
+it('does not let a previous completed task clear a new run failure', async () => {
+  record = { ...record, state: 'completed', taskId: 'previous-task', failure: undefined }
+  props.events = [lifecycle(1, 'completed')]
+  props.onRun = vi.fn(async () => { throw new Error('Could not start the next run') })
+  await act(async () => { tree = create(<ObserveSession />) })
+  await act(async () => { await session.runPrompt('Try again') })
+  await act(async () => { await session.refreshSessionHistory() })
+  expect(session.error).toBe('Could not start the next run')
+})
+
+it('preserves a composer validation error when the session is completed', async () => {
+  record = { ...record, state: 'completed', taskId: 'previous-task', failure: undefined }
+  await act(async () => { tree = create(<ObserveSession />) })
+  await act(async () => {
+    session.composer.setAttachments([{ sourcePath: '/cache/draft.jpg', name: 'draft.jpg', mediaType: 'image/jpeg' }])
+    session.composer.updatePrompt('/goal Build a game')
+  })
+  await act(async () => { await session.submit() })
+  expect(session.error).toBe('goalWithImages')
+  props.events = [lifecycle(1, 'completed')]
+  await act(async () => { tree!.update(<ObserveSession />) })
+  await act(async () => { await session.refreshSessionHistory() })
+  expect(session.error).toBe('goalWithImages')
+  expect(props.onRun).not.toHaveBeenCalled()
+})
+
 it('clears a lost run response after history confirms the task is running without resubmitting', async () => {
   record.taskId = 'previous-task'
   props.onRun = vi.fn(async () => {
