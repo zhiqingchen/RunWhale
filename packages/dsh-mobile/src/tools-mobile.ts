@@ -6,7 +6,8 @@ import type { CodeJsonValue } from '@deepseek-ai/dsh-code-runtime'
 import type { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
-import { MobileGitRepository, MobileProjectFileSystem, MobileTypeScriptService } from '@runwhale/mobile-runtime'
+import { MobileGitRepository, MobileProjectFileSystem, runMobileTypeScriptDiagnostics, MOBILE_TYPESCRIPT_TIMEOUT_MS } from '@runwhale/mobile-runtime'
+import type { MobileDiagnostic } from '@runwhale/mobile-runtime'
 import { isProjectImagePath } from '@runwhale/mobile-protocol'
 import { MOBILE_IMAGE_MODEL, MOBILE_IMAGE_SIZES, type ModelImageRequest } from './image-generation-mobile.js'
 import type { MobileGitFetchResult, MobileGitPullResult, MobileGitPushResult } from '@runwhale/mobile-runtime'
@@ -31,6 +32,7 @@ export interface MobileWorkspaceServices {
   generateImage?: (request: ModelImageRequest) => Promise<Uint8Array>
   moduleStore?: string
   ensureModuleStore?: () => Promise<void>
+  typescriptWorkerUrl?: URL
   requestPackageInstall?: (sessionId: string, projectRoot: string, dependencies: Record<string, string>, offline: boolean | undefined, signal: AbortSignal) => Promise<MobilePackageInstallOutcome>
   runNodeTask?: (projectRoot: string, entry: string, args: string[] | undefined, timeoutMs: number | undefined, signal: AbortSignal) => Promise<{ id: string; exitCode: number; output: string; durationMs: number; error?: string }>
   runPreview?: (projectRoot: string, sessionId: string, signal: AbortSignal) => Promise<PreviewEndpoint>
@@ -98,6 +100,17 @@ export function registerMobileWorkspaceTools(
   }
   const renderJson = (_args: unknown, value: unknown) => [{ type: 'text' as const, text: JSON.stringify(value) }]
   const portableJson = (value: unknown): JsonValue => JSON.parse(JSON.stringify(value)) as JsonValue
+  const typescriptDiagnostics = async (paths: string[], exec: { agent?: Agent | undefined; signal: AbortSignal }, librariesReady = false) => {
+    validateBatchPaths(paths)
+    exec.signal.throwIfAborted()
+    const fileSystem = fileSystemFor(exec.agent)
+    const files = await Promise.all(paths.map(async (path) => ({ path, content: (await fileSystem.readText(path)).content })))
+    if (files.reduce((bytes, file) => bytes + Buffer.byteLength(file.content), 0) > maxBatchTextBytes) {
+      throw new Error(`batch file content exceeds ${maxBatchTextBytes} bytes`)
+    }
+    if (!librariesReady) await services.ensureModuleStore?.()
+    return runMobileTypeScriptDiagnostics({ root: executionRoot(exec.agent), moduleStore: services.moduleStore, files }, exec.signal, services.typescriptWorkerUrl)
+  }
 
   if (services.generateImage) ctx.tools.register(defineTool({
     name: 'generate_image',
@@ -196,7 +209,7 @@ export function registerMobileWorkspaceTools(
 
   ctx.tools.register(defineTool({
     name: 'typescript_program',
-    description: 'Run bounded TypeScript in a fresh worker with top-level await/return. Await all async work; return JSON. Async workspace API: readFile({path}) -> {content, version}; writeFile({path, content, expectedVersion?}); listFiles({}); typescriptDiagnostics({path}); gitDiff({path?}).',
+    description: 'Run bounded TypeScript in a fresh worker with top-level await/return. Await all async work; return JSON. Async workspace API: readFile({path}) -> {content, version}; writeFile({path, content, expectedVersion?}); listFiles({}); typescriptDiagnostics({path} or {paths}) -> diagnostics; gitDiff({path?}). Batch affected paths in one diagnostics call after related type or logic edits, not after every write; skip cosmetic-only edits and do not repeat unchanged checks.',
     parameters: { program: { type: 'string', required: true } },
     output: { schema: { type: 'json' }, render: renderJson },
     timeoutMs: 5 * 60_000,
@@ -219,6 +232,9 @@ export function registerMobileWorkspaceTools(
       const fileSystem = fileSystemFor(exec.agent)
       // Cold extraction must finish before the worker's bounded execution starts.
       await services.ensureModuleStore?.()
+      const programFinished = new AbortController()
+      const diagnosticExec = { agent: exec.agent, signal: AbortSignal.any([exec.signal, programFinished.signal]) }
+      const pendingDiagnostics = new Set<Promise<MobileDiagnostic[]>>()
       const result = await ctx.codeRuntime.run({
         program,
         signal: exec.signal,
@@ -243,11 +259,11 @@ export function registerMobileWorkspaceTools(
               return await listProjectFiles(root)
             },
             async typescriptDiagnostics(args): Promise<CodeJsonValue> {
-              const { path } = codeArgs(args)
-              const filePath = requiredString(path, 'path')
-              const source = await fileSystem.readText(filePath)
-              const service = new MobileTypeScriptService([{ path: filePath, content: source.content }], { root, moduleStore: services.moduleStore })
-              try { return service.diagnostics(filePath).map((diagnostic) => ({ ...diagnostic })) as CodeJsonValue } finally { service.dispose() }
+              const { path, paths } = codeArgs(args)
+              const pending = typescriptDiagnostics(diagnosticPaths(path, paths), diagnosticExec, true)
+              pendingDiagnostics.add(pending)
+              try { return (await pending).map((diagnostic) => ({ ...diagnostic })) }
+              finally { pendingDiagnostics.delete(pending) }
             },
             async gitDiff(args): Promise<CodeJsonValue> {
               const { path } = codeArgs(args)
@@ -258,6 +274,10 @@ export function registerMobileWorkspaceTools(
             },
           },
         }],
+      }).finally(async () => {
+        // A program can return or hit its own deadline without awaiting a binding.
+        programFinished.abort()
+        await Promise.allSettled(pendingDiagnostics)
       })
       return {
         logs: result.logs,
@@ -445,16 +465,15 @@ export function registerMobileWorkspaceTools(
 
   ctx.tools.register(defineTool({
     name: 'typescript_diagnostics',
-    description: 'Run the on-device TypeScript language service diagnostics for one workspace source file.',
-    parameters: { path: { type: 'string', required: true } },
+    description: 'Check TypeScript errors and warnings in up to eight affected source files using one cancellable worker and shared language service. Pass paths for a batch, or path for one file; never both. Run once after related type, import, interface, or logic edits. Skip text, color, spacing, and other cosmetic-only edits. Reuse previous results while relevant source, dependencies, and configuration are unchanged. Rerun only affected checks after a fix. Suggestions are omitted. A timeout or environment failure means validation is incomplete; do not retry automatically.',
+    parameters: { path: { type: 'string' }, paths: { type: 'array', items: { type: 'string' } } },
     output: { schema: { type: 'json' }, render: renderJson },
-    timeoutMs: 5 * 60_000,
-    isConcurrencySafe: () => true,
-    async execute({ path }, exec) {
-      const source = await fileSystemFor(exec.agent).readText(path)
-      await services.ensureModuleStore?.()
-      const service = new MobileTypeScriptService([{ path, content: source.content }], { root: executionRoot(exec.agent), moduleStore: services.moduleStore })
-      try { return { path, diagnostics: service.diagnostics(path).map((diagnostic) => ({ ...diagnostic })) } } finally { service.dispose() }
+    timeoutMs: MOBILE_TYPESCRIPT_TIMEOUT_MS,
+    isConcurrencySafe: () => false,
+    async execute({ path, paths }, exec) {
+      const selected = diagnosticPaths(path, paths)
+      const diagnostics = (await typescriptDiagnostics(selected, exec)).map((diagnostic) => ({ ...diagnostic }))
+      return { ...(path === undefined ? { paths: selected } : { path }), diagnostics }
     },
   }))
 
@@ -640,4 +659,11 @@ function codeArgs(value: unknown): Record<string, unknown> {
 function requiredString(value: unknown, name: string): string {
   if (typeof value !== 'string') throw new Error(`workspace binding ${name} must be a string`)
   return value
+}
+
+function diagnosticPaths(path: unknown, paths: unknown): string[] {
+  if (path !== undefined && paths !== undefined) throw new Error('Pass path or paths, not both')
+  if (path !== undefined) return [requiredString(path, 'path')]
+  if (!Array.isArray(paths) || paths.some((value) => typeof value !== 'string')) throw new Error('Pass a source path or an array of source paths')
+  return paths as string[]
 }

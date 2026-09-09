@@ -100,14 +100,14 @@ export class MobileTypeScriptService {
 
   remove(path: string): boolean { return this.files.delete(this.sourcePath(path)) }
 
-  diagnostics(path?: string): MobileDiagnostic[] {
+  diagnostics(path?: string, { includeSuggestions = true } = {}): MobileDiagnostic[] {
     const targets = path ? [this.sourcePath(path)] : [...this.files.keys()]
     const configuration = [...this.configurationErrors, ...this.service.getCompilerOptionsDiagnostics()]
       .map((diagnostic) => this.toDiagnostic(join(this.root, 'tsconfig.json'), diagnostic))
     return configuration.concat(targets.flatMap((target) => [
       ...this.service.getSyntacticDiagnostics(target),
       ...this.service.getSemanticDiagnostics(target),
-      ...this.service.getSuggestionDiagnostics(target),
+      ...(includeSuggestions ? this.service.getSuggestionDiagnostics(target) : []),
     ].map((diagnostic) => this.toDiagnostic(target, diagnostic))))
   }
 
