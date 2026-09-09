@@ -2,6 +2,7 @@ import type { HostEvent, HostEventName } from '@runwhale/mobile-protocol'
 import { describe, expect, it } from 'vitest'
 import { appendLiveTranscriptEvent, compactLiveTranscriptEvents } from '../src/utils/live-transcript-events'
 import { mergeSessionTranscript, projectSessionTranscript } from '../src/utils/session-transcript'
+import { projectAgentProgress } from '../src/utils/agent-progress'
 
 const messages = (events: HostEvent[], scope = base) => projectSessionTranscript(mergeSessionTranscript([], events, scope).events, true).flatMap(row => row.kind === 'assistant' ? row.blocks.map(block => block.text) : [])
 
@@ -12,6 +13,28 @@ function hostEvent(sequence: number, name: HostEventName, data: Record<string, u
 }
 
 describe('live transcript event compaction', () => {
+  it('shows coalesced tool input activity without exposing arguments as assistant text', () => {
+    const fragments = Array.from({ length: 600 }, (_, index) => hostEvent(index + 1, 'agent.delta', {
+      ...base, kind: 'tool-call', callId: 'write', index: 0, tool: 'write_files', characters: 4,
+      turn: 1, step: 1, sessionSequence: index + 1, sessionTime: 1_000 + index * 100,
+    }))
+    const compacted = compactLiveTranscriptEvents(fragments)
+    expect(compacted).toHaveLength(1)
+    expect(messages(compacted)).toEqual([])
+    const events = mergeSessionTranscript([], compacted, base).events
+    expect(projectAgentProgress(events)).toEqual({ phase: 'tool-input', tool: 'write_files', characters: 2_400, startedAt: 1_000, updatedAt: 60_900 })
+    expect(appendLiveTranscriptEvent(compacted, fragments.at(-1)!)).toBe(compacted)
+
+    const nextTool = appendLiveTranscriptEvent(compacted, hostEvent(601, 'agent.delta', {
+      ...base, kind: 'tool-call', callId: 'check', index: 1, tool: 'git_diff', characters: 2,
+      turn: 1, step: 1, sessionSequence: 601, sessionTime: 61_000,
+    }))
+    expect(nextTool).toHaveLength(2)
+    expect(projectAgentProgress(mergeSessionTranscript([], nextTool, base).events)).toMatchObject({ tool: 'git_diff', characters: 2, startedAt: 61_000 })
+    const retry = appendLiveTranscriptEvent(nextTool, hostEvent(602, 'agent.state', { ...base, state: 'llm/retry', turn: 1, step: 1 }))
+    expect(retry.filter(event => event.name === 'agent.delta')).toHaveLength(0)
+  })
+
   it('keeps the complete response after the generic event window passes 500 entries', () => {
     const fragments = Array.from({ length: 600 }, (_, index) => `[${String(index).padStart(3, '0')}]`)
     const events = [

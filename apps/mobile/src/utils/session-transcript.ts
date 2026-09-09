@@ -51,8 +51,11 @@ export function mergeSessionTranscript(history: readonly unknown[], live: readon
         if (!bySeq.has(data.event.seq)) bySeq.set(data.event.seq, data.event)
       } else if (typeof data.sessionSequence === 'number') missing.add(data.sessionSequence)
     } else if (host.name === 'agent.delta') {
-      transient.push({ type: 'assistant/chunk', seq: Number(data.sessionSequence ?? Number.MAX_SAFE_INTEGER), time: host.timestamp,
-        data: { turn: data.turn, step: data.step, chunk: { type: data.kind === 'reasoning' ? 'reasoning-delta' : 'text-delta', text: data.text }, transient: true } })
+      const chunk = data.kind === 'tool-call'
+        ? { type: 'tool-call-delta', id: data.callId, index: data.index, name: data.tool, characters: data.characters }
+        : { type: data.kind === 'reasoning' ? 'reasoning-delta' : 'text-delta', text: data.text }
+      transient.push({ type: 'assistant/chunk', seq: Number(data.sessionSequence ?? Number.MAX_SAFE_INTEGER), time: Number(data.sessionStartedAt ?? data.sessionTime ?? host.timestamp),
+        data: { turn: data.turn, step: data.step, chunk, updatedAt: Number(data.sessionTime ?? host.timestamp), transient: true } })
     }
   }
   return {

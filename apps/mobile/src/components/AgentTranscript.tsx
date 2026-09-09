@@ -24,12 +24,13 @@ import { type ToolActivityGroup, type ToolActivitySessionEvent, type ToolActivit
 import { contextDetailSummary, type TranscriptContextRecord } from '@/utils/transcript-context'
 import { groupTranscriptActivities, projectSessionTranscript, type GroupedTranscriptRow } from '@/utils/session-transcript'
 import { type PendingTranscriptPrompt } from '@/utils/transcript-user'
+import { projectAgentProgress, type AgentProgress } from '@/utils/agent-progress'
 
 interface TranscriptImage { attachmentId?: string; name: string; width?: number; height?: number; bytes?: number }
 
 export type TranscriptRow = GroupedTranscriptRow
   | { kind: 'live-prompt'; id: string; text: string }
-  | { kind: 'live-working'; id: string; label: string }
+  | { kind: 'live-working'; id: string; label: string; progress?: AgentProgress }
 
 const TOOL_ROW_GAP = 6
 // Older pages append to the inverted list, preserving the visible messages.
@@ -77,12 +78,13 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   const [selectedDetailId, setSelectedDetailId] = useState<string>()
   useEffect(() => { onBranchRef.current = onBranch }, [onBranch])
   const historyRows = useMemo(() => groupTranscriptActivities(projectSessionTranscript(events as ToolActivitySessionEvent[], Boolean(liveWorkingLabel))), [events, liveWorkingLabel])
+  const progress = useMemo(() => liveWorkingLabel ? projectAgentProgress(events as ToolActivitySessionEvent[]) : undefined, [events, liveWorkingLabel])
   const liveRows = useMemo<TranscriptRow[]>(() => {
     const rows: TranscriptRow[] = []
     if (livePrompt && !historyRows.some(row => row.id === livePrompt.id)) rows.push({ kind: 'live-prompt', ...livePrompt })
-    if (liveWorkingLabel) rows.push({ kind: 'live-working', id: 'live-working', label: liveWorkingLabel })
+    if (liveWorkingLabel) rows.push({ kind: 'live-working', id: 'live-working', label: liveWorkingLabel, progress })
     return rows
-  }, [historyRows, livePrompt, liveWorkingLabel])
+  }, [historyRows, livePrompt, liveWorkingLabel, progress])
   const historyWindow = transcriptHistoryWindow(historyRows.length, visibleLimit)
   const loadEarlierLabel = t(historyWindow.hidden === 1 ? 'loadEarlierSingular' : 'loadEarlier', { count: historyWindow.hidden })
   const visibleHistoryRows = useMemo(() => historyRows.slice(historyWindow.start), [historyRows, historyWindow.start])
@@ -166,8 +168,7 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
     onSelectActivity={selectActivity}
     onSelectDetails={selectDetails}
     styles={styles}
-    workingColor={colors.accent}
-  />, [branchAvailable, branchEnabled, branching, colors.accent, handleBranch, selectActivity, selectDetails, styles])
+  />, [branchAvailable, branchEnabled, branching, handleBranch, selectActivity, selectDetails, styles])
 
   const beginUserScroll = useCallback(() => {
     positionCoordinator.current.userScrollBegan()
@@ -246,7 +247,7 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   /></>
 }
 
-const TranscriptRowView = memo(function TranscriptRowView({ row, onBranch, branching, branchAvailable, onSelectActivity, onSelectDetails, styles, workingColor }: {
+const TranscriptRowView = memo(function TranscriptRowView({ row, onBranch, branching, branchAvailable, onSelectActivity, onSelectDetails, styles }: {
   row: TranscriptRow
   onBranch?(sequence?: number): void
   branching?: TranscriptBranchInFlight
@@ -254,7 +255,6 @@ const TranscriptRowView = memo(function TranscriptRowView({ row, onBranch, branc
   onSelectActivity(activityId: string, itemId: string): void
   onSelectDetails(contextId: string): void
   styles: ReturnType<typeof createStyles>
-  workingColor: string
 }) {
   if (row.kind === 'user') { const images = messageImages(row.event.data); return <View style={styles.userBubbleRow}><View style={styles.userBubble}>{images.length > 0 && <MessageImageGallery images={images} />}{Boolean(row.text) && <TranscriptRichText text={row.text} inverted />}</View></View> }
   if (row.kind === 'assistant') return <AssistantMessage status={row.status} event={row.event} blocks={row.blocks} branchSequence={row.branchSequence} onBranch={onBranch} branching={branching} branchAvailable={branchAvailable} />
@@ -263,9 +263,41 @@ const TranscriptRowView = memo(function TranscriptRowView({ row, onBranch, branc
   if (row.kind === 'notice') return <TranscriptNotice row={row} onPress={() => onSelectDetails(row.id)} />
   if (row.kind === 'context') return <ContextCard context={row.context} onSelectDetails={onSelectDetails} />
   if (row.kind === 'live-prompt') return <View style={styles.userBubbleRow}><View style={styles.userBubble}><TranscriptRichText text={row.text} inverted /></View></View>
-  if (row.kind === 'live-working') return <View accessible accessibilityRole="progressbar" accessibilityLabel={row.label} accessibilityLiveRegion="polite" style={styles.liveWorking}><Spinner size="sm" color={workingColor} /><Text style={styles.liveWorkingText}>{row.label}</Text></View>
+  if (row.kind === 'live-working') return <AgentWorkingIndicator label={row.label} progress={row.progress} />
   return null
 })
+
+function AgentWorkingIndicator({ label, progress }: { label: string; progress?: AgentProgress }) {
+  const { t } = useI18n()
+  const colors = useAppColors()
+  const styles = useTranscriptStyles()
+  const [mountedAt] = useState(Date.now)
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1_000)
+    return () => clearInterval(timer)
+  }, [])
+  const phase = progress?.phase
+  const title = phase ? t(({
+    preparing: 'agentPreparingRequest', waiting: 'agentWaitingModel', reasoning: 'agentReasoning',
+    responding: 'agentResponding', 'tool-input': 'agentPreparingTool', tool: 'agentRunningTool',
+    retry: 'agentRetryingRequest', finishing: 'agentFinishingStep',
+  } as const)[phase], { tool: progress.tool || t('eventTool'), retry: progress.retry ?? 1 }) : label
+  const elapsed = Math.max(0, Math.floor((now - (progress?.startedAt ?? mountedAt)) / 1_000))
+  const idle = Math.max(0, Math.floor((now - (progress?.updatedAt ?? now)) / 1_000))
+  const detail = [
+    progress?.characters ? t('agentReceivedCharacters', { count: progress.characters }) : undefined,
+    phase === 'retry' && progress?.retryAt !== undefined
+      ? t('agentRetryInSeconds', { seconds: Math.max(0, Math.ceil((progress.retryAt - Math.max(now, progress.updatedAt ?? now)) / 1_000)) })
+      : t('agentElapsedSeconds', { seconds: elapsed }),
+    phase === 'tool-input' || phase === 'responding' || phase === 'reasoning'
+      ? t(idle < 2 ? 'agentReceivingNow' : 'agentLastUpdateSeconds', { seconds: idle }) : undefined,
+  ].filter(Boolean).join(' · ')
+  return <View testID="agent-working-status" accessible accessibilityRole="progressbar" accessibilityLabel={`${title}. ${detail}`} style={styles.liveWorking}>
+    <Spinner size="sm" color={colors.accent} />
+    <View style={styles.activityCopy}><Text style={styles.liveWorkingText}>{title}</Text><Text style={styles.activityDetail}>{detail}</Text></View>
+  </View>
+}
 
 function AssistantMessage({ status, event, blocks, branchSequence, onBranch, branching, branchAvailable }: { status: Extract<TranscriptRow, { kind: 'assistant' }>['status']; event?: ToolActivitySessionEvent; blocks: AssistantMessageBlock[]; branchSequence?: number; onBranch?(sequence?: number): void; branching?: TranscriptBranchInFlight; branchAvailable: boolean }) {
   const { t } = useI18n()

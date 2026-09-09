@@ -51,6 +51,12 @@ export function appendLiveTranscriptEvent(current: readonly HostEvent[], event: 
         ...data,
         text: `${String(previousData?.text ?? '')}${String(data?.text ?? '')}`,
         endSequence: eventEndSequence(event),
+        sessionStartedAt: previousData?.sessionStartedAt ?? previousData?.sessionTime ?? previous.timestamp,
+      }
+      if (data?.kind === 'tool-call') {
+        delete mergedData.text
+        mergedData.tool = data.tool || previousData?.tool
+        mergedData.characters = (finiteNumber(previousData?.characters) ?? 0) + (finiteNumber(data.characters) ?? 0)
       }
       const firstSessionSequence = eventSessionSequences(previousData)[0] ?? eventSessionSequences(data)[0]
       if (firstSessionSequence !== undefined) mergedData.sessionSequence = firstSessionSequence
@@ -75,6 +81,7 @@ export function appendLiveTranscriptEvent(current: readonly HostEvent[], event: 
 
 function sameDeltaSegment(left: Record<string, unknown> | undefined, right: Record<string, unknown> | undefined): boolean {
   return left?.kind === right?.kind
+    && (left?.kind !== 'tool-call' || left.callId === right?.callId && left.index === right?.index)
     && finiteNumber(left?.turn) === finiteNumber(right?.turn)
     && finiteNumber(left?.step) === finiteNumber(right?.step)
 }

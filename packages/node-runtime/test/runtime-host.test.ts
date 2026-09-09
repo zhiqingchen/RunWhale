@@ -1098,6 +1098,36 @@ describe('RunWhaleRuntimeHost', () => {
     expect(await running).toMatchObject({ ok: true, result: { sessionId: 'message-order-session' } })
   })
 
+  it('publishes tool input progress before execution without broadcasting argument content', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'runwhale-tool-progress-'))
+    const host = new RunWhaleRuntimeHost({
+      root, moduleStore: join(root, 'modules'), platform: 'ios',
+      agent: { run: async ({ onEvent }) => {
+        const events = [
+          { type: 'turn/start', seq: 1, time: 100, data: { turn: 1 } },
+          { type: 'assistant/chunk', seq: 2, time: 200, data: { turn: 1, step: 1, chunk: { type: 'tool-call-delta', id: 'write', index: 0, name: 'write_files', argumentsDelta: 'private file content' } } },
+          { type: 'turn/end', seq: 3, time: 300, data: { turn: 1, reason: { kind: 'completed' } } },
+        ]
+        events.forEach(event => onEvent?.(event))
+        return { text: '', events }
+      } },
+    })
+    hosts.push(host)
+    const info = await host.start()
+    const rpc = createRuntimeRpc(info)
+    await rpc('project.create', { id: 'progress', name: 'Progress' })
+    expect(await rpc('agent.run', { projectId: 'progress', sessionId: 'progress', prompt: 'Write a file' })).toMatchObject({ ok: true })
+    const snapshot = await hostSnapshot(info.origin, info.token) as { result: { events: Array<{ name: string; data: Record<string, unknown> }> } }
+    const deltas = snapshot.result.events.filter(event => event.name === 'agent.delta')
+    expect(deltas).toEqual([expect.objectContaining({ data: expect.objectContaining({
+      kind: 'tool-call', callId: 'write', index: 0, tool: 'write_files', characters: 20,
+      sessionTime: 200, sessionSequence: 2, turn: 1, step: 1,
+    }) })])
+    expect(JSON.stringify(deltas)).not.toContain('private file content')
+    await host.stop()
+    await rm(root, { recursive: true, force: true })
+  })
+
   it('streams structured DSH events and exposes recoverable session logs', async () => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-agent-session-'))
     const sessionEvents = [

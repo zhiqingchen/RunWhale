@@ -1383,7 +1383,7 @@ export class RunWhaleRuntimeHost {
       return
     }
     if (record.type === 'assistant/chunk') {
-      const chunk = record.data?.chunk as { type?: unknown; text?: unknown; usage?: unknown } | undefined
+      const chunk = record.data?.chunk as { type?: unknown; text?: unknown; usage?: unknown; id?: unknown; index?: unknown; name?: unknown; argumentsDelta?: unknown } | undefined
       if (chunk?.type === 'text-delta' || chunk?.type === 'reasoning-delta') {
         this.server.emit('agent.delta', {
           ...common,
@@ -1391,6 +1391,14 @@ export class RunWhaleRuntimeHost {
           text: boundedText(chunk.text, 32 * 1024),
           turn: record.data?.turn,
           step: record.data?.step,
+        })
+      } else if (chunk?.type === 'tool-call-delta') {
+        this.server.emit('agent.delta', {
+          ...common, kind: 'tool-call',
+          callId: boundedText(chunk.id, 256), index: chunk.index,
+          tool: boundedText(chunk.name, 256),
+          characters: typeof chunk.argumentsDelta === 'string' ? chunk.argumentsDelta.length : 0,
+          turn: record.data?.turn, step: record.data?.step,
         })
       } else if (chunk?.type === 'usage') {
         this.server.emit('agent.state', { ...common, state: 'usage', usage: publicAgentDetail(chunk.usage ?? chunk) })
