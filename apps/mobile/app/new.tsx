@@ -21,6 +21,7 @@ import { completeNewProjectSubmission, idleNewProjectSubmissionUiState, newProje
 import { cloneProgressMessageKey, cloneProgressPercent } from '@/utils/clone-progress'
 import type { ProjectCloneProgress } from '@runwhale/mobile-protocol'
 import { deviceLayout } from '@/utils/device-layout'
+import { beginStudioOperation } from '#extensions'
 
 export default function NewProjectScreen() {
   const { t } = useI18n()
@@ -64,6 +65,7 @@ export default function NewProjectScreen() {
       dispatchSubmissionUi({ type: 'start' })
       setError(undefined)
       setCloneProgress(undefined)
+      const finishOperation = beginStudioOperation('project_create', repositoryUrl.trim() ? 'repository' : template)
       try {
         const repository = repositoryUrl.trim()
         const projectName = name.trim() || t('untitledProject')
@@ -94,7 +96,9 @@ export default function NewProjectScreen() {
         })
         pendingSubmission.current = undefined
         completedDestination.current = { projectId: submission.project.id, sessionId: createdSession.sessionId }
+        finishOperation('success')
       } catch (cause) {
+        finishOperation('failure')
         setError(cause instanceof Error ? cause.message : String(cause))
       } finally {
         setCloneProgress(undefined)

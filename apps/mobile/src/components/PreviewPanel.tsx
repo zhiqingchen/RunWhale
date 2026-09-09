@@ -27,6 +27,7 @@ import {
 import { projectPreviewConfiguration } from '@/utils/project-preview'
 import { resolvePreviewLaunch } from '@/utils/preview-open'
 import { NativePreviewLaunchCancelled } from '@/utils/native-preview-launch'
+import { studioPreviewOpened } from '#extensions'
 import { latestAgentPreviewPublication } from '@/utils/preview-publication'
 import { previewDeviceReport } from '@/utils/preview-feedback'
 import {
@@ -381,7 +382,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
     setSupportMultipleWindows={false}
     startInLoadingState
     renderLoading={() => <View accessible accessibilityLabel={t('openingPreview')} accessibilityLiveRegion="polite" accessibilityRole="progressbar" style={styles.webLoading}><Spinner color={colors.accent} size="lg" /></View>}
-    onLoad={() => dispatch({ type: 'content-opened', bundleUrl: webActive.bundleUrl })}
+    onLoad={() => { dispatch({ type: 'content-opened', bundleUrl: webActive.bundleUrl }); studioPreviewOpened('web') }}
     onError={(event) => fail(new Error(event.nativeEvent.description || 'Web Preview failed to load'), webActive.bundleUrl)}
   /></View> : <View accessible accessibilityLabel={t('openingPreview')} accessibilityLiveRegion="polite" accessibilityRole="progressbar" style={styles.webLoading}><Spinner color={colors.accent} size="lg" /></View>
 

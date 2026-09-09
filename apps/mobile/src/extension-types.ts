@@ -2,6 +2,9 @@ import type { MobileModelProvider, MobileModelProviderProfile } from '@runwhale/
 import type { StoredPreferences } from '@/state/preference-context'
 
 export type PreferenceUpdate = (change: (current: StoredPreferences) => StoredPreferences) => void
+export type StudioOperation = 'project_create' | 'preview_build'
+export type StudioOperationTarget = 'expo' | 'web' | 'repository' | 'ios' | 'android'
+export type StudioOperationOutcome = 'success' | 'failure' | 'cancelled'
 export interface ModelAccessContext {
   modelProfiles: Readonly<Record<MobileModelProvider, MobileModelProviderProfile>>
   language: string

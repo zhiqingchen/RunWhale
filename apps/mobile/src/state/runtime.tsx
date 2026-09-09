@@ -12,6 +12,7 @@ import { nativeRuntimeRecoveryAction, publishRuntimeHost, runtimeBootPollingActi
 import { RUNTIME_BOOT_PROBE_TIMEOUT_MS, RUNTIME_BOOT_TIMEOUT_MS, RUNTIME_RECONNECT_TIMEOUT_MS, RUNTIME_CREDENTIAL_READ_TIMEOUT_MS, RUNTIME_REQUEST_TIMEOUT_GRACE_MS, RuntimeTransportError, isRuntimeTransportError, runtimeBootStepTimeoutMs, runtimeRequestTimeoutMs, withClientDeadline } from '@/utils/runtime-request'
 import { appendLiveTranscriptEvent, compactLiveTranscriptEvents } from '@/utils/live-transcript-events'
 import { NativePreviewLauncher, NativePreviewLaunchCancelled } from '@/utils/native-preview-launch'
+import { beginStudioOperation, studioPreviewOpened } from '#extensions'
 import { runtimeProjectFileContent, type StudioProject } from './project-data'
 
 export type HostInfo = RuntimeHostInfo
@@ -589,13 +590,19 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   }, [])
 
   const runPreview = useCallback(async (project: StudioProject, platform: 'android' | 'ios' | 'web', requestId: string) => {
+    const finishOperation = beginStudioOperation('preview_build', platform)
     try {
       if (cancelledPreviewLaunches.current.has(requestId)) throw new Error('Preview launch cancelled')
       const projectId = await activateProject(project.id)
       if (cancelledPreviewLaunches.current.has(requestId)) throw new Error('Preview launch cancelled')
       const hostInfo = infoRef.current
       if (!hostInfo) throw new Error('embedded Node runtime is still starting')
-      return await rpc(hostInfo, 'preview.run', { projectId, platform }, requestId)
+      const result = await rpc(hostInfo, 'preview.run', { projectId, platform }, requestId)
+      finishOperation('success')
+      return result
+    } catch (cause) {
+      finishOperation(cancelledPreviewLaunches.current.has(requestId) ? 'cancelled' : 'failure')
+      throw cause
     } finally {
       cancelledPreviewLaunches.current.delete(requestId)
     }
@@ -624,6 +631,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
       throw new Error(diagnostic ?? 'Preview did not mount its first content')
     }
     setNativePreviewDiagnostic(undefined)
+    if (Platform.OS === 'ios' || Platform.OS === 'android') studioPreviewOpened(Platform.OS)
     return { opened: true }
   }, [nativePreviewLauncher])
 

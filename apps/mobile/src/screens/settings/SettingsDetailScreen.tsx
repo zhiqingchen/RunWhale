@@ -1,3 +1,4 @@
+import { renderSlot } from '#extensions'
 import { AppDialog } from '@/components/AppDialog'
 import { AppIcon } from '@/components/AppIcon'
 import { PendingButton } from '@/components/PendingButton'
@@ -217,6 +218,7 @@ function GeneralSettings() {
         { key: 'steer', label: t('steer'), description: t('busySteerDescription') },
       ]} onChange={(value) => setBusyMessageMode(value as 'followup' | 'steer')} last />
     </View>
+    {renderSlot('settings.general')}
     <AppDialog
       open={Boolean(pendingPermissionMode)}
       onOpenChange={(open) => { if (!open) setPendingPermissionMode(undefined) }}
