@@ -74,4 +74,31 @@ describe('jitless fetch fallback', () => {
       await new Promise<void>((resolve) => server.close(() => resolve()))
     }
   })
+
+  it('aborts a pending SSE read and permits a fresh request after a stalled response', async () => {
+    installJitlessFetch(true)
+    const server = createServer((_request, response) => {
+      response.writeHead(200, { 'Content-Type': 'text/event-stream' })
+      response.write('data: {"text":"partial"}\n\n')
+    })
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+    try {
+      const address = server.address()
+      if (!address || typeof address === 'string') throw new Error('Server did not bind')
+      const url = `http://127.0.0.1:${address.port}`
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const controller = new AbortController()
+        const response = await fetch(url, { signal: controller.signal })
+        const reader = response.body!.getReader()
+        expect(new TextDecoder().decode((await reader.read()).value)).toContain('partial')
+        const pending = expect(reader.read()).rejects.toMatchObject({ name: 'AbortError' })
+        controller.abort()
+        await pending
+        reader.releaseLock()
+      }
+    } finally {
+      server.closeAllConnections()
+      await new Promise<void>(resolve => server.close(() => resolve()))
+    }
+  })
 })

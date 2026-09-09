@@ -9,6 +9,7 @@ overrides:
 
 patchedDependencies:
   '@deepseek-ai/dsh-code-runtime-worker-thread@0.1.2-rc.1': a31a8b16305e564f24bc1a9b3f233b714582b828c41cca921a60ae2df74dd732
+  '@deepseek-ai/dsh-llm-pi-ai@0.1.2-rc.1': 03b09de1ab3d15944118463a9d1e15b76db2a4d612d95546ebaf7255d7242fa5
   '@expo/dom-webview@57.0.1': 8ea81885e1f1e3e67315f283a0f84be8b608c1945a7d3e73d4a7125eee323673
   expo-file-system@57.0.6: 3c41712fd8a15a59dd53f868fba0864a49b4b9e79e0b0ea8e0a2a4f1341c4c26
   expo-modules-core@57.0.15: 08c6065aafe2ac6edb5ec10758056af3e20e00c3d443d48f6bd3798e36ae4446
@@ -371,7 +372,7 @@ importers:
         version: 0.1.2-rc.1(@deepseek-ai/cordis@4.0.2)
       '@deepseek-ai/dsh-llm-pi-ai':
         specifier: 0.1.2-rc.1
-        version: 0.1.2-rc.1(1ef68ddee9b44429d4144c99e6ed3b89)
+        version: 0.1.2-rc.1(patch_hash=03b09de1ab3d15944118463a9d1e15b76db2a4d612d95546ebaf7255d7242fa5)(1ef68ddee9b44429d4144c99e6ed3b89)
       '@deepseek-ai/dsh-llm-retry':
         specifier: 0.1.2-rc.1
         version: 0.1.2-rc.1(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-agent@0.1.2-rc.1(6f833cf90b9dd3f0d529840b1aebfb48))(@deepseek-ai/dsh-brand@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2))(@deepseek-ai/dsh-invariants@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2))(@deepseek-ai/dsh-llm@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2))(@deepseek-ai/dsh-session-projection@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-session@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-scope@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-invariants@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2)))))(@deepseek-ai/dsh-session@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-scope@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-invariants@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2))))(@deepseek-ai/dsh-timeout@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2))
@@ -6618,7 +6619,7 @@ snapshots:
     dependencies:
       '@deepseek-ai/cordis': 4.0.2
 
-  '@deepseek-ai/dsh-llm-pi-ai@0.1.2-rc.1(1ef68ddee9b44429d4144c99e6ed3b89)':
+  '@deepseek-ai/dsh-llm-pi-ai@0.1.2-rc.1(patch_hash=03b09de1ab3d15944118463a9d1e15b76db2a4d612d95546ebaf7255d7242fa5)(1ef68ddee9b44429d4144c99e6ed3b89)':
     dependencies:
       '@deepseek-ai/cordis': 4.0.2
       '@deepseek-ai/dsh-attachment': 0.1.2-rc.1(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-brand@0.1.2-rc.1(@deepseek-ai/cordis@4.0.2))

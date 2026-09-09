@@ -1,0 +1,48 @@
+diff --git a/lib/index.js b/lib/index.js
+index c25e5c7afcd9381dec2490fbff24910f173281d0..af6006eadaa46bbcc9dec281cb57b5941224698a 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -1797,7 +1797,7 @@ var PiAiAdapter = class extends LlmAdapter {
+ 				let exhausted = false;
+ 				try {
+ 					while (true) {
+-						const result = await watchdog.next(iterator);
++						const result = await watchdog.next({ next: () => nextStreamChunk(iterator, watchdog.signal) });
+ 						const timeout = timeoutOf(watchdog.signal, "LLM_STREAM_IDLE_TIMEOUT");
+ 						if (timeout !== void 0) throw timeout;
+ 						if (result.done) {
+@@ -1809,9 +1809,9 @@ var PiAiAdapter = class extends LlmAdapter {
+ 				} finally {
+ 					if (!exhausted) {
+ 						consumer.abort("pi-ai stream consumer stopped");
+-						try {
+-							await iterator.return(void 0);
+-						} catch (_abortedSdkTeardown) {}
++						// Async-generator return queues behind a pending next. Do not
++						// let unresponsive SDK teardown block timeout or caller Stop.
++						void iterator.return(void 0).catch(() => {});
+ 					}
+ 				}
+ 			} catch (error) {
+@@ -1830,6 +1830,21 @@ var PiAiAdapter = class extends LlmAdapter {
+ 	}
+ };
+ //#endregion
++// The watchdog signals cancellation; it does not settle a wedged SDK read.
++// Observe late settlements without delivering their chunks to a later attempt.
++async function nextStreamChunk(iterator, signal) {
++	if (signal.aborted) throw signal.reason;
++	let onAbort;
++	const cancelled = new Promise((_resolve, reject) => {
++		onAbort = () => reject(signal.reason);
++		signal.addEventListener("abort", onAbort, { once: true });
++	});
++	try {
++		return await Promise.race([iterator.next(), cancelled]);
++	} finally {
++		signal.removeEventListener("abort", onAbort);
++	}
++}
+ //#region lib/types/auth.js
+ /**
+ * The three adapters between pi-ai's auth model and the harness credential
