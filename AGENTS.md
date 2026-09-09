@@ -2,7 +2,8 @@
 
 ## Basics
 
-- Work in English; product copy may use the localization system.
+- Keep code and repository documentation in English; product copy may use the localization system.
+- Prefer replying in the language the user uses, unless they explicitly request another language.
 
 ## Runtime Boundaries
 
