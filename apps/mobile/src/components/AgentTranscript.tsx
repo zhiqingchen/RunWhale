@@ -21,7 +21,7 @@ import { actionErrorPresentation } from '@/utils/action-progress'
 import { createTranscriptPositionCoordinator, transcriptHistoryWindow } from '@/utils/transcript-position'
 import { assistantMessageCopyText, transcriptBranchActionState, type AssistantMessageBlock, transcriptInteractionContract, transcriptLayoutContract, type TranscriptBranchInFlight } from '@/utils/transcript-feedback'
 import { type ToolActivityGroup, type ToolActivitySessionEvent, type ToolActivityState } from '@/utils/tool-activity'
-import { contextDetailSummary, type TranscriptContextRecord } from '@/utils/transcript-context'
+import { contextDetailSummary, type TranscriptContextDetail, type TranscriptContextRecord } from '@/utils/transcript-context'
 import { groupTranscriptActivities, projectSessionTranscript, type GroupedTranscriptRow } from '@/utils/session-transcript'
 import { type PendingTranscriptPrompt } from '@/utils/transcript-user'
 import { projectAgentProgress, type AgentProgress } from '@/utils/agent-progress'
@@ -241,8 +241,9 @@ export function AgentTranscript({ ref, events, livePrompt, liveWorkingLabel, onB
   /><TranscriptTextDetails
     open={Boolean(selectedDetail)}
     onOpenChange={(open) => { if (!open) setSelectedDetailId(undefined) }}
-    title={selectedDetail?.kind === 'notice' ? noticeLabel(selectedDetail.label, t) : selectedDetail?.kind === 'context' ? selectedDetail.context.details[0]?.sourceName ?? t('context') : ''}
-    text={selectedDetail?.kind === 'notice' ? selectedDetail.text : selectedDetail?.kind === 'context' ? selectedDetail.context.details.map(detail => detail.text).join('\n') : ''}
+    title={selectedDetail?.kind === 'notice' ? noticeLabel(selectedDetail.label, t) : selectedDetail?.kind === 'context' ? contextTitle(selectedDetail.context.details[0], t) : ''}
+    text={selectedDetail?.kind === 'notice' ? selectedDetail.text : selectedDetail?.kind === 'context' ? selectedDetail.context.details.map(detail => contextDetailsText(detail, t)).join('\n') : ''}
+    originalText={selectedDetail?.kind === 'context' && selectedDetail.context.details.some(detail => detail.notice) ? selectedDetail.context.details.map(detail => detail.text).join('\n') : undefined}
     testID="transcript-details-sheet"
   /></>
 }
@@ -362,8 +363,36 @@ function noticeLabel(label: Extract<TranscriptRow, { kind: 'notice' }>['label'],
 function ContextCard({ context, onSelectDetails }: { context: TranscriptContextRecord; onSelectDetails(contextId: string): void }) {
   const { t } = useI18n()
   const colors = useAppColors()
+  const styles = useTranscriptStyles()
   const detail = context.details[0]
-  return <TranscriptDetailCard label={t('context')} title={detail?.sourceName ?? detail?.sourceKind ?? t('context')} summary={contextDetailSummary(detail?.text ?? '')} onPress={() => onSelectDetails(context.id)} icon={<AppIcon icon={Database} color={colors.blue} size={17} />} />
+  const title = contextTitle(detail, t)
+  const notice = detail?.notice
+  if (notice) {
+    const resumed = notice.kind === 'background-resumed'
+    const blocked = notice.kind === 'goal-blocked'
+    const color = resumed ? colors.muted : blocked ? colors.warning : colors.accent
+    return <Button testID={`transcript-${notice.kind}`} size="sm" variant="ghost" accessibilityLabel={[title, notice.objective, notice.reason].filter(Boolean).join(', ')} accessibilityHint={t('details')} onPress={() => onSelectDetails(context.id)} style={[styles.activity, resumed && styles.contextStatus]}>
+      <View pointerEvents="none" style={styles.activityIcon}><AppIcon icon={resumed ? RefreshCw : blocked ? CircleX : CircleCheck} color={color} size={resumed ? 14 : 18} /></View>
+      <View style={styles.activityCopy}>
+        <Text numberOfLines={2} style={[styles.activityTools, resumed && styles.contextStatusText, blocked && { color }]}>{title}</Text>
+        {notice.objective ? <Text numberOfLines={2} style={styles.activityDetail}>{contextDetailSummary(notice.objective)}</Text> : null}
+        {notice.reason ? <Text numberOfLines={2} style={[styles.activityDetail, { color }]}>{contextDetailSummary(notice.reason)}</Text> : null}
+      </View>
+      <AppIcon icon={ChevronRight} color={colors.muted} size={14} />
+    </Button>
+  }
+  return <TranscriptDetailCard label={t('context')} title={title} summary={contextDetailSummary(detail?.summary ?? detail?.text ?? '')} onPress={() => onSelectDetails(context.id)} icon={<AppIcon icon={Database} color={colors.blue} size={17} />} />
+}
+
+function contextTitle(detail: TranscriptContextDetail | undefined, t: ReturnType<typeof useI18n>['t']): string {
+  if (detail?.notice) return t(({ 'goal-complete': 'goalCompletedNotice', 'goal-blocked': 'goalBlockedNotice', 'background-resumed': 'backgroundResumedNotice' } as const)[detail.notice.kind])
+  return detail?.sourceName === 'tool-goal' ? t('goal') : detail?.sourceName ?? detail?.sourceKind ?? t('context')
+}
+
+function contextDetailsText(detail: TranscriptContextDetail, t: ReturnType<typeof useI18n>['t']): string {
+  if (!detail.notice) return detail.text
+  if (detail.notice.kind === 'background-resumed') return t('backgroundResumedDetail')
+  return [detail.notice.objective, detail.notice.reason].filter(Boolean).join('\n\n') || contextTitle(detail, t)
 }
 
 function TranscriptDetailCard({ icon, label, title, summary, onPress, failed, running }: {
@@ -662,6 +691,8 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   reasoningTitle: { color: '#6C5AD9', fontSize: 11, fontWeight: '900' },
   reasoningMeta: { color: colors.muted, fontSize: 10 },
   activity: { width: '100%', minHeight: transcriptInteractionContract.disclosureMinimumHeight, height: 'auto', borderWidth: 1, borderColor: colors.border, borderRadius: 11, backgroundColor: colors.panel, padding: transcriptLayoutContract.toolCardPadding, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  contextStatus: { borderWidth: 0, backgroundColor: 'transparent', paddingVertical: 6 },
+  contextStatusText: { color: colors.muted, fontSize: 10, fontWeight: '500' },
   toolActivityGroup: { gap: 6 },
   toolScroll: { flexGrow: 0 },
   toolRow: { flexGrow: 1, gap: TOOL_ROW_GAP },

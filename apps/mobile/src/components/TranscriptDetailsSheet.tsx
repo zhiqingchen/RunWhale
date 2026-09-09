@@ -1,11 +1,11 @@
-import { type ReactNode, useMemo } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { SlideInDown, SlideOutDown } from 'react-native-reanimated'
 import { Button } from 'heroui-native/button'
 import { Dialog } from 'heroui-native/dialog'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AppIcon } from './AppIcon'
-import { ArrowLeft, Check, Copy } from './icons'
+import { ArrowLeft, Check, ChevronDown, ChevronRight, Copy } from './icons'
 import { PendingButton } from './PendingButton'
 import { TranscriptCodeBlock, useClipboardCopyFeedback } from './TranscriptCodeBlock'
 import { formatTranscriptJson } from '@/utils/transcript-feedback'
@@ -52,16 +52,25 @@ export function TranscriptDetailsSheet({ open, onOpenChange, title, titleNumberO
   </Dialog>
 }
 
-export function TranscriptTextDetails({ text, ...props }: SheetProps & { text: string }) {
+export function TranscriptTextDetails({ text, originalText, ...props }: SheetProps & { text: string; originalText?: string }) {
   const { t } = useI18n()
   const colors = useAppColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const { copyState, copy } = useClipboardCopyFeedback(text)
   const json = useMemo(() => formatTranscriptJson(text), [text])
+  const [originalOpen, setOriginalOpen] = useState(false)
+  useEffect(() => { setOriginalOpen(false) }, [props.open, text, originalText])
   return <TranscriptDetailsSheet {...props} action={json === undefined ? <PendingButton isIconOnly size="sm" variant="ghost" accessibilityLabel={t(copyState === 'copied' ? 'copied' : 'copy')} isPending={copyState === 'copying'} onPress={() => { void copy() }} style={styles.control}><AppIcon icon={copyState === 'copied' ? Check : Copy} color={colors.blue} size={17} /></PendingButton> : undefined}>
     <ScrollView bounces={false} nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{ flex: 1 }} contentContainerStyle={{ padding: 12 }}>
       {copyState === 'failed' ? <Text accessibilityRole="alert" style={{ color: colors.danger }}>{t('codeCopyFailed')}</Text> : null}
       {json === undefined ? <Text selectable style={{ color: colors.text, fontSize: 13, lineHeight: 21 }}>{text}</Text> : <TranscriptCodeBlock code={json} language="json" copyLabel={t('copy')} copiedLabel={t('copied')} copyFailedLabel={t('codeCopyFailed')} />}
+      {originalText ? <View style={{ marginTop: 16 }}>
+        <Button size="sm" variant="ghost" accessibilityState={{ expanded: originalOpen }} onPress={() => setOriginalOpen(value => !value)} style={{ alignSelf: 'flex-start', gap: 6 }}>
+          <AppIcon icon={originalOpen ? ChevronDown : ChevronRight} color={colors.muted} size={14} />
+          <Button.Label style={{ color: colors.muted, fontSize: 12 }}>{t(originalOpen ? 'hideOriginalMessage' : 'viewOriginalMessage')}</Button.Label>
+        </Button>
+        {originalOpen ? <Text selectable style={{ marginTop: 8, color: colors.muted, fontSize: 12, lineHeight: 19 }}>{originalText}</Text> : null}
+      </View> : null}
     </ScrollView>
   </TranscriptDetailsSheet>
 }
