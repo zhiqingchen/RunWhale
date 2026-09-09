@@ -1,0 +1,13 @@
+--- a/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt
++++ b/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt
+@@ -229,8 +229,8 @@
+         }
+ 
+     fun onUpdate() {
+-        val stack = screenStack
+-        val isTop = stack == null || stack.topScreen == parent
++        val stack = screenStack ?: return
++        val isTop = stack.topScreen == parent
+ 
+         if (!isAttachedToWindow || !isTop || isDestroyed) {
+             return

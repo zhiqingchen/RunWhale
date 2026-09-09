@@ -15,6 +15,8 @@ pnpm install
 
 Install the platform toolchain needed for your change. `pnpm install` provides the native Node runtime through the standalone `@runwhale/node-mobile-runtime` package.
 
+The `react-native-screens@4.26.0` patch skips Android header updates after a screen leaves its stack, preventing the detached-screen navigation crash. It follows [upstream PR #4498](https://github.com/software-mansion/react-native-screens/pull/4498); recheck it when upgrading React Native Screens. Native clients must be rebuilt to include the patch.
+
 ## Embedded JavaScript Runtime
 
 Rebuild the embedded runtime and shared dependency store after changing the Node entry point, Agent host, dependency store, Metro server, or mobile runtime bundle:

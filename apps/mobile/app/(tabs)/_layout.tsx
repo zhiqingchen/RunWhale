@@ -9,7 +9,7 @@ import { useI18n } from '@/i18n'
 import { AppIcon } from '@/components/AppIcon'
 
 export default function TabLayout() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const colors = useAppColors()
   const insets = useSafeAreaInsets()
 
@@ -38,7 +38,7 @@ export default function TabLayout() {
           />
           <NativeTabs.Trigger.Label>{t('workspace')}</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
-        {renderSlot('tabs.native')}
+        {renderSlot('tabs.native', { language })}
         <NativeTabs.Trigger name="settings">
           <NativeTabs.Trigger.Icon
             sf={{ default: 'gearshape', selected: 'gearshape.fill' }}
@@ -61,7 +61,7 @@ export default function TabLayout() {
     }}>
       <Tabs.Screen name="index" options={{ title: t('home'), tabBarIcon: ({ color }) => <AppIcon icon={Home} color={color} size={20} /> }} />
       <Tabs.Screen name="workspace" options={{ title: t('workspace'), tabBarIcon: ({ color }) => <AppIcon icon={FolderTree} color={color} size={20} /> }} />
-      {renderSlot('tabs.web')}
+      {renderSlot('tabs.web', { language })}
       <Tabs.Screen name="settings" options={{ title: t('settings'), tabBarIcon: ({ color }) => <AppIcon icon={Settings} color={color} size={20} /> }} />
     </Tabs>
   )
