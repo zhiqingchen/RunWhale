@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
 import { copyFile, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
+import { pipeline } from 'node:stream/promises'
 import { x as extractTar } from 'tar'
 
 export const EMBEDDED_NPM_VERSION = '11.17.0'
@@ -33,7 +34,7 @@ export async function prepareModuleStore(root: string, destination: string): Pro
   const staging = join(root, `.module-store-stage-${process.pid}`)
   await mkdir(staging, { recursive: true })
   try {
-    await extractTar({ cwd: staging, file: archive, strict: true })
+    await extractRuntimeArchive(archive, staging)
     if (!(await exists(join(staging, 'expo/package.json')))) throw new Error('shared module store archive is invalid')
     await writeFile(join(staging, '.runwhale-module-store.sha256'), `${archiveDigest}\n`, { mode: 0o600 })
     if (await exists(bundleVersionPath)) await copyFile(bundleVersionPath, join(staging, '.runwhale-bundle-version'))
@@ -56,7 +57,7 @@ export async function prepareEmbeddedNpm(root: string, destination: string): Pro
   const staging = join(root, `.npm-stage-${process.pid}`)
   await mkdir(staging, { recursive: true })
   try {
-    await extractTar({ cwd: staging, file: archive, strict: true })
+    await extractRuntimeArchive(archive, staging)
     const manifest = JSON.parse(await readFile(join(staging, 'package.json'), 'utf8')) as { version?: unknown }
     if (manifest.version !== EMBEDDED_NPM_VERSION) throw new Error(`embedded npm version is ${String(manifest.version)}, expected ${EMBEDDED_NPM_VERSION}`)
     await rm(destination, { recursive: true, force: true })
@@ -67,6 +68,16 @@ export async function prepareEmbeddedNpm(root: string, destination: string): Pro
     await rm(staging, { recursive: true, force: true })
     throw error
   }
+}
+
+async function extractRuntimeArchive(archive: string, destination: string): Promise<void> {
+  // Android's embedded filesystem pays heavily for a callback per tar operation.
+  // Synchronous extraction within small, asynchronously read chunks avoids that
+  // overhead while yielding between chunks. iOS is faster with async writes.
+  await pipeline(
+    createReadStream(archive, { highWaterMark: 64 * 1024 }),
+    extractTar({ cwd: destination, strict: true, sync: String(process.platform) === 'android' }),
+  )
 }
 
 async function removeStaleStages(root: string, prefix: string): Promise<void> {

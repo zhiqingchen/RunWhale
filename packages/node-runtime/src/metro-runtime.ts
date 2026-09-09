@@ -8,7 +8,7 @@ import { collectNativeAssets, materializeNativeAssets, nativeAssetPluginPath, na
 import { webPreviewTestingScript } from '@runwhale/mobile-protocol'
 import type { MetroMiddleWare } from '@expo/metro/metro'
 import type { ConfigT } from '@expo/metro/metro-config'
-import type { SourcePathsMode } from '@expo/metro/metro/shared/types'
+import type { SourcePathsMode, SplitBundleOptions } from '@expo/metro/metro/shared/types'
 import {
   isNativePreviewBuiltIn,
   nativePreviewPackageName,
@@ -47,8 +47,9 @@ let packedMapSupportInstalled = false
 export class MobileMetroRuntime {
   private server: Server | undefined
   private servingSockets = new Set<Socket>()
-  private bundler: { key: string; middleware: MetroMiddleWare; hmrGraphId?: string } | undefined
+  private bundler: { key: string; middleware: MetroMiddleWare; graphId?: string; resetGraph?: boolean } | undefined
   private activeProjectRoot: string | undefined
+  private sourceExtensions: ReadonlySet<string> = PREVIEW_SOURCE_EXTENSIONS
   private changeSnapshot = new Map<string, string>()
   private changeSynchronization: Promise<void> = Promise.resolve()
   private changePoll: NodeJS.Timeout | undefined
@@ -67,7 +68,7 @@ export class MobileMetroRuntime {
   async bundle(projectRoot: string, platform: MetroPlatform): Promise<MetroBundle> {
     // Metro is deliberately loaded on demand: its worker paths are materialized
     // only in the shared module store and must not prevent the host from booting.
-    const [{ getDefaultConfig }, metro, outputBundle] = await loadMetroTooling()
+    const [{ getDefaultConfig }, metro] = await loadMetroTooling()
     await installExpoPackedMapSupport()
     const [root, store] = await Promise.all([
       realpath(resolve(projectRoot)),
@@ -91,6 +92,11 @@ export class MobileMetroRuntime {
     const watchRoots = [root, ...moduleRoots]
     try { watchRoots.push(await realpath(resolve(store, '.pnpm'))) } catch { /* hoisted stores may not expose a virtual store */ }
     const base: ConfigT = getDefaultConfig(root)
+    this.sourceExtensions = new Set([
+      ...PREVIEW_SOURCE_EXTENSIONS,
+      ...base.resolver.sourceExts.map((value) => `.${value}`),
+      ...base.resolver.assetExts.map((value) => `.${value}`),
+    ])
     const originalResolve = base.resolver.resolveRequest
     const unsupportedNativeDependencies = platform === 'web'
       ? new Set<string>()
@@ -175,7 +181,7 @@ export class MobileMetroRuntime {
       // descriptor per directory in the shared module store on iOS. Only Web
       // Preview needs the live watcher for its HMR session.
       this.bundler = { key, middleware: await metro.createConnectMiddleware(config, { watch: previewBundleMode(platform).hot, waitForBundler: true }) }
-      this.changeSnapshot = await projectSourceSnapshot(root)
+      this.changeSnapshot = await projectSourceSnapshot(root, this.sourceExtensions)
     } else {
       // Agent writes replace files atomically, and native watcher delivery can
       // lag behind an immediate preview.run. Publish the precise snapshot delta
@@ -183,70 +189,68 @@ export class MobileMetroRuntime {
       // that the platform watcher wins the race.
       await this.synchronizeProjectChanges(root)
     }
-    const buildOptions = {
+    const mode = previewBundleMode(platform)
+    const buildOptions: SplitBundleOptions = {
       entryFile: entry,
-      platform,
-      dev: previewBundleMode(platform).dev,
-      minify: false,
-      inlineSourceMap: false,
-      createModuleIdFactory: config.serializer.createModuleIdFactory,
-      customResolverOptions: {},
-      customTransformOptions: { routerRoot: 'app' },
-      unstable_transformProfile: 'default' as const,
-    }
-    const build = async () => {
-      const server = this.bundler!.middleware.metroServer
-      const result = await outputBundle.build(server, buildOptions)
-      const nativeAssets = platform === 'web' ? undefined : await collectNativeAssets(root, await server.getAssets({
-        ...buildOptions,
-        onProgress: null,
+      transformOptions: {
+        platform,
+        dev: mode.dev,
+        minify: false,
+        type: 'module',
+        customTransformOptions: { routerRoot: 'app' },
+        unstable_transformProfile: 'default',
+      },
+      resolverOptions: { customResolverOptions: {}, dev: mode.dev },
+      serializerOptions: {
         excludeSource: false,
-        lazy: false,
+        inlineSourceMap: false,
         modulesOnly: false,
         runModule: true,
-        shallow: false,
         sourceMapUrl: null,
+        sourceUrl: null,
         sourcePaths: 'absolute' as SourcePathsMode,
-      }))
+      },
+      graphOptions: { shallow: false, lazy: false },
+      onProgress: null,
+    }
+    const build = async () => {
+      const bundler = this.bundler!
+      const server = bundler.middleware.metroServer
+      const incremental = server.getBundler()
+      if (bundler.resetGraph && bundler.graphId) {
+        await incremental.endGraph(bundler.graphId)
+        delete bundler.graphId
+      }
+      bundler.resetGraph = false
+      const previous = bundler.graphId ? incremental.getRevisionByGraphId(bundler.graphId) : undefined
+      const { revision } = previous
+        ? await incremental.updateGraph(await previous, false)
+        : await incremental.initializeGraph(entry, buildOptions.transformOptions, buildOptions.resolverOptions, {
+          ...buildOptions.graphOptions,
+          onProgress: null,
+        })
+      bundler.graphId = revision.graphId
+      // Use the pinned Metro serializer and asset collector with the same
+      // retained graph. server.build creates a new graph on every invocation;
+      // ordinary agent edits only need to transform the changed modules.
+      const [result, assets] = await Promise.all([
+        server._serializeGraph({ splitOptions: buildOptions, ...revision }),
+        platform === 'web' ? undefined : server._getAssetsFromDependencies(revision.graph.dependencies, platform),
+      ])
+      const nativeAssets = assets ? await collectNativeAssets(root, assets) : undefined
       return { ...result, nativeAssets }
     }
     let sourceAtBuildStart = new Map(this.changeSnapshot)
     let result = await build()
     for (let retry = 0; retry < 2; retry += 1) {
-      const sourceAtBuildEnd = await projectSourceSnapshot(root)
+      const sourceAtBuildEnd = await projectSourceSnapshot(root, this.sourceExtensions)
       if (sameSourceSnapshot(sourceAtBuildStart, sourceAtBuildEnd)) break
       await this.synchronizeProjectChanges(root)
       sourceAtBuildStart = sourceAtBuildEnd
       result = await build()
-      if (retry === 1 && !sameSourceSnapshot(sourceAtBuildStart, await projectSourceSnapshot(root))) {
+      if (retry === 1 && !sameSourceSnapshot(sourceAtBuildStart, await projectSourceSnapshot(root, this.sourceExtensions))) {
         throw new Error('Project source kept changing while Preview was building; run Preview again')
       }
-    }
-    if (previewBundleMode(platform).hot) {
-      // outputBundle.build intentionally creates a one-shot graph. Seed Metro's
-      // incremental graph only for Web, where the live HMR socket consumes it.
-      const incrementalBundler = this.bundler.middleware.metroServer.getBundler()
-      const previousRevision = this.bundler.hmrGraphId
-        ? incrementalBundler.getRevisionByGraphId(this.bundler.hmrGraphId)
-        : undefined
-      const { revision } = previousRevision
-        ? await incrementalBundler.updateGraph(await previousRevision, false)
-        : await incrementalBundler.initializeGraph(entry, {
-          customTransformOptions: { routerRoot: 'app' },
-          dev: previewBundleMode(platform).dev,
-          minify: false,
-          platform,
-          type: 'module',
-          unstable_transformProfile: 'default',
-        }, {
-          customResolverOptions: {},
-          dev: previewBundleMode(platform).dev,
-        }, {
-          onProgress: null,
-          shallow: false,
-          lazy: false,
-        })
-      this.bundler.hmrGraphId = revision.graphId
     }
     return {
       platform,
@@ -349,7 +353,9 @@ export class MobileMetroRuntime {
     const address = server.address()
     if (!address || typeof address === 'string') throw new Error('Metro preview did not bind a port')
     this.server = server
-    if (this.pollProjectChanges && liveBundler && bundle.projectRoot) await this.startChangePolling(bundle.projectRoot)
+    // Native Preview is immutable until its next explicit run, which already
+    // synchronizes source changes. Only Web HMR needs background file polling.
+    if (this.pollProjectChanges && hot && bundle.projectRoot) await this.startChangePolling(bundle.projectRoot)
     return {
       port: address.port,
       token,
@@ -392,7 +398,7 @@ export class MobileMetroRuntime {
 
   private async startChangePolling(root: string): Promise<void> {
     if (this.changePoll) clearTimeout(this.changePoll)
-    if (this.changeSnapshot.size === 0) this.changeSnapshot = await projectSourceSnapshot(root)
+    if (this.changeSnapshot.size === 0) this.changeSnapshot = await projectSourceSnapshot(root, this.sourceExtensions)
     const poll = async (): Promise<void> => {
       if (!this.server || this.activeProjectRoot !== root) return
       try {
@@ -409,7 +415,7 @@ export class MobileMetroRuntime {
 
   private synchronizeProjectChanges(root: string): Promise<boolean> {
     const synchronization = this.changeSynchronization.then(async () => {
-      const next = await projectSourceSnapshot(root)
+      const next = await projectSourceSnapshot(root, this.sourceExtensions)
       if (this.changeSnapshot.size === 0) {
         this.changeSnapshot = next
         return false
@@ -419,12 +425,16 @@ export class MobileMetroRuntime {
         const previous = this.changeSnapshot.get(path)
         if (previous !== fingerprint) {
           changed = true
+          // Metro does not re-resolve existing imports when a platform-specific
+          // file is added, and image densities can change outside the JS graph.
+          if (this.bundler && (previous === undefined || !PREVIEW_CODE_EXTENSIONS.has(extension(path)))) this.bundler.resetGraph = true
           await this.publishFileChange(root, path, previous === undefined ? 'added' : 'modified')
         }
       }
       for (const path of this.changeSnapshot.keys()) {
         if (!next.has(path)) {
           changed = true
+          if (this.bundler) this.bundler.resetGraph = true
           await this.publishFileChange(root, path, 'removed')
         }
       }
@@ -501,7 +511,6 @@ function loadMetroToolingUncached() {
   return Promise.all([
     import('@expo/metro-config'),
     import('@expo/metro/metro'),
-    import('@expo/metro/metro/shared/output/bundle'),
   ])
 }
 
@@ -558,9 +567,16 @@ async function writePreviewEntry(root: string, platform: MetroPlatform): Promise
   const source = projectEntry.kind === 'expo-router'
     ? `${fastRefresh}import { AppRegistry } from 'react-native'\nimport App from '../app/index'\nAppRegistry.registerComponent('main', () => App)\n${platform === 'web' ? `AppRegistry.runApplication('main', { rootTag: document.getElementById('root') })\n` : ''}`
     : `${fastRefresh}import '../${projectEntry.path}'\n`
-  await writeFile(resolve(directory, 'preview-testing.js'), platform === 'web' ? webPreviewTestingScript : nativePreviewConsoleSource + nativeAssetSource)
-  await writeFile(path, `import './preview-testing'\n${source}`)
+  await writePreviewSource(resolve(directory, 'preview-testing.js'), platform === 'web' ? webPreviewTestingScript : nativePreviewConsoleSource + nativeAssetSource)
+  await writePreviewSource(path, `import './preview-testing'\n${source}`)
   return path
+}
+
+async function writePreviewSource(path: string, source: string): Promise<void> {
+  try { if (await readFile(path, 'utf8') === source) return } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+  }
+  await writeFile(path, source)
 }
 
 async function unsupportedProjectNativeDependencies(root: string, platform: Exclude<MetroPlatform, 'web'>): Promise<Set<string>> {
@@ -618,10 +634,11 @@ function metroRequestPath(root: string, entry: string): string {
   return `/${relativeEntry}`
 }
 
-const PREVIEW_SOURCE_EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx', '.json', '.html', '.css', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'])
+const PREVIEW_CODE_EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'])
+const PREVIEW_SOURCE_EXTENSIONS = new Set([...PREVIEW_CODE_EXTENSIONS, '.json', '.html', '.css', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'])
 const PREVIEW_IGNORED_DIRECTORIES = new Set(['.runwhale', '.git', 'node_modules'])
 
-async function projectSourceSnapshot(root: string): Promise<Map<string, string>> {
+async function projectSourceSnapshot(root: string, extensions: ReadonlySet<string>): Promise<Map<string, string>> {
   const snapshot = new Map<string, string>()
   const directories = [root]
   while (directories.length > 0 && snapshot.size < 2_048) {
@@ -632,11 +649,21 @@ async function projectSourceSnapshot(root: string): Promise<Map<string, string>>
         if (!PREVIEW_IGNORED_DIRECTORIES.has(entry.name)) directories.push(join(directory, entry.name))
         continue
       }
-      if (!entry.isFile() || !PREVIEW_SOURCE_EXTENSIONS.has(extension(entry.name))) continue
+      if (!entry.isFile() || !extensions.has(extension(entry.name))) continue
       const path = join(directory, entry.name)
       const info = await stat(path)
       snapshot.set(path, `${info.mtimeMs}:${info.ctimeMs}:${info.size}:${info.ino}`)
     }
+  }
+  // Generated entries must participate in invalidation when runwhale.json
+  // selects a different entry. Keep caches and session files out of the scan.
+  for (const name of ['metro-ios-entry.tsx', 'metro-android-entry.tsx', 'metro-web-entry.tsx', 'preview-testing.js']) {
+    const path = join(root, '.runwhale', name)
+    const info = await stat(path).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== 'ENOENT') throw error
+      return undefined
+    })
+    if (info?.isFile()) snapshot.set(path, `${info.mtimeMs}:${info.ctimeMs}:${info.size}:${info.ino}`)
   }
   return snapshot
 }

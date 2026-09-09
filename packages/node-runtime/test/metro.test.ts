@@ -19,9 +19,10 @@ describe('MobileMetroRuntime', () => {
       'iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAIAAADZSiLoAAAAD0lEQVR4nGNgOGMMRVhYAITMCPj9ggIrAAAAAElFTkSuQmCC',
     ]
     try {
-      await writeFile(join(project, 'app/index.tsx'), "import { Image } from 'react-native'\nexport default function App() { return <Image source={require('../assets/黄瓜 player.png')} style={{ width: 160, height: 160 }} /> }\n")
+      await writeFile(join(project, 'app/index.tsx'), "import { Image } from 'react-native'\nconst font = require('../assets/preview.ttf')\nexport default function App() { return <Image testID={String(font)} source={require('../assets/黄瓜 player.png')} style={{ width: 160, height: 160 }} /> }\n")
       for (const platform of ['ios', 'android'] as const) {
         await mkdir(join(project, 'assets'), { recursive: true })
+        await writeFile(join(project, 'assets/preview.ttf'), 'font-before')
         for (const [index, content] of images.entries()) {
           await writeFile(join(project, `assets/黄瓜 player${index === 0 ? '' : `@${index + 1}x`}.png`), Buffer.from(content, 'base64'))
         }
@@ -41,6 +42,13 @@ describe('MobileMetroRuntime', () => {
         const updated = await metro.bundle(project, platform)
         expect(updated.code).not.toBe(bundle.code)
         expect(Object.values(updated.nativeAssets!.files)).not.toContain(images[0])
+        // Asset invalidation must use Metro's full extension list, including fonts.
+        await writeFile(join(project, 'assets/preview.ttf'), 'font-after')
+        const updatedFont = await metro.bundle(project, platform)
+        expect(Object.values(updatedFont.nativeAssets!.files)).toContain(Buffer.from('font-after').toString('base64'))
+        expect(Object.values(updatedFont.nativeAssets!.files)).not.toContain(Buffer.from('font-before').toString('base64'))
+        const fontName = Object.keys(updatedFont.nativeAssets!.files).find((name) => name.endsWith('.ttf'))!
+        expect(updatedFont.code).toContain(fontName)
         await metro.stop()
         await rm(join(project, 'assets'), { recursive: true })
         await rm(bundle.nativeAssets!.directory, { recursive: true })
@@ -105,15 +113,16 @@ describe('MobileMetroRuntime', () => {
       resolve(repository, 'packages/runtime-module-store/node_modules'),
       [resolve(repository, 'node_modules/.pnpm')],
       false,
+      true,
     )
     try {
       for (const platform of ['ios', 'android'] as const) {
         const result = await metro.bundle(project, platform)
-        expect((metro as unknown as { bundler?: { hmrGraphId?: string } }).bundler?.hmrGraphId).toBeUndefined()
         expectNativePreviewAcceptanceSignals(result.code)
         expect(result.code).not.toContain("Deep imports from the 'react-native' package are deprecated")
 
         const served = await metro.serve(result)
+        expect((metro as any).changePoll).toBeUndefined()
         const servedUrl = new URL(served.bundleUrl)
         expect(servedUrl.searchParams.get('dev')).toBe('false')
         expect(servedUrl.searchParams.get('hot')).toBe('false')
@@ -166,6 +175,57 @@ describe('MobileMetroRuntime', () => {
       await rm(project, { recursive: true, force: true })
       if (previousEnvironment === undefined) delete process.env.NODE_ENV
       else process.env.NODE_ENV = previousEnvironment
+    }
+  }, 120_000)
+
+  it('keeps one native graph across edits and refreshes dependencies, entry points, and failed builds', async () => {
+    const repository = resolve(import.meta.dirname, '../../..')
+    const project = await createExpoTestProject()
+    const metro = new MobileMetroRuntime(resolve(repository, 'packages/runtime-module-store/node_modules'), [resolve(repository, 'node_modules/.pnpm')])
+    const source = join(project, 'app/index.tsx')
+    const label = join(project, 'app/label.cjs')
+    await writeFile(label, "module.exports = 'Original label'\n")
+    await writeFile(source, "import { Text } from 'react-native'\nconst label = require('./label')\nexport default function App() { return <Text>{label}</Text> }\n")
+    const build = async () => {
+      const result = await metro.bundle(project, 'ios')
+      const incremental = (metro as any).bundler.middleware.metroServer.getBundler()
+      expect(incremental.getDeltaBundler()._deltaCalculators.size).toBe(1)
+      return result
+    }
+    try {
+      expect((await build()).code).toContain('Original label')
+      for (let index = 0; index < 3; index += 1) {
+        await writeFile(`${label}.tmp`, `module.exports = 'Changed label ${index}'\n`)
+        await rename(`${label}.tmp`, label)
+        const result = await build()
+        expect(result.code).toContain(`Changed label ${index}`)
+        expect(result.code).not.toContain('Original label')
+      }
+      // A new platform override changes resolution without editing its importer.
+      const override = join(project, 'app/label.ios.cjs')
+      await writeFile(override, "module.exports = 'iOS label'\n")
+      expect((await build()).code).toContain('iOS label')
+      await rm(override)
+      const restored = await build()
+      expect(restored.code).toContain('Changed label 2')
+      expect(restored.code).not.toContain('iOS label')
+
+      await writeFile(label, 'module.exports = (\n')
+      await expect(build()).rejects.toThrow()
+      await writeFile(label, "module.exports = 'Recovered label'\n")
+      expect((await build()).code).toContain('Recovered label')
+
+      await writeFile(join(project, 'alternate.tsx'), "import { AppRegistry, Text } from 'react-native'\nAppRegistry.registerComponent('main', () => () => <Text>Alternate entry</Text>)\n")
+      const manifestPath = join(project, 'runwhale.json')
+      const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+      manifest.entry.ios = 'alternate.tsx'
+      await writeFile(manifestPath, JSON.stringify(manifest))
+      const alternate = await build()
+      expect(alternate.code).toContain('Alternate entry')
+      expect(alternate.code).not.toContain('Recovered label')
+    } finally {
+      await metro.stop()
+      await rm(project, { recursive: true, force: true })
     }
   }, 120_000)
 
