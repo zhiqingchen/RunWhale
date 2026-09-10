@@ -100,7 +100,10 @@ export function projectSessionTranscript(events: readonly Event[], running = fal
     if (event.type === 'turn/start') { turn = data.turn; step = undefined; lastAssistant = undefined }
     if (event.type === 'step/start') { turn = data.turn ?? turn; step = data.step }
     const key = stepKey({ ...event, data: { ...data, turn: data.turn ?? turn, step: data.step ?? step } })
-    if (event.type === 'user/message') {
+    if (event.type === 'system/message') {
+      const text = agentMessageText(data)
+      if (text.trim()) rows.push({ id: entry.id, kind: 'context', context: { id: entry.id, details: [{ id: entry.id, sourceKind: 'system', text }] } })
+    } else if (event.type === 'user/message') {
       if (replacement(event)) {
         const source = record(data.source)
         const id = source.sourceCommandId ? `command:${source.sourceCommandId}` : entry.id

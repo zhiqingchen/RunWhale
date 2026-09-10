@@ -12,6 +12,19 @@ function live(e: Event, afterSequence?: number): HostEvent {
 const delta = (seq: number, text: string): HostEvent => ({ ...live(event('', seq)), name: 'agent.delta', data: { ...scope, sessionSequence: seq, turn: 1, step: 1, kind: 'text', text } })
 
 describe('one Session transcript', () => {
+  it('renders system messages as context with full prompt text in history and live delivery', () => {
+    const text = 'You are an AI agent.\n\nFollow the project instructions.'
+    const log = [
+      event('system/message', 0, { turn: 1, step: 1, message: { role: 'system', content: [{ type: 'text', text }] } }, 'append'),
+      event('user/message', 1, message('draw a cat')),
+      event('system/message', 2, { message: { role: 'system', content: [] } }, { op: 'replace', start: 0, end: 1 }),
+    ]
+    const rows = projectSessionTranscript(log)
+    expect(rows.map(row => row.kind)).toEqual(['context', 'user'])
+    expect(rows[0]).toMatchObject({ context: { details: [{ sourceKind: 'system', text }] } })
+    expect(projectSessionTranscript(mergeSessionTranscript([], log.map(e => live(e)), scope).events)).toEqual(rows)
+  })
+
   it('combines consecutive tool steps while preserving individual calls, states, and message boundaries', () => {
     const log = [
       event('tool/call', 1, { turn: 1, step: 1, callId: 'read', name: 'read_files' }),
