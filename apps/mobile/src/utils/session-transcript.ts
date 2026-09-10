@@ -32,7 +32,7 @@ export function groupTranscriptActivities(rows: readonly SessionTranscriptRow[])
 /** Request headers are complete snapshots; an omitted prompt clears the previous one. */
 export function latestSessionSystemPrompt(events: readonly Event[]): string | undefined {
   const header = events.findLast(event => event.type === 'request/header')
-  const system = record(header?.data?.header).system
+  const system = record(header?.data?.header).system ?? header?.data?.legacySystem
   return typeof system === 'string' && system.trim() ? system : undefined
 }
 

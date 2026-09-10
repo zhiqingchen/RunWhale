@@ -487,8 +487,11 @@ export class RunWhaleRuntimeHost {
       ...(execution ? { projectId: execution.projectId, sessionId: execution.sessionId, taskId: work.taskId } : {}),
       message: `Background execution ended: ${reason}.`,
     })
-    if (pause && execution && execution.taskId === work.taskId) {
-      // iOS uses the same expiration callback for system expiry and user cancellation.
+    // Losing the native heartbeat revokes background execution time, not the
+    // foreground Agent run. Expiration still pauses because iOS also uses it
+    // for an explicit user cancellation.
+    const shouldPause = pause && (reason !== 'transport-lost' || this.backgrounded)
+    if (shouldPause && execution && execution.taskId === work.taskId) {
       execution.requiresExplicitResume = true
       this.backgroundSessions.delete(execution)
       const handoff = reason === 'waiting' || reason === 'preview'

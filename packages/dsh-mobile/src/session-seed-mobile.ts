@@ -12,6 +12,15 @@ export function restoreMobileSessionSeed(seed: readonly unknown[]): SessionEvent
   }[]
   const bySequence = new Map(events.map(event => [event.seq, event]))
   return events.map(event => {
+    if (event.type === 'request/header') {
+      const header = event.data.header as Record<string, unknown>
+      if (header && Object.hasOwn(header, 'system')) {
+        const { system, ...currentHeader } = header
+        // Keep historical prompts outside the current request-header schema.
+        // Do not insert events: tool and surface references use these sequences.
+        return { ...event, data: { ...event.data, legacySystem: system, header: currentHeader } }
+      }
+    }
     if (event.type === 'assistant/chunk') return { ...event, ignorable: true }
     if (event.type !== 'assistant/message' || Array.isArray(event.data.stream)) return event
     const { sourceEventSeqs, ...rest } = event

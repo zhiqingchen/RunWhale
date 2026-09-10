@@ -157,5 +157,6 @@ describe('one Session transcript', () => {
     expect(latestSessionSystemPrompt([...log, event('request/header', 8, { header: {} })])).toBeUndefined()
     expect(latestSessionSystemPrompt([...log, event('request/header', 8, { header: { system: '' } })])).toBeUndefined()
     expect(latestSessionSystemPrompt([])).toBeUndefined()
+    expect(latestSessionSystemPrompt([event('request/header', 0, { header: {}, legacySystem: 'Preserved legacy instructions' })])).toBe('Preserved legacy instructions')
   })
 })

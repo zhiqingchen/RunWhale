@@ -74,6 +74,36 @@ async function setup(platform: 'ios' | 'android' = 'ios', initialization?: Promi
 
 const continuedId = 'app.runwhale.community.agent.background-test'
 
+it('keeps foreground work running after losing the native continued-task connection', async () => {
+  const test = await setup()
+  await test.rpc('host.continued.prepare', { id: continuedId })
+  const running = test.start(continuedId)
+  await vi.waitFor(() => expect(test.requests()).toBe(1))
+  await test.rpc('host.continued.status', { id: continuedId, granted: true })
+  await test.rpc('host.continued.end', { id: continuedId, pause: true, reason: 'transport-lost' })
+  await test.rpc('host.foreground', { revision: 1 })
+  expect((await test.record()).state).toBe('running')
+  expect(test.requests()).toBe(1)
+  test.release()
+  await running
+  expect((await test.record()).state).toBe('completed')
+  expect((await test.record()).events.some((event: any) => event.data?.source?.plugin === 'runwhale-background')).toBe(false)
+})
+
+it('still checkpoints background work when its native continued-task connection is lost', async () => {
+  const test = await setup()
+  await test.rpc('host.continued.prepare', { id: continuedId })
+  const running = test.start(continuedId)
+  await vi.waitFor(() => expect(test.requests()).toBe(1))
+  await test.rpc('host.continued.status', { id: continuedId, granted: true })
+  await test.rpc('host.background', { revision: 1, graceMs: 0 })
+  await test.rpc('host.continued.end', { id: continuedId, pause: true, reason: 'transport-lost' })
+  await running
+  expect((await test.record()).state).toBe('paused')
+  await test.reconnect(2)
+  expect(test.requests()).toBe(1)
+})
+
 it('continues only the granted execution and reports real completed steps', async () => {
   const test = await setup()
   expect(await test.rpc('host.continued.prepare', { id: continuedId })).toEqual({ prepared: true })
@@ -108,13 +138,13 @@ it('preserves the existing pause fallback until a native task is actually grante
   test.release()
 })
 
-it('requires explicit continuation after native expiration and ignores stale callbacks', async () => {
+it.each([false, true])('requires explicit continuation after native expiration and ignores stale callbacks (background=%s)', async (background) => {
   const test = await setup()
   await test.rpc('host.continued.prepare', { id: continuedId })
   const running = test.start(continuedId)
   await vi.waitFor(() => expect(test.requests()).toBe(1))
   await test.rpc('host.continued.status', { id: continuedId, granted: true })
-  await test.rpc('host.background', { revision: 1, graceMs: 0 })
+  if (background) await test.rpc('host.background', { revision: 1, graceMs: 0 })
   await test.rpc('host.continued.end', { id: continuedId, pause: true })
   await running
   await test.reconnect(2)
@@ -130,6 +160,9 @@ it('requires explicit continuation after native expiration and ignores stale cal
   test.release()
   await resumed
   expect((await test.record()).state).toBe('completed')
+  const notice = (await test.record()).events.find((event: any) => event.data?.source?.plugin === 'runwhale-background')
+  expect(notice.data.content[0].text).toContain('The session resumed after a pause.')
+  expect(notice.data.content[0].text).not.toContain('The app returned from the background.')
 })
 
 it('does not admit an execution after its prepared native task was cancelled', async () => {

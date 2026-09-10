@@ -344,8 +344,8 @@ export class MobileHarness {
     try {
       if (signal?.aborted) { abort(); throw signal.reason }
       const notice = createUserMessage({
-        content: [{ type: 'text', text: 'The app returned from the background. Continue the unfinished request using the existing session and pending messages. First reconcile recorded tool results with the current workspace. Preserve completed changes; do not repeat successful actions. If an interrupted action may have had external effects, verify its outcome before retrying; ask the user if it cannot be determined.' }],
-        source: { kind: 'plugin', plugin: 'runwhale-background', form: 'notice', summary: 'Resumed after background pause' },
+        content: [{ type: 'text', text: 'The session resumed after a pause. Continue the unfinished request using the existing session and pending messages. First reconcile recorded tool results with the current workspace. Preserve completed changes; do not repeat successful actions. If an interrupted action may have had external effects, verify its outcome before retrying; ask the user if it cannot be determined.' }],
+        source: { kind: 'plugin', plugin: 'runwhale-background', form: 'notice', summary: 'Session resumed' },
       })
       const goal = this.getGoal(sessionId)
       if (pause.goalId && goal?.id === pause.goalId && (goal.phase === 'paused' || goal.phase === 'active')) {

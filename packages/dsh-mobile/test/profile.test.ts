@@ -217,6 +217,8 @@ describe('DSH mobile profile', () => {
           return seq
         })
         seed.push({ ...event, seq: seed.length, data, sourceEventSeqs })
+      } else if (event.type === 'request/header') {
+        seed.push({ ...event, seq: seed.length, data: { ...event.data, header: { ...event.data.header, system: 'Legacy system instructions' } } })
       } else seed.push({ ...event, seq: seed.length })
     }
     const original = structuredClone(seed)
@@ -231,6 +233,9 @@ describe('DSH mobile profile', () => {
         data: { stream: initial.events.find(event => event.type === 'assistant/message')!.data.stream },
       })
       expect(seed).toEqual(original)
+      const restoredHeader = result.events.find(event => event.type === 'request/header')!
+      expect(restoredHeader.data).toMatchObject({ legacySystem: 'Legacy system instructions' })
+      expect((restoredHeader.data as { header: object }).header).not.toHaveProperty('system')
     } finally { await restarted.dispose() }
   })
 

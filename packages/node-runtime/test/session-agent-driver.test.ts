@@ -244,3 +244,35 @@ it('preserves the durable transcript when Retry is rejected before credentials a
   expect(failed.events).toEqual(saved.events)
   expect(createHarness).not.toHaveBeenCalled()
 })
+
+it('preserves a restoration error as failed and lets Retry create a loaded session', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'runwhale-load-retry-'))
+  cleanup.push(() => rm(root, { recursive: true, force: true }))
+  const secrets = { get: async () => undefined, set: async () => {}, delete: async () => {} }
+  let failLoad = true
+  const driver = createSessionAgentDriver({
+    secrets, deterministicReplay: true,
+    harnessOptions: mode => ({ mode, secrets, deterministicReply: 'Recovered.' }),
+    createHarness: async options => {
+      const harness = await createMobileHarness(options)
+      if (failLoad) {
+        failLoad = false
+        vi.spyOn(harness, 'loadSession').mockRejectedValueOnce(new Error('Synthetic history restoration failure'))
+      }
+      return harness
+    },
+  })
+  const host = new RunWhaleRuntimeHost({ root, moduleStore: join(root, 'modules'), platform: 'ios', agent: driver })
+  cleanup.push(() => host.stop())
+  const info = await host.start()
+  const rpc = async (method: string, params: object) => fetch(`${info.origin}/rpc`, {
+    method: 'POST', headers: { authorization: `Bearer ${info.token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ v: 1, type: 'request', id: crypto.randomUUID(), method, params }),
+  }).then(response => response.json()) as Promise<any>
+  const scope = { projectId: 'recovery', sessionId: 'failed-load' }
+  await rpc('project.create', { id: scope.projectId, name: 'Restore failure regression' })
+  expect(await rpc('agent.run', { ...scope, prompt: 'Continue the task' })).toMatchObject({ error: { message: 'Synthetic history restoration failure' } })
+  expect((await rpc('session.read', scope)).result).toMatchObject({ state: 'failed', failure: { message: 'Synthetic history restoration failure' } })
+  expect(await rpc('agent.run', { ...scope, prompt: 'Continue the task' })).toMatchObject({ ok: true })
+  expect((await rpc('session.read', scope)).result).toMatchObject({ state: 'completed' })
+})

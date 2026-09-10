@@ -367,14 +367,25 @@ function ContextCard({ context, onSelectDetails }: { context: TranscriptContextR
   const detail = context.details[0]
   const title = contextTitle(detail, t)
   const notice = detail?.notice
+  if (notice?.kind === 'background-resumed') return <Pressable
+    testID="transcript-background-resumed"
+    accessibilityRole="button"
+    accessibilityLabel={title}
+    accessibilityHint={t('details')}
+    onPress={() => onSelectDetails(context.id)}
+    style={({ pressed }) => [styles.toolChip, pressed && styles.toolChipPressed]}
+  >
+    <View pointerEvents="none" style={styles.activityIcon}><AppIcon icon={RefreshCw} color={colors.accent} size={16} /></View>
+    <Text numberOfLines={1} style={styles.toolChipName}>{title}</Text>
+    <AppIcon icon={ChevronRight} color={colors.muted} size={12} />
+  </Pressable>
   if (notice) {
-    const resumed = notice.kind === 'background-resumed'
     const blocked = notice.kind === 'goal-blocked'
-    const color = resumed ? colors.muted : blocked ? colors.warning : colors.accent
-    return <Button testID={`transcript-${notice.kind}`} size="sm" variant="ghost" accessibilityLabel={[title, notice.objective, notice.reason].filter(Boolean).join(', ')} accessibilityHint={t('details')} onPress={() => onSelectDetails(context.id)} style={[styles.activity, resumed && styles.contextStatus]}>
-      <View pointerEvents="none" style={styles.activityIcon}><AppIcon icon={resumed ? RefreshCw : blocked ? CircleX : CircleCheck} color={color} size={resumed ? 14 : 18} /></View>
+    const color = blocked ? colors.warning : colors.accent
+    return <Button testID={`transcript-${notice.kind}`} size="sm" variant="ghost" accessibilityLabel={[title, notice.objective, notice.reason].filter(Boolean).join(', ')} accessibilityHint={t('details')} onPress={() => onSelectDetails(context.id)} style={styles.activity}>
+      <View pointerEvents="none" style={styles.activityIcon}><AppIcon icon={blocked ? CircleX : CircleCheck} color={color} size={18} /></View>
       <View style={styles.activityCopy}>
-        <Text numberOfLines={2} style={[styles.activityTools, resumed && styles.contextStatusText, blocked && { color }]}>{title}</Text>
+        <Text numberOfLines={2} style={[styles.activityTools, blocked && { color }]}>{title}</Text>
         {notice.objective ? <Text numberOfLines={2} style={styles.activityDetail}>{contextDetailSummary(notice.objective)}</Text> : null}
         {notice.reason ? <Text numberOfLines={2} style={[styles.activityDetail, { color }]}>{contextDetailSummary(notice.reason)}</Text> : null}
       </View>
@@ -692,8 +703,6 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   reasoningTitle: { color: '#6C5AD9', fontSize: 11, fontWeight: '900' },
   reasoningMeta: { color: colors.muted, fontSize: 10 },
   activity: { width: '100%', minHeight: transcriptInteractionContract.disclosureMinimumHeight, height: 'auto', borderWidth: 1, borderColor: colors.border, borderRadius: 11, backgroundColor: colors.panel, padding: transcriptLayoutContract.toolCardPadding, flexDirection: 'row', alignItems: 'center', gap: 9 },
-  contextStatus: { borderWidth: 0, backgroundColor: 'transparent', paddingVertical: 6 },
-  contextStatusText: { color: colors.muted, fontSize: 10, fontWeight: '500' },
   toolActivityGroup: { gap: 6 },
   toolScroll: { flexGrow: 0 },
   toolRow: { flexGrow: 1, gap: TOOL_ROW_GAP },

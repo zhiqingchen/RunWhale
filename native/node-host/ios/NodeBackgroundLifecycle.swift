@@ -45,7 +45,9 @@ final class NodeBackgroundLifecycle {
       guard let self else { return }
       // The normal allowance reserves time for draining and persistence. This
       // handler is only a final best effort; checkpoints are already periodic.
-      self.sendBackground(graceMs: 0)
+      if UIApplication.shared.applicationState == .background {
+        self.sendBackground(graceMs: 0)
+      }
       self.end()
     }
   }

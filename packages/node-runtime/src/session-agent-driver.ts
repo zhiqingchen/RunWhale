@@ -37,7 +37,7 @@ export function createSessionAgentDriver(options: SessionAgentDriverOptions) {
     previous?.unsubscribe()
     await previous?.harness.dispose()
   }
-  async function configureSession({ sessionId, projectRoot, provider = 'deepseek', model, modelProfile, agentPreset = 'standard' }: AgentSessionLoadOptions, desired: MobileHarnessOptions['mode']): Promise<MobileHarness> {
+  async function configureSession({ sessionId, seed, projectRoot, provider = 'deepseek', model, modelProfile, agentPreset = 'standard' }: AgentSessionLoadOptions, desired: MobileHarnessOptions['mode']): Promise<MobileHarness> {
     const selectedModel = model?.trim() || MOBILE_DEFAULT_MODELS[provider]
     const desiredKey = JSON.stringify([desired, provider, selectedModel, modelProfile, agentPreset])
     if (disposed) throw new Error('Agent driver is disposed')
@@ -47,11 +47,18 @@ export function createSessionAgentDriver(options: SessionAgentDriverOptions) {
       const previous = sessions.get(sessionId)
       if (previous?.key === desiredKey && previous.projectRoot === projectRoot) return
       const harness = await options.createHarness(harnessOptions(desired, provider, selectedModel, modelProfile, agentPreset))
-      previous?.unsubscribe()
-      await previous?.harness.dispose()
       const unsubscribe = harness.observeSession(sessionId, (event) => {
         for (const listener of observers.get(sessionId) ?? []) listener(event)
       })
+      try {
+        await harness.loadSession({ sessionId, seed, projectRoot })
+      } catch (error) {
+        unsubscribe()
+        await harness.dispose()
+        throw error
+      }
+      previous?.unsubscribe()
+      await previous?.harness.dispose()
       sessions.set(sessionId, { key: desiredKey, harness, projectRoot, unsubscribe })
     })
     switching.set(sessionId, change)
@@ -68,8 +75,7 @@ export function createSessionAgentDriver(options: SessionAgentDriverOptions) {
       if (await sessionHarness(input.sessionId)) return
       const hasCredential = providerHasManagedCredential(input.provider ?? 'deepseek') || Boolean(await secrets.get(providerCredentialRef(input.provider ?? 'deepseek')))
       const mode = !hasCredential && options.deterministicReplay ? 'deterministic' : 'deepseek'
-      const harness = await configureSession(input, mode)
-      await harness.loadSession(input)
+      await configureSession(input, mode)
     },
     observeSession(sessionId: string, onEvent: (event: unknown) => void) {
       const listeners = observers.get(sessionId) ?? new Set()
@@ -104,7 +110,7 @@ export function createSessionAgentDriver(options: SessionAgentDriverOptions) {
         throw Object.assign(new Error(`Configure a ${provider} API key in Settings before running the Agent.`), { code: 'MISSING_CREDENTIAL' })
       }
       const desired = hasCredential ? 'deepseek' : 'deterministic'
-      const harness = await configureSession({ sessionId, projectRoot, provider, model: selectedModel, modelProfile, agentPreset }, desired)
+      const harness = await configureSession({ sessionId, seed, projectRoot, provider, model: selectedModel, modelProfile, agentPreset }, desired)
       return harness.run({ sessionId, prompt, seed, projectRoot, signal, onEvent, planMode, attachments, startPaused: backgroundPaused.has(sessionId) })
     },
     async cancel(sessionId: string) {
