@@ -4,15 +4,22 @@ import { OPENAI_MODELS } from '@earendil-works/pi-ai/providers/openai.models'
 import { ANTHROPIC_MODELS } from '@earendil-works/pi-ai/providers/anthropic.models'
 import { GOOGLE_MODELS } from '@earendil-works/pi-ai/providers/google.models'
 import { normalizedModelProfile } from './model-settings'
+import { MODEL_CATALOG_FILTERS } from '../constants/model-catalog-filters'
 
 export { MOBILE_DEFAULT_MODELS }
 
 const providers = Object.keys(MOBILE_DEFAULT_MODELS) as MobileModelProvider[]
 const catalog = { deepseek: DEEPSEEK_MODELS, openai: OPENAI_MODELS, anthropic: ANTHROPIC_MODELS, google: GOOGLE_MODELS }
 
-/** Installed harness models, with the product's preferred selection first. */
+export function matchesModelPattern(id: string, pattern: string): boolean {
+  const expression = pattern.split('*').map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')
+  return new RegExp(`^${expression}$`).test(id)
+}
+
+/** Filtered harness models, with the product's preferred selection first. */
 export const MOBILE_DEFAULT_MODEL_PROFILES = Object.fromEntries<MobileModelProviderProfile>(providers.map((provider) => {
   const models = Object.values(catalog[provider as keyof typeof catalog] ?? {})
+    .filter(({ id }) => !MODEL_CATALOG_FILTERS[provider]?.exclude.some((pattern) => matchesModelPattern(id, pattern)))
     .map(({ id, name }) => ({ id, name }))
     .sort((a, b) => Number(b.id === MOBILE_DEFAULT_MODELS[provider]) - Number(a.id === MOBILE_DEFAULT_MODELS[provider]))
   return [provider, { models }]
