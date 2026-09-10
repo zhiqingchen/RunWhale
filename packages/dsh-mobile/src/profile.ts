@@ -5,6 +5,7 @@ import type { ImageMediaType } from '@deepseek-ai/dsh-attachment'
 import AgentRegistry, { type Agent } from '@deepseek-ai/dsh-agent'
 import AgentLoop from '@deepseek-ai/dsh-agent-loop'
 import { MobileCodeRuntime } from './code-runtime-mobile.js'
+import { restoreMobileSessionSeed } from './session-seed-mobile.js'
 import CommandRuntime from '@deepseek-ai/dsh-commands'
 import BasicCompactionEngine from '@deepseek-ai/dsh-compaction-basic'
 import ToolResultPruner from '@deepseek-ai/dsh-compaction-tool-result-pruner'
@@ -117,14 +118,21 @@ export interface MobileHarnessRunOptions extends MobileHarnessSessionOptions {
   startPaused?: boolean | undefined
   prompt: string
   signal?: AbortSignal | undefined
-  onEvent?: ((event: SessionEvent) => void) | undefined
+  onEvent?: ((event: MobileHarnessEvent) => void) | undefined
   planMode?: boolean | undefined
   attachments?: readonly MobileImageInput[] | undefined
 }
 
+export type MobileHarnessEvent = SessionEvent | {
+  type: 'assistant/chunk'
+  seq: number
+  time: number
+  data: { turn: number; step: number; chunk: StreamChunk }
+}
+
 export class MobileHarness {
   private readonly initializedSessions = new Set<string>()
-  private readonly observers = new Map<string, Set<(event: SessionEvent) => void>>()
+  private readonly observers = new Map<string, Set<(event: MobileHarnessEvent) => void>>()
   private readonly activityListeners = new Map<string, Set<() => void>>()
   private readonly queuedMessages = new Map<string, Map<string, AgentQueuedMessage>>()
   private readonly backgroundPauses = new Map<string, { goalId?: string }>()
@@ -139,12 +147,27 @@ export class MobileHarness {
     context.on('session/event', (session, event) => {
       if (this.initializedSessions.has(String(session.id))) this.publishSessionEvent(String(session.id), event)
     })
+    // DSH publishes live chunks separately from the durable session log.
+    const attempts = new Map<string, { turn: number; step: number }>()
+    context.on('agent/assistant-stream', ({ agent, frame }) => {
+      if (frame.type === 'start') attempts.set(frame.attemptId, { turn: frame.turn, step: frame.step })
+      else if (frame.type === 'end') attempts.delete(frame.attemptId)
+      else {
+        const position = attempts.get(frame.attemptId)
+        if (position && this.initializedSessions.has(String(agent.id))) {
+          this.publishSessionEvent(String(agent.id), {
+            type: 'assistant/chunk', seq: agent.session.seq, time: frame.time,
+            data: { ...position, chunk: frame.chunk },
+          })
+        }
+      }
+    })
     context.on('agent/status', ({ agent }) => this.notifyActivity(String(agent.id)))
     context.on('goal/changed', ({ agent }) => this.notifyActivity(String(agent.id)))
   }
 
   /** Observation belongs to a loaded session, not to an individual prompt. */
-  observeSession(sessionId: string, onEvent: (event: SessionEvent) => void): () => void {
+  observeSession(sessionId: string, onEvent: (event: MobileHarnessEvent) => void): () => void {
     const listeners = this.observers.get(sessionId) ?? new Set()
     this.observers.set(sessionId, listeners)
     listeners.add(onEvent)
@@ -154,7 +177,7 @@ export class MobileHarness {
     }
   }
 
-  private publishSessionEvent(sessionId: string, event: SessionEvent): void {
+  private publishSessionEvent(sessionId: string, event: MobileHarnessEvent): void {
     for (const listener of this.observers.get(sessionId) ?? []) listener(event)
   }
 
@@ -191,14 +214,18 @@ export class MobileHarness {
       // Mobile restores through agents.create rather than DSH's persistence
       // loader, so apply the same crash-tail closure before the next request.
       // Missing tool outcomes stay explicitly unknown; recorded work is kept.
-      const events = seed as readonly SessionEvent[]
+      const events = restoreMobileSessionSeed(seed)
       return this.context.agents.create({
         sessionId: id,
         seed: [...events, ...interruptedTurnClosers(events)],
         agentOptions: { provider: this.provider, model: this.model },
       }).then(({ agent: restored }) => this.initializeSession(sessionId, restored, true, seed.length))
     }
-    this.initializeSession(sessionId, agent ?? this.context.agentLoop.create(id, { provider: this.provider, model: this.model }), !agent, seed.length)
+    if (!agent) {
+      return this.context.agentLoop.create(id, { provider: this.provider, model: this.model })
+        .then((created) => this.initializeSession(sessionId, created, true, seed.length))
+    }
+    this.initializeSession(sessionId, agent, false, seed.length)
   }
 
   private initializeSession(sessionId: string, agent: Agent, created: boolean, seedLength: number): void {
@@ -496,7 +523,7 @@ export async function createMobileHarness(options: MobileHarnessOptions): Promis
   await ctx.plugin(LlmRuntime)
   await ctx.plugin(SessionStore)
   await ctx.plugin(SessionProjectionRegistry)
-  await ctx.plugin(SystemPrompt, { persona: `${options.persona ?? defaultMobilePersona} ${efficientMobileWorkflow} ${mobileTypeScriptWorkflow} ${previewTestingWorkflow}` })
+  await ctx.plugin(SystemPrompt, { personaPrefix: `${options.persona ?? defaultMobilePersona} ${efficientMobileWorkflow} ${mobileTypeScriptWorkflow} ${previewTestingWorkflow}` })
   await ctx.plugin(ToolRuntime)
   await ctx.plugin(CommandRuntime)
   await ctx.plugin(SkillRegistry)

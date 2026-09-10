@@ -207,7 +207,7 @@ describe('Mobile Goal lifecycle with the real continuation driver', () => {
     }
     base.context.llm.registerAdapter(['goal-stop-audit'], new WaitingAdapter())
     const harness = new MobileHarness(base.context, 'goal-stop-audit', 'audit', new Map(), () => 'review')
-    const agent = base.context.agentLoop.create(SessionId('goal-stop'), { provider: 'goal-stop-audit', model: 'audit' })
+    const agent = await base.context.agentLoop.create(SessionId('goal-stop'), { provider: 'goal-stop-audit', model: 'audit' })
     harness.createGoal('goal-stop', 'Exercise stop during a goal round', 3)
     await requestStarted
     const current = harness.getGoal('goal-stop')!

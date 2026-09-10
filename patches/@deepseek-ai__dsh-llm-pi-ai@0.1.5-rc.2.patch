@@ -1,8 +1,8 @@
 diff --git a/lib/index.js b/lib/index.js
-index c25e5c7afcd9381dec2490fbff24910f173281d0..af6006eadaa46bbcc9dec281cb57b5941224698a 100644
+index e06cf8d..1051c36 100644
 --- a/lib/index.js
 +++ b/lib/index.js
-@@ -1797,7 +1797,7 @@ var PiAiAdapter = class extends LlmAdapter {
+@@ -1875,7 +1875,7 @@ var PiAiAdapter = class extends LlmAdapter {
  				let exhausted = false;
  				try {
  					while (true) {
@@ -11,7 +11,7 @@ index c25e5c7afcd9381dec2490fbff24910f173281d0..af6006eadaa46bbcc9dec281cb57b594
  						const timeout = timeoutOf(watchdog.signal, "LLM_STREAM_IDLE_TIMEOUT");
  						if (timeout !== void 0) throw timeout;
  						if (result.done) {
-@@ -1809,9 +1809,9 @@ var PiAiAdapter = class extends LlmAdapter {
+@@ -1887,9 +1887,9 @@ var PiAiAdapter = class extends LlmAdapter {
  				} finally {
  					if (!exhausted) {
  						consumer.abort("pi-ai stream consumer stopped");
@@ -24,7 +24,7 @@ index c25e5c7afcd9381dec2490fbff24910f173281d0..af6006eadaa46bbcc9dec281cb57b594
  					}
  				}
  			} catch (error) {
-@@ -1830,6 +1830,21 @@ var PiAiAdapter = class extends LlmAdapter {
+@@ -1908,6 +1908,21 @@ var PiAiAdapter = class extends LlmAdapter {
  	}
  };
  //#endregion

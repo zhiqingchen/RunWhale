@@ -1186,7 +1186,7 @@ describe('RunWhaleRuntimeHost', () => {
     expect(run.ok).toBe(true)
     expect(liveExport.ok).toBe(true)
     const liveZip = unzipSync(await readFile(liveExport.result.path))
-    expect(strFromU8(liveZip['session.jsonl']!).trimEnd().split('\n').slice(1).map(line => JSON.parse(line))).toEqual(sessionEvents)
+    expect(strFromU8(liveZip['session.jsonl']!).trimEnd().split('\n').slice(1).map(line => JSON.parse(line))).toEqual(sessionEvents.filter(event => event.type !== 'assistant/chunk'))
     await rm(join(liveExport.result.path, '..'), { recursive: true })
     const list = await rpc('session.list', { projectId: created.result.id })
     expect(list.result).toEqual([expect.objectContaining({

@@ -25,7 +25,7 @@ Rebuild the embedded runtime and shared dependency store after changing the Node
 pnpm runtime:bundle
 ```
 
-The `@deepseek-ai/dsh-llm-pi-ai@0.1.2-rc.1` patch makes stream reads settle on timeout or cancellation even when the transport ignores abort, and prevents stalled iterator cleanup from blocking the Agent. Recheck it when upgrading DSH. Mobile provider defaults allow 90 seconds without a stream chunk and two retries; active reasoning and tool-argument streams keep the request alive.
+The `@deepseek-ai/dsh-llm-pi-ai@0.1.5-rc.2` patch makes stream reads settle on timeout or cancellation even when the transport ignores abort, and prevents stalled iterator cleanup from blocking the Agent. Recheck it when upgrading DSH. Mobile provider defaults allow 90 seconds without a stream chunk and two retries; active reasoning and tool-argument streams keep the request alive.
 
 ## Studio and Development Clients
 

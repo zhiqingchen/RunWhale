@@ -3,7 +3,7 @@ import { createMobileHarness, DEEPSEEK_MOBILE_MODEL, MOBILE_MAX_PARALLEL_TOOL_CA
 import { Context } from '@deepseek-ai/cordis'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { SessionId } from '@deepseek-ai/dsh-session'
-import { ToolCallId, LlmAdapter, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
+import { ToolCallId, LlmAdapter, expandAssistantStream, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -188,7 +188,7 @@ describe('DSH mobile profile', () => {
     await first.dispose()
     const restarted = await createMobileHarness(options)
     const streamed: typeof initial.events[number][] = []
-    const continued = await restarted.run({ sessionId: 'durable-session', prompt: 'Make it faster', seed: JSON.parse(JSON.stringify(initial.events)), onEvent: (event) => streamed.push(event) }
+    const continued = await restarted.run({ sessionId: 'durable-session', prompt: 'Make it faster', seed: JSON.parse(JSON.stringify(initial.events)), onEvent: (event) => { if (event.type !== 'assistant/chunk') streamed.push(event) } }
     )
     expect(streamed[0]).toMatchObject({
       type: 'session/end-seed',
@@ -200,6 +200,38 @@ describe('DSH mobile profile', () => {
     expect(continued.events.filter((event) => event.type === 'turn/end')).toHaveLength(2)
     expect(continued.text).toBe('Continued.')
     await restarted.dispose()
+  })
+
+  it('continues a legacy session with top-level chunks without changing its sequence references', async () => {
+    const options = { mode: 'deterministic' as const, secrets: new MemorySecrets(), deterministicReply: 'Continued.' }
+    const first = await createMobileHarness(options)
+    const initial = await first.run({ sessionId: 'legacy-session', prompt: 'Create the game' })
+    await first.dispose()
+    const seed: Record<string, unknown>[] = []
+    for (const event of initial.events) {
+      if (event.type === 'assistant/message') {
+        const { stream, ...data } = event.data
+        const sourceEventSeqs = expandAssistantStream(stream).map(({ time, chunk }) => {
+          const seq = seed.length
+          seed.push({ type: 'assistant/chunk', seq, time, data: { turn: data.turn, step: data.step, chunk } })
+          return seq
+        })
+        seed.push({ ...event, seq: seed.length, data, sourceEventSeqs })
+      } else seed.push({ ...event, seq: seed.length })
+    }
+    const original = structuredClone(seed)
+    const restarted = await createMobileHarness(options)
+    try {
+      const result = await restarted.run({ sessionId: 'legacy-session', prompt: 'Continue', seed })
+      expect(result.failure).toBeUndefined()
+      expect(result.text).toBe('Continued.')
+      expect(result.events.filter(event => event.type === 'turn/end')).toHaveLength(2)
+      expect(result.events.map(event => event.seq)).toEqual(result.events.map((_, index) => index))
+      expect(result.events.find(event => event.type === 'assistant/message')).toMatchObject({
+        data: { stream: initial.events.find(event => event.type === 'assistant/message')!.data.stream },
+      })
+      expect(seed).toEqual(original)
+    } finally { await restarted.dispose() }
   })
 
   it('retries a session whose first turn was interrupted before completion', async () => {
@@ -239,7 +271,7 @@ describe('DSH mobile profile', () => {
     const retry = new MobileHarness(restarted.context, 'preview-test', 'test', new Map(), () => 'review')
     const streamed: typeof initial.events[number][] = []
     try {
-      const result = await retry.run({ sessionId: 'interrupted-first-turn', prompt: 'Create the game', seed: JSON.parse(JSON.stringify(seed)), onEvent: (event) => streamed.push(event) })
+      const result = await retry.run({ sessionId: 'interrupted-first-turn', prompt: 'Create the game', seed: JSON.parse(JSON.stringify(seed)), onEvent: (event) => { if (event.type !== 'assistant/chunk') streamed.push(event) } })
       expect(result.failure).toBeUndefined()
       expect(result.text).toBe('Recovered.')
       expect(result.events.find((event) => event.type === 'tool/result')).toMatchObject({
@@ -264,6 +296,7 @@ describe('DSH mobile profile', () => {
 
   it('stops at idle and returns queued messages instead of waking another turn', async () => {
     const harness = await createMobileHarness({ mode: 'deterministic', secrets: new MemorySecrets(), deterministicReply: 'Should not finish.' })
+    await harness.loadSession({ sessionId: 'paused-session' })
     const running = harness.run({ sessionId: 'paused-session', prompt: 'Start work' })
     expect(harness.message('paused-session', 'Try this next', 'followup')).toMatchObject({ accepted: true, messageId: expect.any(String) })
 
@@ -288,7 +321,7 @@ describe('DSH mobile profile', () => {
     const adapter = new HangingAdapter()
     harness.context.llm.registerAdapter(['runwhale-hang'], adapter)
     const blocking = new MobileHarness(harness.context, 'runwhale-hang', 'hang', new Map(), () => 'review')
-    blocking.context.agentLoop.create(SessionId('claimed-queue-session'), { provider: 'runwhale-hang', model: 'hang' })
+    await blocking.context.agentLoop.create(SessionId('claimed-queue-session'), { provider: 'runwhale-hang', model: 'hang' })
 
     const accepted = blocking.message('claimed-queue-session', 'Restore claimed work', 'followup')
     await adapter.started

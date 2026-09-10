@@ -75,9 +75,10 @@ export class AgentSessionExecution {
 
   readonly acceptEvent = (event: unknown): void => {
     this.receivedLiveEvent = true
-    this.events.push(event)
-    this.options.publish(this.taskId, event, this.afterSequence)
     const value = event as { type?: unknown; seq?: unknown } | undefined
+    // Live chunks share the next durable sequence and must not enter checkpoints.
+    if (value?.type !== 'assistant/chunk') this.events.push(event)
+    this.options.publish(this.taskId, event, this.afterSequence)
     if (this.active && value?.type === 'step/end') this.completedSteps += 1
     if (value?.type !== 'assistant/chunk' && typeof value?.seq === 'number') this.afterSequence = value.seq
     if (!this.timer) this.timer = setTimeout(() => {
