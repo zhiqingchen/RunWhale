@@ -1225,6 +1225,9 @@ export class RunWhaleRuntimeHost {
     const repository = new MobileGitRepository(projectRoot)
     await repository.ensureInitialized()
     const attachments = await this.readAgentAttachments(projectId, attachmentPaths)
+    const agentPrompt = attachments.length > 0
+      ? `${prompt}\n\nAttached images are saved in the project at these relative paths, in image order:\n${attachmentPaths!.map((path, index) => `${index + 1}. ${path}`).join('\n')}\nThe list_files tool hides .runwhale. Use these paths directly; node_task can copy the image files into assets/ with node:fs/promises copyFile when needed.`
+      : prompt
     let seed: readonly unknown[] = []
     let existingTitle = prompt.trim().slice(0, 80) || 'Untitled session'
     let agentPreset: MobileAgentPreset = requestedPreset ?? 'standard'
@@ -1262,7 +1265,7 @@ export class RunWhaleRuntimeHost {
     try {
       answer = backgroundResume
         ? await this.options.agent.resume!(sessionId, runController.signal)
-        : await this.options.agent.run({ sessionId, prompt, seed, projectRoot, signal: runController.signal, onEvent: this.options.agent.observeSession ? undefined : execution.acceptEvent, planMode, provider, model, agentPreset, attachments, modelProfile, startPaused: execution.pauseRequested })
+        : await this.options.agent.run({ sessionId, prompt: agentPrompt, seed, projectRoot, signal: runController.signal, onEvent: this.options.agent.observeSession ? undefined : execution.acceptEvent, planMode, provider, model, agentPreset, attachments, modelProfile, startPaused: execution.pauseRequested })
       await execution.whenIdle()
       const events = await this.options.agent.sessionEvents?.(sessionId)
       if (events) answer = { ...answer, events }

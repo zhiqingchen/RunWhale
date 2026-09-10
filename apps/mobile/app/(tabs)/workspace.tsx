@@ -28,6 +28,7 @@ import { actionErrorPresentation, runExclusiveAction } from '@/utils/action-prog
 import { clearAgentDraftsForProject } from '@/utils/agent-draft'
 import { closedProjectActionState, omitProjectRecordEntry, performProjectDeletion, projectActionReducer } from '@/utils/project-actions'
 import { removeProjectShortcutAppearance } from '@/utils/project-shortcut-storage'
+import { tabScreenBackground } from '@/theme/tab-screen-background'
 
 export default function WorkspaceScreen() {
   const { projects, loadStatus: projectLoadStatus, retryLoad: retryProjectLoad, renameProject, removeProject } = useProjects()
@@ -535,7 +536,7 @@ function formatSessionDate(timestamp: number): string {
 }
 
 function createStyles(colors: ThemeColors, projectCardWidth: number) { return StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.canvas },
+  safe: { flex: 1, ...tabScreenBackground(colors, 'teal') },
   content: { paddingHorizontal: 18, paddingTop: topLevelScreenLayout.topPadding, paddingBottom: 34, gap: 12 },
   header: { minHeight: topLevelScreenLayout.headerMinHeight, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   title: { color: colors.text, ...topLevelPageTitleStyle },

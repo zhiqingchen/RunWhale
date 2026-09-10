@@ -17,6 +17,7 @@ import { runExclusiveAction } from '@/utils/action-progress'
 import { homeActivePreviewProjectId, homeContinueWorkViewModel, isCurrentHomeContinueRequest, selectLatestHomeProject } from '@/utils/home-continue-work'
 import { NewProjectButton } from '@/components/NewProjectButton'
 import { deviceLayout } from '@/utils/device-layout'
+import { tabScreenBackground } from '@/theme/tab-screen-background'
 
 interface HomeContinueLoadState {
   projectId?: string
@@ -210,7 +211,7 @@ function formatHomeDate(timestamp: number, language: 'zh-CN' | 'en'): string {
 }
 
 function createStyles(colors: ThemeColors) { return StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.canvas },
+  safe: { flex: 1, ...tabScreenBackground(colors, 'blue') },
   content: { width: '100%', maxWidth: deviceLayout.readableContentMaximumWidth, alignSelf: 'center', paddingHorizontal: 18, paddingTop: topLevelScreenLayout.topPadding, paddingBottom: 34, gap: 12 },
   header: { flexDirection: 'row', alignItems: 'flex-start', minHeight: topLevelScreenLayout.headerMinHeight },
   headerCopy: { flex: 1 },

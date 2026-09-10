@@ -20,11 +20,12 @@ import { settingsDetailRoutes } from '@/utils/settings-routes'
 import { runtimeSettingsSummaryState } from '@/utils/settings-runtime'
 import { settingsUseStackedRows } from '@/utils/settings-layout'
 import { deviceLayout } from '@/utils/device-layout'
+import { tabScreenBackground } from '@/theme/tab-screen-background'
 
 export default function SettingsScreen() {
   const router = useRouter()
   const runtime = useRuntime()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const colors = useAppColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const { modelProvider, agentPreset } = usePreferences()
@@ -52,6 +53,7 @@ export default function SettingsScreen() {
   return <SafeAreaView style={styles.safe} edges={['top']}>
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.pageHeader}><Text accessibilityRole="header" style={styles.pageTitle}>{t('settings')}</Text>{renderSlot('settings.header')}</View>
+      {renderSlot('settings.promotion', { language })}
       <SectionTitle>{t('deepSeekHarness')}</SectionTitle>
       <View style={styles.settingsGroup}>
         <SettingsLink icon={SlidersHorizontal} label={t('general')} description={t('generalSettingsSummary')} onPress={() => router.push(settingsDetailRoutes.general)} />
@@ -130,7 +132,7 @@ function useSettingsStyles() {
 function createStyles(colors: ThemeColors) {
   const controlColors = settingsControlColorsFor(colors)
   return StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.canvas },
+  safe: { flex: 1, ...tabScreenBackground(colors, 'rose') },
   content: { width: '100%', maxWidth: deviceLayout.readableContentMaximumWidth, alignSelf: 'center', paddingHorizontal: 18, paddingTop: topLevelScreenLayout.topPadding, paddingBottom: 34, gap: 9 },
   pageHeader: { minHeight: topLevelScreenLayout.headerMinHeight, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pageTitle: { color: colors.text, ...topLevelPageTitleStyle },

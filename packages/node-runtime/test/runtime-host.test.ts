@@ -194,11 +194,12 @@ describe('RunWhaleRuntimeHost', () => {
     const image = join(cache, 'pixel.png')
     await writeFile(image, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'))
     let received: readonly { data: Uint8Array; mediaType: string; name?: string }[] = []
+    let receivedPrompt = ''
     const host = new RunWhaleRuntimeHost({
       root,
       moduleStore: join(root, 'modules'),
       platform: 'ios',
-      agent: { run: async ({ attachments = [] }) => { received = attachments; return { text: 'Attached.', events: [{ type: 'turn/end' }] } } },
+      agent: { run: async ({ attachments = [], prompt }) => { received = attachments; receivedPrompt = prompt; return { text: 'Attached.', events: [{ type: 'turn/end' }] } } },
     })
     hosts.push(host)
     const info = await host.start()
@@ -214,6 +215,8 @@ describe('RunWhaleRuntimeHost', () => {
     expect((await rpc('agent.run', { projectId: 'image-project', prompt: 'Inspect', attachmentPaths: [attached.result.path] })).ok).toBe(true)
     expect(received).toHaveLength(1)
     expect(received[0]).toMatchObject({ mediaType: 'image/png' })
+    expect(receivedPrompt).toContain(`Inspect\n\nAttached images are saved in the project at these relative paths, in image order:\n1. ${attached.result.path}\n`)
+    expect(receivedPrompt).toContain('node_task can copy the image files')
     expect(Buffer.from(received[0]!.data).subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
     const outside = join(tmpdir(), 'outside-image.png')
     await writeFile(outside, await readFile(image))
