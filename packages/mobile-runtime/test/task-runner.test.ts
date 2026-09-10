@@ -17,6 +17,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  vi.useRealTimers()
   vi.restoreAllMocks()
   await Promise.all(workers.splice(0).map(worker => worker.terminate()))
   await rm(root, { recursive: true, force: true })
@@ -112,10 +113,17 @@ describe('mobile task runner', () => {
     })
     const states: string[] = []
     runner.on('state', (_, state) => states.push(state))
+    // Control the runner deadline independently of real Worker startup and output.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const ready = reason === 'timeout' ? once(runner, 'output') : undefined
     const task = await start('late.ts', { timeoutMs: 1000, maxOutputBytes: reason === 'output limit' ? 1 : 1024 })
     let settled = false
     void task.result.then(() => { settled = true })
     try {
+      if (ready) {
+        await ready
+        await vi.advanceTimersByTimeAsync(1000)
+      }
       await Promise.race([terminating, task.result.then(() => { throw new Error('task settled before termination') })])
       expect(settled).toBe(false)
       expect(runner.hasRunningTaskForRoot(root)).toBe(true)
