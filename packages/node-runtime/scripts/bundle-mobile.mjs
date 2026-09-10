@@ -2,6 +2,7 @@ import { build } from 'esbuild'
 import { copyFile, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
+import { checkBundledStartup } from './check-bundled-startup.mjs'
 
 const dshRequire = createRequire(resolve(import.meta.dirname, '../../dsh-mobile/package.json'))
 const dshLlmEntry = dshRequire.resolve('@deepseek-ai/dsh-llm')
@@ -152,3 +153,5 @@ for (const bundle of [runtimeBundle, agentRuntimeBundle]) {
     throw new Error(`LGPL ZenFS path.join remains in runtime bundle: ${bundle}`)
   }
 }
+
+await checkBundledStartup(runtimeBundle)
