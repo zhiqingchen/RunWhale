@@ -49,8 +49,8 @@ export default function ChinesePrivacyPage() {
       eyebrow="隐私"
       title="隐私政策"
       summary="哪里跑以本地运行作为设计原则。本政策说明哪些数据会留在设备上、使用联网服务时哪些数据会离开设备，以及网站的托管方式。"
-      updated="2026 年 9 月 8 日"
-      updatedIso="2026-09-08"
+      updated="2026 年 9 月 10 日"
+      updatedIso="2026-09-10"
     >
       <section>
         <h2>适用范围</h2>
@@ -77,6 +77,14 @@ export default function ChinesePrivacyPage() {
       </section>
 
       <section>
+        <h2>商业版应用使用统计</h2>
+        <p>商业版移动应用使用 Google Analytics for Firebase，在应用启动时自动启用，以了解功能使用情况并改善可靠性。社区版和 Debug 构建不发送这些统计。商业版不会单独弹出统计授权提示，也不提供统计开关。</p>
+        <p>Google 会接收应用打开与互动信息、项目创建和 Preview 的事件类别、结果与耗时、应用版本、设备型号、操作系统、语言，以及随机生成的应用实例标识。Google 可能根据连接的 IP 地址推算大致位置；Analytics 不记录或存储单独的 IP 地址。我们不会将你的哪里跑账号标识、邮箱、代码、提示词、项目名称、文件内容、路径、URL 或日志作为统计事件数据发送。</p>
+        <p>广告标识收集、广告个性化和自动屏幕上报均已关闭。统计限于哪里跑应用本身，Firebase SDK 不向 Native Preview 中运行的用户项目开放。Google 会在其基础设施上处理统计数据，处理地点可能在你所在国家或地区以外，具体遵循 <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google 隐私政策</a>及其 <a href="https://support.google.com/analytics/answer/6004245" target="_blank" rel="noreferrer">Analytics 数据保护说明</a>。</p>
+        <p>统计记录按我们 Google Analytics 媒体资源的数据保留设置保存。删除哪里跑账号或本地项目，不会自动删除此前收集的统计数据；我们不通过账号标识关联这些统计。如需提出统计数据的隐私或删除请求，请通过下方邮箱联系我们。</p>
+      </section>
+
+      <section>
         <h2>网站托管</h2>
         <p>本网站不包含网站分析脚本、广告追踪器或应用 Cookie。页面与媒体均为静态文件。</p>
         <p>部署在 GitHub Pages 时，GitHub 可能会处理包括 IP 地址在内的请求信息，以运营和保护服务。有关数据处理与保留政策，请阅读 <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noreferrer">GitHub 隐私声明</a>。</p>
@@ -85,7 +93,7 @@ export default function ChinesePrivacyPage() {
       <section>
         <h2>信息的使用与共享方式</h2>
         <p>信息用于提供你请求的功能、运营和保护网站、诊断问题。哪里跑不会出售你的个人信息，也不会将应用项目内容用于广告。</p>
-        <p>信息只会与你指示应用使用的服务、网站托管服务商共享；或在遵守法律、保护权利与安全、调查滥用行为时按要求共享。</p>
+        <p>信息会与你指示应用使用的服务、上述账号、订阅、统计和托管服务商共享；或在遵守法律、保护权利与安全、调查滥用行为时按要求共享。</p>
       </section>
 
       <section>

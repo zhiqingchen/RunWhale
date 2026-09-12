@@ -48,8 +48,8 @@ export default function PrivacyPage() {
       eyebrow="Privacy"
       title="Privacy Policy"
       summary="RunWhale is local by design. This policy explains what stays on your device, what leaves it when you use connected services, and how the website is hosted."
-      updated="September 8, 2026"
-      updatedIso="2026-09-08"
+      updated="September 10, 2026"
+      updatedIso="2026-09-10"
     >
       <section>
         <h2>Scope</h2>
@@ -76,6 +76,14 @@ export default function PrivacyPage() {
       </section>
 
       <section>
+        <h2>Commercial app usage analytics</h2>
+        <p>The commercial mobile app uses Google Analytics for Firebase, enabled automatically when the app starts, to understand feature usage and improve reliability. The community edition and Debug builds do not send these analytics. The commercial app does not show a separate analytics permission prompt or provide an analytics switch.</p>
+        <p>Google receives app opens and engagement information, project creation and Preview event categories, outcomes and durations, app version, device model, operating system, language, and a randomly generated app-instance identifier. Google may derive approximate location from the connection&apos;s IP address; Analytics does not log or store individual IP addresses. We do not send your RunWhale account identifier, email, code, prompts, project names, file contents, paths, URLs, or logs as analytics event data.</p>
+        <p>Advertising identifier collection, advertising personalization, and automatic screen reporting are disabled. Analytics is limited to the RunWhale app; the Firebase SDK is not exposed to projects running in Native Preview. Google processes analytics data on its infrastructure, which may be outside your country, according to the <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google Privacy Policy</a> and its <a href="https://support.google.com/analytics/answer/6004245" target="_blank" rel="noreferrer">Analytics data safeguards</a>.</p>
+        <p>Analytics records follow the retention settings of our Google Analytics property. Deleting a RunWhale account or local projects does not automatically delete previously collected analytics, which are not linked by us to your account identifier. Contact us using the address below for analytics privacy or deletion requests.</p>
+      </section>
+
+      <section>
         <h2>Website hosting</h2>
         <p>This website does not include analytics scripts, advertising trackers, or application cookies. Its pages and media are static files.</p>
         <p>When hosted on GitHub Pages, GitHub may process request information, including IP addresses, to operate and secure the service. See the <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noreferrer">GitHub Privacy Statement</a> for its data practices and retention policies.</p>
@@ -84,7 +92,7 @@ export default function PrivacyPage() {
       <section>
         <h2>How information is used and shared</h2>
         <p>Information is used to provide the features you request, operate and secure the website, and diagnose problems. RunWhale does not sell your personal information or use app project content for advertising.</p>
-        <p>Information is shared only with services you direct the app to use, website hosting providers, or when required to comply with law, protect rights and safety, or investigate abuse.</p>
+        <p>Information is shared with services you direct the app to use, the account, subscription, analytics, and hosting providers described above, or when required to comply with law, protect rights and safety, or investigate abuse.</p>
       </section>
 
       <section>
