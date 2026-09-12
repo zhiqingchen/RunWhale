@@ -39,6 +39,7 @@ internal object NativePreviewReactPackages {
     }
     return buildList {
       add(MainReactPackage())
+      add(RunWhaleSettingsPackage())
       add(NativePreviewExpoModulesPackage(projectScope))
       addAll(linkedPackages.filter { it.javaClass.name in allowedReactPackageClasses })
     }

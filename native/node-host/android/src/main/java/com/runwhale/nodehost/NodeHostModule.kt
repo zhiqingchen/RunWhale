@@ -39,6 +39,7 @@ class NodeHostModule : Module() {
 
   override fun definition() = ModuleDefinition {
     Name("RunWhaleNodeHost")
+    Function("setLanguage") { language: String, closePreviewLabel: String -> NativePreviewLanguage.set(language, closePreviewLabel) }
     Events("onNodeState", "onNodeLog", "onNativePreviewAction")
 
     OnCreate {

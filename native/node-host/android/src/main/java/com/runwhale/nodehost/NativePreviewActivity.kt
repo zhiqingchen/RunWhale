@@ -423,6 +423,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
 
   override fun onResume() {
     super.onResume()
+    previewControl?.contentDescription = NativePreviewLanguage.closePreviewLabel
     // Studio owns Agent RPC and test dispatch. Its host must keep processing
     // events and timers while this in-app Preview is the foreground activity.
     (application as ReactApplication).reactHost?.onHostResume(this, this)
@@ -540,10 +541,9 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
   }
 
   private fun installMinimizeControl(root: FrameLayout) {
-    val chinese = resources.configuration.locales.get(0)?.language == "zh"
     val close = previewControl(
       drawable = R.drawable.runwhale_close,
-      label = if (chinese) "关闭 Preview" else "Close Preview",
+      label = NativePreviewLanguage.closePreviewLabel,
       onClick = ::minimizeToStudio,
     )
     previewControl = close

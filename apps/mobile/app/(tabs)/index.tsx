@@ -1,3 +1,4 @@
+import type { AppLanguage } from '@runwhale/mobile-protocol'
 import { ProjectIcon } from '@/components/ProjectIcon'
 import { ProjectLoadFailure } from '@/components/ProjectLoadFailure'
 import { router, useFocusEffect } from 'expo-router'
@@ -201,8 +202,8 @@ export default function HomeScreen() {
   )
 }
 
-function formatHomeDate(timestamp: number, language: 'zh-CN' | 'en'): string {
-  return new Intl.DateTimeFormat(language === 'zh-CN' ? 'zh-CN' : 'en-US', {
+function formatHomeDate(timestamp: number, language: AppLanguage): string {
+  return new Intl.DateTimeFormat(language, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',

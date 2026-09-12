@@ -46,7 +46,20 @@ const RuntimeContext = createContext<RuntimeContextValue | null>(null)
 const NODE_RELAUNCH_REQUIRED = 'Embedded Node stopped and cannot restart inside the current app process. Fully close and reopen RunWhale.'
 
 export function RuntimeProvider({ children }: PropsWithChildren) {
-  const { t } = useI18n()
+  const { t, language, languageReady } = useI18n()
+  const languageRef = useRef(language)
+  languageRef.current = language
+  const previewCloseLabel = useRef(t('nativePreviewClose'))
+  previewCloseLabel.current = t('nativePreviewClose')
+  const languageSync = useRef<Promise<unknown>>(Promise.resolve())
+  const syncLanguage = useCallback((host: HostInfo) => {
+    const next = languageSync.current.catch(() => undefined).then(() => {
+      NodeHost.setLanguage(languageRef.current, previewCloseLabel.current)
+      return rpc(host, 'host.language.set', { language: languageRef.current })
+    })
+    languageSync.current = next
+    return next
+  }, [])
   const [snapshot, setSnapshot] = useState<NativeNodeSnapshot>(() => NodeHost.snapshot())
   const [info, setInfo] = useState<HostInfo>()
   const [lastError, setLastError] = useState<string>()
@@ -71,6 +84,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   const dismissCredentialSyncWarning = useCallback(() => setCredentialSyncWarning(undefined), [])
 
   useEffect(() => {
+    if (!languageReady) return
     if (Platform.OS === 'web') {
       setSnapshot({ state: 'stopped' })
       return
@@ -173,6 +187,8 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
             if (!runtimeHostPublicationReady(synchronized.snapshot.state, synchronizedNative.state)) {
               throw new Error(`embedded Node host entered ${synchronized.snapshot.state} while native runtime reported ${synchronizedNative.state} during credential synchronization`)
             }
+            await syncLanguage(hostInfo)
+            if (!isActivationActive()) return
             setNativePreviewDiagnostic(NodeHost.takeNativePreviewDiagnostic() ?? undefined)
             setLastError(undefined)
             setCredentialSyncWarning(credentialSyncFailures.length > 0 ? `credential sync failed: ${credentialSyncFailures.join(', ')}` : undefined)
@@ -427,7 +443,11 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
       subscription.remove()
       appState.remove()
     }
-  }, [publishHost])
+  }, [languageReady, syncLanguage, publishHost])
+
+  useEffect(() => {
+    if (info && languageReady) void syncLanguage(info).catch((error) => setLastError(error instanceof Error ? error.message : 'Language synchronization failed'))
+  }, [info, language, languageReady, syncLanguage])
 
   const readyHost = useCallback((signal?: AbortSignal) => readyHostRef.current(signal), [])
 

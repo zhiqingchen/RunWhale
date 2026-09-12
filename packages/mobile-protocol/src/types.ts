@@ -1,3 +1,4 @@
+import type { AppLanguage } from './language.js'
 import type { AdditionalHostRequests } from '#extensions'
 import type { MobileModelProvider } from './model-providers.js'
 export { MOBILE_DEFAULT_MODELS, type MobileModelProvider } from './model-providers.js'
@@ -253,6 +254,7 @@ export interface MobileHostRequestMap extends AdditionalHostRequests {
   'host.continued.status': { params: { id: string; granted: boolean }; result: { state: 'pending' | 'running' | 'saving' | 'completed' | 'stopped' | 'waiting' | 'failed' | 'missing'; completedSteps: number } }
   'host.continued.end': { params: { id: string; pause: boolean; reason?: 'expired' | 'transport-lost' }; result: { ended: boolean } }
   'host.stop': { params: Record<string, never>; result: HostSnapshot }
+  'host.language.set': { params: { language: AppLanguage }; result: { synchronized: true } }
   'host.snapshot': { params: { afterSequence?: number }; result: { snapshot: HostSnapshot; events: HostEvent[] } }
   'host.environment': { params: Record<string, never>; result: RuntimeEnvironment }
   'credential.set': { params: { provider: MobileModelProvider; value: string }; result: { configured: true } }

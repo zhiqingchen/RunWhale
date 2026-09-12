@@ -593,6 +593,9 @@ importers:
       '@runwhale/native-preview-shims':
         specifier: workspace:*
         version: link:../native-preview-shims
+      '@runwhale/sdk':
+        specifier: workspace:*
+        version: link:../sdk
       '@shopify/react-native-skia':
         specifier: 2.6.2
         version: 2.6.2(react-native-reanimated@4.5.1(react-native-worklets@0.10.1(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
@@ -770,6 +773,28 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+
+  packages/sdk:
+    dependencies:
+      react-native:
+        specifier: '>=0.76'
+        version: 0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
+      react-test-renderer:
+        specifier: 19.2.3
+        version: 19.2.3(react@19.2.3)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
 
 packages:
 

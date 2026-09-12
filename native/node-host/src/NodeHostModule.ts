@@ -39,6 +39,7 @@ declare class NodeHostNativeModule extends NativeModule<{
   beginContinuedAgentTask?(copy: { title: string; working: string; steps: string; saving: string; waiting: string }): Promise<string | null>
   stop(port?: number, token?: string): Promise<NativeNodeSnapshot>
   snapshot(): NativeNodeSnapshot
+  setLanguage(language: string, closePreviewLabel: string): void
   runtimeRoot(): string
   supportsProjectShortcuts?(): boolean
   pinProjectShortcut?(projectId: string, name: string, iconUri: string): Promise<'requested' | 'updated' | 'unsupported'>
@@ -58,6 +59,7 @@ const browserShim = {
   async recoverTransport() { return null },
   async stop() { return browserSnapshot },
   snapshot() { return browserSnapshot },
+  setLanguage(_language: string, _closePreviewLabel: string) {},
   runtimeRoot() { return '' },
   readHostInfo() { return null },
   takeNativePreviewDiagnostic() { return null },

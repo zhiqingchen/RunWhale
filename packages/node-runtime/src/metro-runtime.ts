@@ -1,3 +1,4 @@
+import { PreviewLanguage } from './preview-language.js'
 import { createServer, type Server } from 'node:http'
 import type { Socket } from 'node:net'
 import { access, mkdir, readFile, readdir, realpath, stat, writeFile } from 'node:fs/promises'
@@ -45,6 +46,7 @@ export interface MetroBundle {
 let packedMapSupportInstalled = false
 
 export class MobileMetroRuntime {
+  readonly language = new PreviewLanguage()
   private server: Server | undefined
   private servingSockets = new Set<Socket>()
   private bundler: { key: string; middleware: MetroMiddleWare; graphId?: string; resetGraph?: boolean } | undefined
@@ -129,7 +131,7 @@ export class MobileMetroRuntime {
         // before `runtime.ts`. That pulls React Native core into the browser
         // graph even though the root package is correctly aliased to RN Web.
         let resolverContext = platform === 'web' ? { ...context, preferNativePlatform: false } : context
-        if (platform !== 'web' && isNativePreviewBuiltIn(requestName, platform)) {
+        if (nativePreviewPackageName(requestName) === '@runwhale/sdk' || (platform !== 'web' && isNativePreviewBuiltIn(requestName, platform))) {
           // ABI packages always come from the shared store. A project's local
           // node_modules cannot replace JavaScript while the native host remains
           // pinned to a different implementation.
@@ -298,6 +300,14 @@ export class MobileMetroRuntime {
       if (!safeEqual(url.searchParams.get('token'), token) && !assetReferrerAuthorized) {
         response.writeHead(401, { 'content-type': 'text/plain', 'cache-control': 'no-store' })
         response.end('Unauthorized')
+        return
+      }
+      if (url.pathname === '/__runwhale/sdk/v1/language') {
+        if (request.method !== 'GET' || (bundle.restricted && bundle.platform === 'web')) {
+          response.writeHead(403).end('Forbidden')
+          return
+        }
+        this.language.read(url.searchParams.get('after'), response)
         return
       }
       if (url.pathname === bundle.requestPath) {

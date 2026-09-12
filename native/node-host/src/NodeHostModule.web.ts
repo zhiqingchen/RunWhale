@@ -13,6 +13,7 @@ const NodeHost = {
   async recoverTransport(): Promise<string | null> { return null },
   async stop(): Promise<NativeNodeSnapshot> { return snapshot },
   snapshot(): NativeNodeSnapshot { return snapshot },
+  setLanguage(_language: string, _closePreviewLabel: string): void {},
   runtimeRoot(): string { return '' },
   readHostInfo(): string | null { return null },
   takeNativePreviewDiagnostic(): string | null { return null },

@@ -75,6 +75,11 @@ public final class NodeHostModule: Module {
     Function("cancelNativePreviewOpen") { (requestId: String) in
       self.nativePreviewLaunchState.cancel(requestId: requestId)
     }
+    Function("setLanguage") { (language: String, closePreviewLabel: String) in
+      guard RunWhaleSetLanguage(language, closePreviewLabel) else {
+        throw NativePreviewException("Unsupported RunWhale language.")
+      }
+    }
     AsyncFunction("openNativePreview") { (bundleUrl: URL, requestId: String, projectId: String, promise: Promise) in
       guard isValidNativePreviewBundleURL(bundleUrl) else {
         promise.reject(nativePreviewFailure(

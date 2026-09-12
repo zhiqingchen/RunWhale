@@ -1,3 +1,4 @@
+import { APP_LANGUAGE_OPTIONS, type AppLanguage } from '@runwhale/mobile-protocol'
 import { renderSlot } from '#extensions'
 import { AppDialog } from '@/components/AppDialog'
 import { AppIcon } from '@/components/AppIcon'
@@ -211,7 +212,7 @@ function GeneralSettings() {
         { key: 'read-only', label: t('readOnly'), description: t(permissionModeDescriptionKeys['read-only']) },
         { key: 'danger-full-access', label: t('fullAccess'), description: t(permissionModeDescriptionKeys['danger-full-access']) },
       ]} onChange={(value) => changePermissionMode(value as MobilePermissionMode)} />
-      <ChoiceRow label={t('language')} value={language} options={[{ key: 'zh-CN', label: t('simplifiedChinese') }, { key: 'en', label: t('english') }]} onChange={(value) => setLanguage(value as 'zh-CN' | 'en')} />
+      <ChoiceRow label={t('language')} value={language} options={APP_LANGUAGE_OPTIONS} onChange={(value) => setLanguage(value as AppLanguage)} />
       <ChoiceRow label={t('appearance')} value={appearance} options={[{ key: 'system', label: t('followSystem') }, { key: 'light', label: t('light') }, { key: 'dark', label: t('dark') }]} onChange={(value) => setAppearance(value as 'system' | 'light' | 'dark')} />
       <ChoiceRow label={t('enterWhileBusy')} value={busyMessageMode} options={[
         { key: 'followup', label: t('followup'), description: t('busyFollowupDescription') },

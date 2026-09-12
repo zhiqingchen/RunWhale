@@ -60,7 +60,7 @@
     { "name": "react-native-webview", "version": "13.16.1", "platforms": ["android", "ios"] },
     { "name": "react-native-worklets", "version": "0.10.1", "platforms": ["android", "ios"] }
   ],
-  "internalModules": ["@babel/runtime", "@expo/dom-webview", "@expo/log-box", "@runwhale/native-preview-shims", "expo-image-loader", "expo-modules-core", "expo-modules-jsi", "metro-runtime"],
+  "internalModules": ["@babel/runtime", "@expo/dom-webview", "@expo/log-box", "@runwhale/native-preview-shims", "@runwhale/sdk", "expo-image-loader", "expo-modules-core", "expo-modules-jsi", "metro-runtime"],
   "blockedModules": [
     "@runwhale/node-host",
     "expo-background-fetch",

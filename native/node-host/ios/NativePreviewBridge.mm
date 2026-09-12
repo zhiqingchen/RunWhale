@@ -1,5 +1,6 @@
 #import "NativePreviewPolicy.h"
 #import "NativePreviewBridge.h"
+#import "RunWhaleSettings.h"
 #import "NativePreviewSurface.h"
 
 #import "RCTDefaultReactNativeFactoryDelegate.h"
@@ -567,6 +568,7 @@ static void RunWhaleInstallNativePreviewFatalReporter(
 }
 
 - (Class)getModuleClassFromName:(const char *)name {
+  if (strcmp(name, "RunWhaleSettings") == 0) return RunWhaleSettings.class;
   return RunWhalePreviewModuleClass(name) ?: [super getModuleClassFromName:name];
 }
 
@@ -621,11 +623,6 @@ static __weak UIView *RunWhaleRegisteredNativePreviewHostView;
 static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewController;
 
 @implementation RunWhaleNativePreviewController
-
-- (BOOL)usesChineseLabels {
-  NSString *language = NSLocale.preferredLanguages.firstObject.lowercaseString;
-  return [language hasPrefix:@"zh"];
-}
 
 - (instancetype)initWithBundleURL:(NSURL *)bundleURL
                   sourceIdentifier:(NSString *)sourceIdentifier
@@ -721,6 +718,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
+  self.previewControl.accessibilityLabel = RunWhaleSettings.closePreviewLabel;
   [self resetPreviewControlPosition];
   [self installRestrictedComponentProvider];
 }
@@ -773,9 +771,8 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
 }
 
 - (void)installMinimizeControl {
-  BOOL chinese = [self usesChineseLabels];
   UIButton *close = [self previewControlWithImage:@"xmark"
-                                              label:chinese ? @"关闭 Preview" : @"Close Preview"
+                                              label:RunWhaleSettings.closePreviewLabel
                                          identifier:@"runwhale-native-preview-back"
                                              action:@selector(minimizePreview)];
   self.previewControl = close;

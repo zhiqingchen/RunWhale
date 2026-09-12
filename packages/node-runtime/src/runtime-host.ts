@@ -146,6 +146,7 @@ export class RunWhaleRuntimeHost {
       'host.continued.end': async ({ id, pause, reason }) => ({ ended: this.endContinuedWork(id, pause, reason === 'transport-lost' ? reason : pause ? 'expired' : 'stopped') }),
       'host.stop': async () => { queueMicrotask(() => { void this.stop() }); return this.snapshot('stopping') },
       'host.snapshot': async ({ afterSequence }) => ({ snapshot: this.snapshot(), events: this.server.eventsAfter(afterSequence ?? 0) }),
+      'host.language.set': async ({ language }) => { this.metro.language.set(language); return { synchronized: true } },
       'host.environment': async () => this.runtimeEnvironment(),
       'credential.set': async ({ provider, value }) => {
         const selected = mobileModelProvider(provider)

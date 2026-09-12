@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "allowJs": true, "checkJs": true, "lib": ["ES2023", "DOM"], "noEmit": true },
+  "include": ["src/**/*.js", "src/**/*.d.ts"],
+  "exclude": ["src/environment.native.js", "src/index.native.js"]
+}

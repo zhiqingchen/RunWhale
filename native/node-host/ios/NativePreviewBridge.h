@@ -6,6 +6,7 @@ NS_ASSUME_NONNULL_BEGIN
 typedef void (^RunWhaleNativePreviewReadyHandler)(void);
 typedef void (^RunWhaleNativePreviewFailureHandler)(NSString *message);
 typedef void (^RunWhaleNativePreviewActionHandler)(NSString *action, NSString *_Nullable message);
+FOUNDATION_EXPORT BOOL RunWhaleSetLanguage(NSString *language, NSString *closePreviewLabel);
 
 FOUNDATION_EXPORT UIViewController *RunWhaleCreateNativePreviewController(
     NSURL *bundleURL,

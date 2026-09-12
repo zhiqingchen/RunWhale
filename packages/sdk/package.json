@@ -1,0 +1,17 @@
+{
+  "name": "@runwhale/sdk",
+  "version": "0.1.1",
+  "description": "React hooks for RunWhale host capabilities",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./src/index.js",
+  "react-native": "./src/index.native.js",
+  "types": "./src/index.d.ts",
+  "exports": { ".": { "types": "./src/index.d.ts", "react-native": "./src/index.native.js", "default": "./src/index.js" } },
+  "files": ["src", "LICENSE", "README.md"],
+  "sideEffects": false,
+  "peerDependencies": { "react": ">=18", "react-native": ">=0.76" },
+  "peerDependenciesMeta": { "react-native": { "optional": true } },
+  "scripts": { "typecheck": "tsc --noEmit", "test": "vitest run" },
+  "devDependencies": { "@types/react": "19.2.18", "react": "19.2.3", "react-test-renderer": "19.2.3", "typescript": "6.0.3", "vitest": "4.1.11" }
+}

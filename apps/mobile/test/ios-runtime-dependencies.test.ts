@@ -21,6 +21,22 @@ async function generatedGuard() {
 }
 
 describe('iOS prebuilt runtime dependencies', () => {
+  it('removes the generated legacy bridge override while preserving the bundle provider', async () => {
+    const config = withIosRuntimeDependencies({ name: 'RunWhale', slug: 'runwhale' })
+    const contents = `class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
+  override func sourceURL(for bridge: RCTBridge) -> URL? {
+    // needed to return the correct URL for expo-dev-client.
+    bridge.bundleURL ?? bundleURL()
+  }
+
+  override func bundleURL() -> URL? { return previewURL }
+}`
+    const result = await config.mods.ios.appDelegate({ ...config, modRequest: {}, modResults: { language: 'swift', contents } })
+    expect(result.modResults.contents).not.toContain('RCTBridge')
+    expect(result.modResults.contents).toContain('override func bundleURL() -> URL? { return previewURL }')
+    const repeated = await config.mods.ios.appDelegate({ ...config, modRequest: {}, modResults: result.modResults })
+    expect(repeated.modResults.contents).toBe(result.modResults.contents)
+  })
   it('includes the guard in the canonical Expo configuration', () => {
     expect(appConfig.expo.plugins).toContain('./plugins/with-ios-runtime-dependencies')
   })

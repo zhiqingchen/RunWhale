@@ -6,6 +6,9 @@ import { RuntimeTransportError } from '../src/utils/runtime-request'
 const native = vi.hoisted(() => ({
   state: 'running',
   appState: 'active',
+  language: 'en',
+  languageReady: true,
+  setLanguage: vi.fn(),
   onAppState: undefined as ((state: string) => void) | undefined,
   onNodeState: undefined as ((snapshot: { state: string }) => void) | undefined,
   startBundled: vi.fn(async () => ({ state: 'running' })),
@@ -25,9 +28,10 @@ vi.mock('react-native', () => ({
   },
 }))
 vi.mock('expo-secure-store', () => ({ getItemAsync: async () => null }))
-vi.mock('../src/i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
+vi.mock('../src/i18n', () => ({ useI18n: () => ({ t: (key: string) => key, language: native.language, languageReady: native.languageReady }) }))
 vi.mock('@runwhale/node-host', () => ({
   NodeHost: {
+    setLanguage: native.setLanguage,
     snapshot: () => ({ state: native.state }),
     startBundled: native.startBundled,
     recoverTransport: native.recoverTransport,
@@ -79,6 +83,8 @@ beforeEach(async () => {
   vi.stubGlobal('WebSocket', EventSocket)
   native.state = 'running'
   native.appState = 'active'
+  native.language = 'en'
+  native.languageReady = true
   native.startBundled.mockClear()
   native.recoverTransport.mockReset().mockResolvedValue(null)
   native.beginContinuedAgentTask.mockReset().mockResolvedValue(null)
@@ -121,6 +127,17 @@ async function loseConnection() {
 }
 
 describe('iOS runtime connection recovery', () => {
+  it('synchronizes the hydrated language before publishing the host and sends later changes', async () => {
+    expect(vi.mocked(fetch).mock.calls.some(([, init]) => {
+      const request = JSON.parse(init!.body as string)
+      return request.method === 'host.language.set' && request.params.language === 'en'
+    })).toBe(true)
+    native.language = 'ja'
+    await act(async () => { tree!.update(<RuntimeProvider><ObserveRuntime /></RuntimeProvider>) })
+    const updates = vi.mocked(fetch).mock.calls.map(([, init]) => JSON.parse(init!.body as string)).filter(request => request.method === 'host.language.set')
+    expect(updates.at(-1).params.language).toBe('ja')
+    expect(native.setLanguage).toHaveBeenLastCalledWith('ja', 'nativePreviewClose')
+  })
   it('waits for foreground activation before sending a session action exactly once', async () => {
     await changeAppState('inactive')
     let settled = false

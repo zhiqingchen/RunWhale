@@ -1,4 +1,4 @@
-const { withPodfile } = require('@expo/config-plugins')
+const { withAppDelegate, withPodfile } = require('@expo/config-plugins')
 
 const guard = `  # Prebuilt React/Expo binaries load ReactNativeDependencies dynamically.
   # A failed artifact probe must not silently substitute static source pods.
@@ -10,12 +10,22 @@ const guard = `  # Prebuilt React/Expo binaries load ReactNativeDependencies dyn
 `
 
 module.exports = function withIosRuntimeDependencies(config) {
-  return withPodfile(config, (project) => {
+  config = withPodfile(config, (project) => {
     const marker = '  post_install do |installer|'
     const contents = project.modResults.contents
     if (!contents.includes(guard)) {
       if (!contents.includes(marker)) throw new Error('iOS Podfile post_install hook is unavailable')
       project.modResults.contents = contents.replace(marker, guard + marker)
+    }
+    return project
+  })
+  return withAppDelegate(config, (project) => {
+    // RN 0.86 prebuilt headers omit RCTBridge. The bridgeless host uses bundleURL().
+    if (project.modResults.language === 'swift') {
+      project.modResults.contents = project.modResults.contents.replace(
+        /  override func sourceURL\(for bridge: RCTBridge\) -> URL\? \{\n    \/\/ needed to return the correct URL for expo-dev-client\.\n    bridge\.bundleURL \?\? bundleURL\(\)\n  \}\n\n/,
+        '',
+      )
     }
     return project
   })
