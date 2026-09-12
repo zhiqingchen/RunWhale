@@ -1,4 +1,5 @@
 import { Context } from '@deepseek-ai/cordis'
+import type { CodeJsonValue } from '@deepseek-ai/dsh-code-runtime'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MobileCodeRuntime } from '../src/code-runtime-mobile.js'
 
@@ -21,6 +22,16 @@ afterEach(async () => {
 })
 
 describe('mobile code runtime without WebAssembly', () => {
+  it('parses JavaScript async bodies without executing project code on the host', async () => {
+    const key = '__runwhale_compile_probe__'
+    const result = await ctx.codeRuntime.run({
+      program: `globalThis.${key} = true; return await workspace.echo({ value: 42 })`,
+      bindings: [{ global: 'workspace', functions: { echo: async (args) => args as CodeJsonValue } }],
+    })
+    expect(result).toEqual({ logs: [], value: { value: 42 } })
+    expect(Object.hasOwn(globalThis, key)).toBe(false)
+  })
+
   it('preserves TypeScript, top-level await and return, logs, and parallel bindings', async () => {
     const calls: number[] = []
     const result = await ctx.codeRuntime.run({
@@ -41,6 +52,19 @@ describe('mobile code runtime without WebAssembly', () => {
     })
     expect(result).toEqual({ logs: ['done 3'], value: { values: [{ n: 1 }, { n: 2 }, { n: 3 }] } })
     expect(calls).toEqual([1, 2, 3])
+  })
+
+  it.each([
+    'return await workspace.echo<number>(42)',
+    'return await workspace.echo < Array<number> > ([42])',
+    'return [...new Map<string, number>([["score", 42]])]',
+  ])('preserves generic expressions that resemble JavaScript comparisons: %s', async (program) => {
+    const result = await ctx.codeRuntime.run({
+      program,
+      bindings: [{ global: 'workspace', functions: { echo: async (args) => args as CodeJsonValue } }],
+    })
+    expect(result.error).toBeUndefined()
+    expect(result.value).toEqual(program.includes('Map') ? [['score', 42]] : program.includes('Array') ? [42] : 42)
   })
 
   it.each([

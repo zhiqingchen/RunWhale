@@ -75,106 +75,108 @@ export class MobileMetroRuntime {
       realpath(resolve(this.moduleStore)),
     ])
     this.activeProjectRoot = root
-    // A deployed pnpm store keeps transitive packages under node_modules/.pnpm.
-    // Metro's file map does not always traverse that hidden virtual store through
-    // symlinks, so watch it explicitly while retaining the post-resolution guard.
-    const linkedInternalModuleRoots = (await Promise.all(
-      [...NATIVE_PREVIEW_INTERNAL_MODULES].map(async (name) => {
-        try {
-          const root = await realpath(join(store, ...name.split('/')))
-          return within(store, root) ? undefined : root
-        } catch {
-          return undefined
-        }
-      }),
-    )).filter((root): root is string => root !== undefined)
-    const moduleRoots = [store, ...this.additionalWatchRoots.map((path) => resolve(path)), ...linkedInternalModuleRoots]
-    const watchRoots = [root, ...moduleRoots]
-    try { watchRoots.push(await realpath(resolve(store, '.pnpm'))) } catch { /* hoisted stores may not expose a virtual store */ }
-    const base: ConfigT = getDefaultConfig(root)
-    this.sourceExtensions = new Set([
-      ...PREVIEW_SOURCE_EXTENSIONS,
-      ...base.resolver.sourceExts.map((value) => `.${value}`),
-      ...base.resolver.assetExts.map((value) => `.${value}`),
-    ])
-    const originalResolve = base.resolver.resolveRequest
-    const unsupportedNativeDependencies = platform === 'web'
-      ? new Set<string>()
-      : await unsupportedProjectNativeDependencies(root, platform)
-    const resolveRequest: NonNullable<typeof base.resolver.resolveRequest> = (context, moduleName, targetPlatform) => {
-      const packageName = nativePreviewPackageName(moduleName)
-      const catalogModule = NATIVE_PREVIEW_MODULES.find((module) => module.name === packageName)
-      // Platform and host-module policy applies to project code. Trusted ABI
-      // packages may import another catalog package's platform-safe fallback
-      // (Expo Router does this with expo-glass-effect on Android).
-      const originatesInStore = moduleRoots.some((moduleRoot) => within(moduleRoot, context.originModulePath))
-      if (platform !== 'web' && !originatesInStore && catalogModule && !catalogModule.platforms.includes(platform)) {
-        throw new Error(`Preview exposes ${packageName} only on ${catalogModule.platforms.join(' and ')}`)
-      }
-      if (platform !== 'web' && !originatesInStore && NATIVE_PREVIEW_BLOCKED_MODULES.has(packageName)) {
-        throw new Error(`Preview does not expose ${packageName}; use a supported v1 built-in module or Web Preview`)
-      }
-      if (platform !== 'web' && !originatesInStore && unsupportedNativeDependencies.has(packageName)) {
-        throw new Error(`Preview cannot load project-native package ${packageName}; host native modules are fixed by the v1 ABI`)
-      }
-      const requestName = nativePreviewRequestName(moduleName, platform)
-      // Metro's native fallback is useful on iOS and Android, but on web it
-      // resolves generic Expo imports such as `./runtime` to `runtime.native`
-      // before `runtime.ts`. That pulls React Native core into the browser
-      // graph even though the root package is correctly aliased to RN Web.
-      let resolverContext = platform === 'web' ? { ...context, preferNativePlatform: false } : context
-      if (platform !== 'web' && isNativePreviewBuiltIn(requestName, platform)) {
-        // ABI packages always come from the shared store. A project's local
-        // node_modules cannot replace JavaScript while the native host remains
-        // pinned to a different implementation.
-        resolverContext = {
-          ...resolverContext,
-          originModulePath: join(store, '__runwhale_native_preview__.js'),
-          nodeModulesPaths: [store],
-          disableHierarchicalLookup: true,
-        }
-      }
-      const resolved = originalResolve
-        ? originalResolve(resolverContext, requestName, targetPlatform)
-        : resolverContext.resolveRequest(resolverContext, requestName, targetPlatform)
-      if (resolved.type === 'sourceFile' && !watchRoots.some((allowed) => within(allowed, resolved.filePath))) {
-        throw new Error(`Metro resolver blocked path outside project/module store: ${resolved.filePath}`)
-      }
-      return resolved
-    }
-    const config = {
-      ...base,
-      // Node Mobile's iOS V8 port can crash while several Metro worker
-      // isolates tear down together. One worker makes Metro transform inline,
-      // preserving Preview behavior without creating WorkerThreads or falling
-      // back to unsupported child processes.
-      maxWorkers: 1,
-      transformerPath: platform === 'web' ? await webTransformerPath(store, base.transformerPath) : base.transformerPath,
-      transformer: platform === 'web' ? base.transformer : {
-        ...base.transformer,
-        assetRegistryPath: 'react-native/Libraries/Image/AssetRegistry',
-        assetPlugins: [...base.transformer.assetPlugins, await nativeAssetPluginPath(store, root, watchRoots)],
-      },
-      watchFolders: watchRoots,
-      resolver: {
-        ...base.resolver,
-        nodeModulesPaths: [store],
-        disableHierarchicalLookup: this.disableHierarchicalLookup,
-        // Embedded Node never ships a Watchman daemon. Selecting Metro's Node
-        // watcher directly avoids a failed Watchman probe on every device boot.
-        useWatchman: false,
-        resolveRequest,
-      },
-      serializer: platform === 'web' ? {
-        ...base.serializer,
-        getModulesRunBeforeMainModule: () => [],
-        getPolyfills: () => [],
-      } : base.serializer,
-    }
     const started = Date.now()
     const entry = await writePreviewEntry(root, platform)
     const key = `${root}\0${platform}`
     if (this.bundler?.key !== key) {
+      // Configuration and generated plugins belong to the retained bundler.
+      // Recreating them on ordinary edits only repeats disk and Expo setup work.
+      // A deployed pnpm store keeps transitive packages under node_modules/.pnpm.
+      // Metro's file map does not always traverse that hidden virtual store through
+      // symlinks, so watch it explicitly while retaining the post-resolution guard.
+      const linkedInternalModuleRoots = (await Promise.all(
+        [...NATIVE_PREVIEW_INTERNAL_MODULES].map(async (name) => {
+          try {
+            const root = await realpath(join(store, ...name.split('/')))
+            return within(store, root) ? undefined : root
+          } catch {
+            return undefined
+          }
+        }),
+      )).filter((root): root is string => root !== undefined)
+      const moduleRoots = [store, ...this.additionalWatchRoots.map((path) => resolve(path)), ...linkedInternalModuleRoots]
+      const watchRoots = [root, ...moduleRoots]
+      try { watchRoots.push(await realpath(resolve(store, '.pnpm'))) } catch { /* hoisted stores may not expose a virtual store */ }
+      const base: ConfigT = getDefaultConfig(root)
+      this.sourceExtensions = new Set([
+        ...PREVIEW_SOURCE_EXTENSIONS,
+        ...base.resolver.sourceExts.map((value) => `.${value}`),
+        ...base.resolver.assetExts.map((value) => `.${value}`),
+      ])
+      const originalResolve = base.resolver.resolveRequest
+      const unsupportedNativeDependencies = platform === 'web'
+        ? new Set<string>()
+        : await unsupportedProjectNativeDependencies(root, platform)
+      const resolveRequest: NonNullable<typeof base.resolver.resolveRequest> = (context, moduleName, targetPlatform) => {
+        const packageName = nativePreviewPackageName(moduleName)
+        const catalogModule = NATIVE_PREVIEW_MODULES.find((module) => module.name === packageName)
+        // Platform and host-module policy applies to project code. Trusted ABI
+        // packages may import another catalog package's platform-safe fallback
+        // (Expo Router does this with expo-glass-effect on Android).
+        const originatesInStore = moduleRoots.some((moduleRoot) => within(moduleRoot, context.originModulePath))
+        if (platform !== 'web' && !originatesInStore && catalogModule && !catalogModule.platforms.includes(platform)) {
+          throw new Error(`Preview exposes ${packageName} only on ${catalogModule.platforms.join(' and ')}`)
+        }
+        if (platform !== 'web' && !originatesInStore && NATIVE_PREVIEW_BLOCKED_MODULES.has(packageName)) {
+          throw new Error(`Preview does not expose ${packageName}; use a supported v1 built-in module or Web Preview`)
+        }
+        if (platform !== 'web' && !originatesInStore && unsupportedNativeDependencies.has(packageName)) {
+          throw new Error(`Preview cannot load project-native package ${packageName}; host native modules are fixed by the v1 ABI`)
+        }
+        const requestName = nativePreviewRequestName(moduleName, platform)
+        // Metro's native fallback is useful on iOS and Android, but on web it
+        // resolves generic Expo imports such as `./runtime` to `runtime.native`
+        // before `runtime.ts`. That pulls React Native core into the browser
+        // graph even though the root package is correctly aliased to RN Web.
+        let resolverContext = platform === 'web' ? { ...context, preferNativePlatform: false } : context
+        if (platform !== 'web' && isNativePreviewBuiltIn(requestName, platform)) {
+          // ABI packages always come from the shared store. A project's local
+          // node_modules cannot replace JavaScript while the native host remains
+          // pinned to a different implementation.
+          resolverContext = {
+            ...resolverContext,
+            originModulePath: join(store, '__runwhale_native_preview__.js'),
+            nodeModulesPaths: [store],
+            disableHierarchicalLookup: true,
+          }
+        }
+        const resolved = originalResolve
+          ? originalResolve(resolverContext, requestName, targetPlatform)
+          : resolverContext.resolveRequest(resolverContext, requestName, targetPlatform)
+        if (resolved.type === 'sourceFile' && !watchRoots.some((allowed) => within(allowed, resolved.filePath))) {
+          throw new Error(`Metro resolver blocked path outside project/module store: ${resolved.filePath}`)
+        }
+        return resolved
+      }
+      const config = {
+        ...base,
+        // Node Mobile's iOS V8 port can crash while several Metro worker
+        // isolates tear down together. One worker makes Metro transform inline,
+        // preserving Preview behavior without creating WorkerThreads or falling
+        // back to unsupported child processes.
+        maxWorkers: 1,
+        transformerPath: platform === 'web' ? await webTransformerPath(store, base.transformerPath) : base.transformerPath,
+        transformer: platform === 'web' ? base.transformer : {
+          ...base.transformer,
+          assetRegistryPath: 'react-native/Libraries/Image/AssetRegistry',
+          assetPlugins: [...base.transformer.assetPlugins, await nativeAssetPluginPath(store, root, watchRoots)],
+        },
+        watchFolders: watchRoots,
+        resolver: {
+          ...base.resolver,
+          nodeModulesPaths: [store],
+          disableHierarchicalLookup: this.disableHierarchicalLookup,
+          // Embedded Node never ships a Watchman daemon. Selecting Metro's Node
+          // watcher directly avoids a failed Watchman probe on every device boot.
+          useWatchman: false,
+          resolveRequest,
+        },
+        serializer: platform === 'web' ? {
+          ...base.serializer,
+          getModulesRunBeforeMainModule: () => [],
+          getPolyfills: () => [],
+        } : base.serializer,
+      }
       await this.bundler?.middleware.end()
       // Preview consumes one immutable bundle and is explicitly rebuilt
       // on every run. Keeping Metro's Node watcher alive there opens one file

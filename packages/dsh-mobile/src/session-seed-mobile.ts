@@ -10,7 +10,7 @@ export function restoreMobileSessionSeed(seed: readonly unknown[]): SessionEvent
     data: Record<string, unknown>
     sourceEventSeqs?: number[]
   }[]
-  const bySequence = new Map(events.map(event => [event.seq, event]))
+  let bySequence: Map<number, typeof events[number]> | undefined
   return events.map(event => {
     if (event.type === 'request/header') {
       const header = event.data.header as Record<string, unknown>
@@ -26,6 +26,8 @@ export function restoreMobileSessionSeed(seed: readonly unknown[]): SessionEvent
     const { sourceEventSeqs, ...rest } = event
     const stream = new AssistantStreamAccumulator()
     for (const seq of sourceEventSeqs ?? []) {
+      // Current logs contain their streams and never need a legacy index.
+      bySequence ??= new Map(events.map(event => [event.seq, event]))
       const source = bySequence.get(seq)
       if (source?.type === 'assistant/chunk') stream.push({ time: source.time, chunk: source.data.chunk as StreamChunk })
     }

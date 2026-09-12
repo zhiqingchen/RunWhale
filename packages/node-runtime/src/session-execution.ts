@@ -79,8 +79,11 @@ export class AgentSessionExecution {
     // Live chunks share the next durable sequence and must not enter checkpoints.
     if (value?.type !== 'assistant/chunk') this.events.push(event)
     this.options.publish(this.taskId, event, this.afterSequence)
+    // Publishing another token does not change the durable transcript. Leave
+    // an existing checkpoint armed, without starting repeated full-log writes.
+    if (value?.type === 'assistant/chunk') return
     if (this.active && value?.type === 'step/end') this.completedSteps += 1
-    if (value?.type !== 'assistant/chunk' && typeof value?.seq === 'number') this.afterSequence = value.seq
+    if (typeof value?.seq === 'number') this.afterSequence = value.seq
     if (!this.timer) this.timer = setTimeout(() => {
       void this.persist(this.active ? 'running' : this.record?.state ?? 'completed').catch((error: unknown) => {
         this.persistenceFailure = error

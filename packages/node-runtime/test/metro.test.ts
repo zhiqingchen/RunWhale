@@ -1,6 +1,6 @@
 import { join, resolve } from 'node:path'
 import { connect } from 'node:net'
-import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 import { describe, expect, it, vi } from 'vitest'
@@ -194,12 +194,18 @@ describe('MobileMetroRuntime', () => {
     }
     try {
       expect((await build()).code).toContain('Original label')
+      const middleware = (metro as any).bundler.middleware
+      const assetPlugin = middleware.metroServer._config.transformer.assetPlugins.at(-1)
+      const pluginModifiedAt = (await stat(assetPlugin, { bigint: true })).mtimeNs
+      expect((await build()).code).toContain('Original label')
       for (let index = 0; index < 3; index += 1) {
         await writeFile(`${label}.tmp`, `module.exports = 'Changed label ${index}'\n`)
         await rename(`${label}.tmp`, label)
         const result = await build()
         expect(result.code).toContain(`Changed label ${index}`)
         expect(result.code).not.toContain('Original label')
+        expect((metro as any).bundler.middleware).toBe(middleware)
+        expect((await stat(assetPlugin, { bigint: true })).mtimeNs).toBe(pluginModifiedAt)
       }
       // A new platform override changes resolution without editing its importer.
       const override = join(project, 'app/label.ios.cjs')
