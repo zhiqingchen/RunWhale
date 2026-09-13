@@ -553,6 +553,52 @@ describe('DSH mobile profile', () => {
     await harness.dispose()
   })
 
+  it('lets the Agent read and edit a project file in one real tool loop', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'runwhale-agent-edit-loop-'))
+    await writeFile(join(root, 'note.txt'), 'original value\n')
+    const version = (await new MobileProjectFileSystem([root]).readText('note.txt')).version
+    let requests = 0
+    const response = (delta: Record<string, unknown>, finishReason: string) => new Response([
+      `data: ${JSON.stringify({ choices: [{ index: 0, delta, finish_reason: null }] })}\n\n`,
+      `data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: finishReason }] })}\n\n`,
+      'data: [DONE]\n\n',
+    ].join(''), { headers: { 'Content-Type': 'text/event-stream' } })
+    const toolReply = (id: string, name: string, args: Record<string, unknown>) => response({
+      tool_calls: [{ index: 0, id, type: 'function', function: { name, arguments: JSON.stringify(args) } }],
+    }, 'tool_calls')
+    vi.stubGlobal('fetch', vi.fn(async (_url: unknown, init: RequestInit) => {
+      requests += 1
+      if (requests === 1) return toolReply('read-note', 'read_file', { path: 'note.txt' })
+      const messages = JSON.stringify(JSON.parse(init.body as string).messages)
+      if (requests === 2) {
+        expect(messages).toContain(version)
+        return toolReply('edit-note', 'edit_file', {
+          path: 'note.txt', oldString: 'original', newString: 'updated', expectedVersion: version,
+        })
+      }
+      expect(messages).toContain('replacements')
+      return response({ content: 'Edited the project file.' }, 'stop')
+    }))
+    const harness = await createMobileHarness({
+      mode: 'deepseek', provider: 'deepseek', model: 'deepseek-v4-flash',
+      secrets: { get: async () => 'fixture', set: async () => {}, delete: async () => {} },
+      modelProfile: { baseURL: 'https://provider.invalid/v1', models: [{ id: 'deepseek-v4-flash' }] },
+      workspaceServices: { permissionModeFor: () => 'danger-full-access' },
+    })
+    try {
+      const result = await harness.run({ sessionId: 'agent-edit-loop', prompt: 'Change original to updated', projectRoot: root })
+      expect(result.failure).toBeUndefined()
+      expect(result.text).toBe('Edited the project file.')
+      expect(result.events.filter(event => event.type === 'tool/call').map(event => event.data.name)).toEqual(['read_file', 'edit_file'])
+      expect(await readFile(join(root, 'note.txt'), 'utf8')).toBe('updated value\n')
+      expect(requests).toBe(3)
+    } finally {
+      await harness.dispose()
+      vi.unstubAllGlobals()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('uses never approvals within app-container roots in Full Access while preserving the OS boundary', async () => {
     const appRoot = await mkdtemp(join(tmpdir(), 'runwhale-full-access-'))
     const projectRoot = join(appRoot, 'projects', 'project')
