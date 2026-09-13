@@ -46,7 +46,7 @@ vi.mock('expo-router', () => {
 vi.mock('@/components/AppIcon', () => ({ AppIcon: 'AppIcon' }))
 vi.mock('@/components/icons', () => ({ ArrowLeft: 'ArrowLeft', ChevronRight: 'ChevronRight', KeyRound: 'KeyRound', ShieldCheck: 'ShieldCheck' }))
 vi.mock('@/components/FirstRunGuide', () => ({ ONBOARDING_STORAGE_KEY: 'runwhale.onboarding.v1' }))
-vi.mock('@/components/OnboardingScene', () => ({ OnboardingScene: 'OnboardingScene' }))
+vi.mock('@/components/OnboardingScene', () => ({ OnboardingScene: 'OnboardingScene', OnboardingSwipeHint: 'OnboardingSwipeHint' }))
 vi.mock('@/screens/settings/ModelSettings', () => ({
   ModelSettings: (props: TestProps) => {
     const [draft, setDraft] = useState('')
@@ -178,7 +178,11 @@ it('opens project creation above Home after completing the guide with a configur
   expect(fixtures.routes).toEqual(['/(tabs)', '/new'])
 })
 
-it('preserves the Home exit when creating a project before adding an API key', async () => {
+it.each([false, true])('returns Home when deferring API key setup and replay is %s', async (replay) => {
+  if (replay) {
+    fixtures.replay = '1'
+    fixtures.routes = ['/(tabs)', '/settings/about', '/onboarding']
+  }
   await mount()
   await settlePage(3)
   await act(async () => {
@@ -186,7 +190,8 @@ it('preserves the Home exit when creating a project before adding an API key', a
   })
   expect(host('onboarding-create').props.isDisabled).toBe(true)
   await press('onboarding-later')
-  expect(fixtures.routes).toEqual(['/(tabs)', '/new'])
+  expect(fixtures.persist).toHaveBeenCalledWith('runwhale.onboarding.v1', 'completed')
+  expect(fixtures.routes).toEqual(['/(tabs)'])
 })
 
 it('keeps completion in the guide until storage succeeds and allows retry after failure', async () => {

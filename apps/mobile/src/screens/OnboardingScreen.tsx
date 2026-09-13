@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { AppIcon } from '@/components/AppIcon'
 import { ArrowLeft, ChevronRight, KeyRound, ShieldCheck } from '@/components/icons'
 import { ONBOARDING_STORAGE_KEY } from '@/components/FirstRunGuide'
-import { OnboardingScene } from '@/components/OnboardingScene'
+import { OnboardingScene, OnboardingSwipeHint } from '@/components/OnboardingScene'
 import type { OnboardingSubscriptionProps } from '@/extension-types'
 import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll'
 import { useI18n } from '@/i18n'
@@ -34,6 +34,7 @@ export function OnboardingScreen() {
   const { width: windowWidth, height } = useWindowDimensions()
   const [width, setWidth] = useState(windowWidth)
   const [page, setPage] = useState(0)
+  const [showSwipeHint, setShowSwipeHint] = useState(true)
   const [keyVisited, setKeyVisited] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const [needsKey, setNeedsKey] = useState(true)
@@ -81,6 +82,7 @@ export function OnboardingScreen() {
   }, [credentialChecked, preferencesReady, modelProvider, replay, runtime.info, runtime.request])
 
   const goTo = useCallback((next: number) => {
+    setShowSwipeHint(false)
     Keyboard.dismiss()
     const target = Math.max(0, Math.min(total - 1, next))
     pager.current?.scrollTo({ x: target * width, animated: true })
@@ -101,7 +103,7 @@ export function OnboardingScreen() {
     scrollX.setValue(page * width)
   }, [width, scrollX])
 
-  const finish = useCallback(async (create: boolean) => {
+  const finish = useCallback(async (action: 'create' | 'skip' | 'later') => {
     if (finishInFlight.current || (isKeyPage && credential.saving)) return
     finishInFlight.current = true
     setFinishing(true)
@@ -109,10 +111,11 @@ export function OnboardingScreen() {
     Keyboard.dismiss()
     try {
       await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, 'completed')
-      if (create) {
+      if (action === 'create') {
         router.dismissTo('/(tabs)')
         router.push('/new')
       }
+      else if (action === 'later') router.dismissTo('/(tabs)')
       else if (replay && router.canGoBack()) router.back()
       else router.replace('/(tabs)')
     } catch {
@@ -127,7 +130,7 @@ export function OnboardingScreen() {
     const back = BackHandler.addEventListener('hardwareBackPress', () => {
       if (busy) return true
       if (page > 0) goTo(page - 1)
-      else void finish(false)
+      else void finish('skip')
       return true
     })
     return () => back.remove()
@@ -138,7 +141,7 @@ export function OnboardingScreen() {
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']} testID="onboarding-screen">
     <View style={styles.header}>
       <View style={styles.brand}><Image source={require('../../assets/images/runwhale-adaptive-foreground.png')} style={styles.logo} /><Text style={styles.brandText}>RunWhale</Text></View>
-      <Button size="sm" variant="ghost" isDisabled={busy} onPress={() => { void finish(false) }} style={styles.skip} testID="onboarding-skip"><Button.Label style={styles.skipText}>{t('onboardingSkip')}</Button.Label></Button>
+      <Button size="sm" variant="ghost" isDisabled={busy} onPress={() => { void finish('skip') }} style={styles.skip} testID="onboarding-skip"><Button.Label style={styles.skipText}>{t('onboardingSkip')}</Button.Label></Button>
     </View>
     <KeyboardAvoidingView style={styles.body} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.body} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
@@ -151,6 +154,7 @@ export function OnboardingScreen() {
           showsHorizontalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           scrollEventThrottle={16}
+          onScrollBeginDrag={() => setShowSwipeHint(false)}
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true })}
           onMomentumScrollEnd={(event) => {
             const next = Math.max(0, Math.min(total - 1, Math.round(event.nativeEvent.contentOffset.x / width)))
@@ -170,7 +174,7 @@ export function OnboardingScreen() {
             return <View key={index} style={{ width }} accessibilityElementsHidden={page !== index} importantForAccessibility={page !== index ? 'no-hide-descendants' : 'auto'}>
               {slide ? <ScrollView contentContainerStyle={styles.slideScroll} showsVerticalScrollIndicator={false}>
                 <Animated.View style={[styles.slide, animated]}>
-                  <View style={[styles.scene, height < 760 && styles.sceneCompact]}><View style={height < 760 ? styles.sceneScaled : undefined}><OnboardingScene page={index} active={page === index} /></View></View>
+                  <View style={[styles.scene, height < 760 && styles.sceneCompact]}><View style={height < 760 ? styles.sceneScaled : styles.sceneExpanded}><OnboardingScene page={index} active={page === index} expanded={height >= 760} /></View></View>
                   <View style={styles.copy}><Text style={styles.eyebrow}>{t(slide.label)}</Text><Text accessibilityRole="header" style={styles.title}>{t(slide.title)}</Text><Text style={styles.description}>{t(slide.body)}</Text></View>
                 </Animated.View>
               </ScrollView> : subscription && index === slides.length ? <ScrollView contentContainerStyle={styles.slideScroll} showsVerticalScrollIndicator={false}>
@@ -189,16 +193,19 @@ export function OnboardingScreen() {
       {!isKeyPage || !keyboardVisible ? <View style={styles.footer}>
         {storageError ? <Text accessibilityRole="alert" style={styles.error}>{t('onboardingStorageError')}</Text> : null}
         <View style={styles.navigation}>
-          <Button isIconOnly variant="ghost" size="sm" accessibilityLabel={t('onboardingBack')} isDisabled={busy || page === 0} onPress={() => goTo(page - 1)} style={[styles.back, page === 0 && styles.invisible]} testID="onboarding-back"><AppIcon icon={ArrowLeft} color={colors.text} size={20} /></Button>
+          <View style={styles.navigationStart}>
+            {page === 0 && showSwipeHint && !last ? <OnboardingSwipeHint /> : null}
+            <Button isIconOnly variant="ghost" size="sm" accessibilityLabel={t('onboardingBack')} isDisabled={busy || page === 0} onPress={() => goTo(page - 1)} style={[styles.back, page === 0 && styles.invisible]} testID="onboarding-back"><AppIcon icon={ArrowLeft} color={colors.text} size={20} /></Button>
+          </View>
           <View style={styles.pagination}>{Array.from({ length: total }, (_, index) => <Pressable key={index} accessibilityRole="button" accessibilityLabel={t('onboardingStep', { current: index + 1, total })} accessibilityState={{ selected: index === page, disabled: busy }} disabled={busy} onPress={() => goTo(index)} style={styles.pageTarget} testID={`onboarding-page-${index}`}><View style={[styles.pageDot, index === page && styles.pageDotActive]} /></Pressable>)}</View>
           <Text style={styles.pageNumber}>{String(page + 1).padStart(2, '0')}<Text style={styles.pageTotal}> / {String(total).padStart(2, '0')}</Text></Text>
         </View>
-        {last ? <Button variant="primary" isDisabled={continueDisabled} onPress={() => { void finish(true) }} style={[styles.next, continueDisabled && styles.nextDisabled]} testID="onboarding-create">
+        {last ? <Button variant="primary" isDisabled={continueDisabled} onPress={() => { void finish('create') }} style={[styles.next, continueDisabled && styles.nextDisabled]} testID="onboarding-create">
           {finishing ? <Spinner color="#FFFFFF" size="sm" /> : null}
           <Button.Label style={styles.nextText}>{t('onboardingCreate')}</Button.Label>
           {!finishing ? <AppIcon icon={ChevronRight} color="#FFFFFF" size={18} /> : null}
-        </Button> : <Text style={styles.swipeHint}>{t('onboardingSwipe')}</Text>}
-        {isKeyPage ? <Button size="sm" variant="ghost" isDisabled={busy} onPress={() => { void finish(true) }} style={styles.later} testID="onboarding-later"><Button.Label style={styles.laterText}>{t('onboardingLater')}</Button.Label></Button> : null}
+        </Button> : null}
+        {isKeyPage ? <Button size="sm" variant="ghost" isDisabled={busy} onPress={() => { void finish('later') }} style={styles.later} testID="onboarding-later"><Button.Label style={styles.laterText}>{t('onboardingLater')}</Button.Label></Button> : null}
       </View> : null}
     </KeyboardAvoidingView>
   </SafeAreaView>
@@ -213,11 +220,12 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   brandText: { color: colors.text, fontSize: 17, fontWeight: '700', letterSpacing: -0.6 },
   skip: { paddingHorizontal: 10, height: 36 },
   skipText: { color: colors.muted, fontSize: 13, fontWeight: '500' },
-  slideScroll: { flexGrow: 1, justifyContent: 'center', paddingBottom: 8 },
-  slide: { width: '100%', maxWidth: 440, paddingHorizontal: 28, alignSelf: 'center', gap: 24 },
+  slideScroll: { flexGrow: 1, justifyContent: 'center', paddingTop: 16, paddingBottom: 20 },
+  slide: { flexGrow: 1, width: '100%', maxWidth: 440, paddingHorizontal: 28, alignSelf: 'center', gap: 24 },
   subscription: { width: '100%', maxWidth: 440, paddingHorizontal: 24, alignSelf: 'center' },
-  scene: { height: 342, justifyContent: 'center' },
-  sceneCompact: { height: 278 },
+  scene: { flex: 1, minHeight: 342, justifyContent: 'center' },
+  sceneCompact: { flex: 0, minHeight: 278, height: 278 },
+  sceneExpanded: { flex: 1 },
   sceneScaled: { transform: [{ scale: 0.84 }] },
   copy: { gap: 13 },
   eyebrow: { color: colors.accent, fontSize: 10, fontWeight: '700', letterSpacing: 2.1 },
@@ -230,17 +238,17 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   keyTitle: { color: colors.text, fontSize: 32, lineHeight: 37, fontWeight: '800', letterSpacing: -1.2 },
   privacy: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingHorizontal: 3 },
   privacyText: { flex: 1, color: colors.muted, fontSize: 11, lineHeight: 17 },
-  footer: { width: '100%', maxWidth: 496, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 12, paddingTop: 8, gap: 10 },
-  navigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 30, marginBottom: 2 },
+  footer: { width: '100%', maxWidth: 496, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 4, paddingTop: 4, gap: 8 },
+  navigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 32 },
+  navigationStart: { width: 60, height: 32, justifyContent: 'center' },
   back: { width: 32, height: 32 },
-  invisible: { opacity: 0 },
+  invisible: { opacity: 0, position: 'absolute' },
   pagination: { flexDirection: 'row', alignItems: 'center' },
   pageTarget: { minWidth: 25, height: 32, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
   pageDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.border },
   pageDotActive: { width: 22, backgroundColor: colors.accent },
-  pageNumber: { color: colors.text, fontSize: 10, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  pageNumber: { width: 60, textAlign: 'right', color: colors.text, fontSize: 10, fontWeight: '600', fontVariant: ['tabular-nums'] },
   pageTotal: { color: colors.muted },
-  swipeHint: { color: colors.muted, fontSize: 11, lineHeight: 20, textAlign: 'center', paddingBottom: 5 },
   next: { height: 54, borderRadius: 17, backgroundColor: colors.accent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, boxShadow: `0px 6px 18px ${colors.accent}26` },
   nextDisabled: { opacity: 0.45 },
   nextText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
