@@ -18,20 +18,15 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
   exit 1
 fi
 
-if [[ ! -d "$IOS_DIR/RunWhale.xcworkspace" ]]; then
+if [[ ! -f "$IOS_DIR/Podfile" ]]; then
   echo "Generate the iOS project first with: pnpm --filter @runwhale/mobile exec expo prebuild" >&2
   exit 1
 fi
 
 expected_node_host_version="$(node -p "require(process.argv[1]).version" "$NODE_HOST_PACKAGE")"
-locked_node_host_version=""
-if [[ -f "$PODFILE_LOCK" ]]; then
-  locked_node_host_version="$(sed -n 's/^  - RunWhaleNodeHost (\([^)]*\)):.*/\1/p' "$PODFILE_LOCK" | head -n 1)"
-fi
-if [[ ! -f "$PODFILE_LOCK" || ! -f "$PODS_MANIFEST" || "$locked_node_host_version" != "$expected_node_host_version" ]] || ! cmp -s "$PODFILE_LOCK" "$PODS_MANIFEST"; then
-  echo "Synchronizing iOS Pods (RunWhaleNodeHost ${locked_node_host_version:-missing} -> $expected_node_host_version)"
-  (cd "$IOS_DIR" && pod install)
-fi
+# Local pod source files can change without a package version or lockfile change.
+echo "Synchronizing iOS Pods and local native source files"
+(cd "$IOS_DIR" && pod install)
 
 locked_node_host_version="$(sed -n 's/^  - RunWhaleNodeHost (\([^)]*\)):.*/\1/p' "$PODFILE_LOCK" 2>/dev/null | head -n 1)"
 if [[ "$locked_node_host_version" != "$expected_node_host_version" ]] || ! cmp -s "$PODFILE_LOCK" "$PODS_MANIFEST"; then

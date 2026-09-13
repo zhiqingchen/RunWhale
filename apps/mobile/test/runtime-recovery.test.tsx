@@ -8,6 +8,7 @@ const native = vi.hoisted(() => ({
   appState: 'active',
   language: 'en',
   languageReady: true,
+  supportsLanguage: true,
   setLanguage: vi.fn(),
   onAppState: undefined as ((state: string) => void) | undefined,
   onNodeState: undefined as ((snapshot: { state: string }) => void) | undefined,
@@ -28,10 +29,11 @@ vi.mock('react-native', () => ({
   },
 }))
 vi.mock('expo-secure-store', () => ({ getItemAsync: async () => null }))
+vi.mock('#extensions', () => ({ beginStudioOperation: () => () => undefined, studioPreviewOpened: () => undefined }))
 vi.mock('../src/i18n', () => ({ useI18n: () => ({ t: (key: string) => key, language: native.language, languageReady: native.languageReady }) }))
 vi.mock('@runwhale/node-host', () => ({
   NodeHost: {
-    setLanguage: native.setLanguage,
+    get setLanguage() { return native.supportsLanguage ? native.setLanguage : undefined },
     snapshot: () => ({ state: native.state }),
     startBundled: native.startBundled,
     recoverTransport: native.recoverTransport,
@@ -85,6 +87,8 @@ beforeEach(async () => {
   native.appState = 'active'
   native.language = 'en'
   native.languageReady = true
+  native.supportsLanguage = true
+  native.setLanguage.mockReset()
   native.startBundled.mockClear()
   native.recoverTransport.mockReset().mockResolvedValue(null)
   native.beginContinuedAgentTask.mockReset().mockResolvedValue(null)
@@ -127,6 +131,78 @@ async function loseConnection() {
 }
 
 describe('iOS runtime connection recovery', () => {
+  it.each(['native', 'rpc'] as const)('reports an outdated %s language interface without retrying a reachable host', async (missing) => {
+    await act(async () => { tree!.unmount() })
+    vi.mocked(fetch).mockClear()
+    native.supportsLanguage = missing !== 'native'
+    const originalFetch = vi.mocked(fetch).getMockImplementation()!
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if (JSON.parse(init!.body as string).method === 'host.language.set') {
+        return { ok: true, json: async () => ({ ok: false, error: { code: 'UNSUPPORTED', message: 'unsupported method: host.language.set' } }) } as Response
+      }
+      return originalFetch(input, init)
+    })
+    await act(async () => { tree = create(<RuntimeProvider><ObserveRuntime /></RuntimeProvider>) })
+    expect(runtime.info).toBeUndefined()
+    expect(runtime.lastError).toBe('The installed runtime is outdated. Update RunWhale or rebuild and reinstall the Debug client.')
+    const requests = vi.mocked(fetch).mock.calls.length
+    if (missing === 'native') expect(requests).toBe(0)
+    else expect(vi.mocked(fetch).mock.calls.filter(([, init]) => JSON.parse(init!.body as string).method === 'host.language.set')).toHaveLength(1)
+    await advance(180_000)
+    expect(vi.mocked(fetch).mock.calls).toHaveLength(requests)
+    expect(runtime.lastError).not.toContain('timed out')
+  })
+
+  it.each(['activation', 'update'] as const)('cancels a suspended language %s before activating the next connection', async (phase) => {
+    const originalFetch = vi.mocked(fetch).getMockImplementation()!
+    const languageSignals: AbortSignal[] = []
+    let languageHangs = true
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if (languageHangs && JSON.parse(init!.body as string).method === 'host.language.set') {
+        languageSignals.push(init!.signal as AbortSignal)
+        return new Promise<Response>(() => undefined)
+      }
+      return originalFetch(input, init)
+    })
+    if (phase === 'activation') {
+      await changeAppState('inactive')
+      await changeAppState('active')
+    } else {
+      native.language = 'ja'
+      await act(async () => { tree!.update(<RuntimeProvider><ObserveRuntime /></RuntimeProvider>) })
+    }
+    expect(languageSignals).toHaveLength(1)
+    await changeAppState('inactive')
+    expect(languageSignals[0]?.aborted).toBe(true)
+    languageHangs = false
+    await changeAppState('active')
+    await advance(100)
+    expect(runtime.info).toBeDefined()
+    expect(runtime.lastError).toBeUndefined()
+    await advance(35_000)
+    expect(runtime.lastError).toBeUndefined()
+  })
+
+  it('includes language synchronization in the reconnect deadline', async () => {
+    const originalFetch = vi.mocked(fetch).getMockImplementation()!
+    const languageSignals: AbortSignal[] = []
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if (JSON.parse(init!.body as string).method === 'host.language.set') {
+        languageSignals.push(init!.signal as AbortSignal)
+        return new Promise<Response>(() => undefined)
+      }
+      return originalFetch(input, init)
+    })
+    let settled = false
+    await act(async () => { void runtime.retryRuntime().then(() => { settled = true }) })
+    expect(languageSignals).toHaveLength(1)
+    await advance(30_000)
+    expect(settled).toBe(true)
+    expect(runtime.info).toBeUndefined()
+    expect(runtime.lastError).toContain('connection timed out')
+    expect(languageSignals[0]?.aborted).toBe(true)
+  })
+
   it('synchronizes the hydrated language before publishing the host and sends later changes', async () => {
     expect(vi.mocked(fetch).mock.calls.some(([, init]) => {
       const request = JSON.parse(init!.body as string)

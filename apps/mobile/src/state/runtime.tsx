@@ -9,7 +9,7 @@ import { projectCloneProgressFromEvent } from '@/utils/clone-progress'
 import { synchronizeRuntimeCredentials } from '@/utils/runtime-credential-sync'
 import { parseRuntimeHostInfo, type RuntimeHostInfo } from '@/utils/runtime-host-info'
 import { nativeRuntimeRecoveryAction, publishRuntimeHost, runtimeBootPollingAction, runtimeConnectionRecoveryAllowed, runtimeHostPublicationReady, runtimeLifecycleAttemptActive } from '@/utils/runtime-startup'
-import { RUNTIME_BOOT_PROBE_TIMEOUT_MS, RUNTIME_BOOT_TIMEOUT_MS, RUNTIME_RECONNECT_TIMEOUT_MS, RUNTIME_CREDENTIAL_READ_TIMEOUT_MS, RUNTIME_REQUEST_TIMEOUT_GRACE_MS, RuntimeTransportError, isRuntimeTransportError, runtimeBootStepTimeoutMs, runtimeRequestTimeoutMs, withClientDeadline } from '@/utils/runtime-request'
+import { RUNTIME_BOOT_PROBE_TIMEOUT_MS, RUNTIME_BOOT_TIMEOUT_MS, RUNTIME_RECONNECT_TIMEOUT_MS, RUNTIME_CREDENTIAL_READ_TIMEOUT_MS, RUNTIME_REQUEST_TIMEOUT_GRACE_MS, RuntimeTransportError, isRuntimeTransportError, runtimeBootStepTimeoutMs, runtimeRequestTimeoutMs, withAbortSignal, withClientDeadline } from '@/utils/runtime-request'
 import { appendLiveTranscriptEvent, compactLiveTranscriptEvents } from '@/utils/live-transcript-events'
 import { NativePreviewLauncher, NativePreviewLaunchCancelled } from '@/utils/native-preview-launch'
 import { beginStudioOperation, studioPreviewOpened } from '#extensions'
@@ -52,11 +52,21 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   const previewCloseLabel = useRef(t('nativePreviewClose'))
   previewCloseLabel.current = t('nativePreviewClose')
   const languageSync = useRef<Promise<unknown>>(Promise.resolve())
-  const syncLanguage = useCallback((host: HostInfo) => {
-    const next = languageSync.current.catch(() => undefined).then(() => {
+  const syncLanguage = useCallback((host: HostInfo, signal: AbortSignal, bootDeadlineAt?: number) => {
+    const previous = languageSync.current
+    const timeoutMs = runtimeBootClientTimeoutMs(bootDeadlineAt, runtimeRequestTimeoutMs('host.language.set') + RUNTIME_REQUEST_TIMEOUT_GRACE_MS)
+      ?? runtimeRequestTimeoutMs('host.language.set') + RUNTIME_REQUEST_TIMEOUT_GRACE_MS
+    const next = withClientDeadline(timeoutMs, async (syncSignal) => {
+      await withAbortSignal(syncSignal, () => previous.catch(() => undefined))
+      requireNativeLanguageSupport()
       NodeHost.setLanguage(languageRef.current, previewCloseLabel.current)
-      return rpc(host, 'host.language.set', { language: languageRef.current })
-    })
+      try {
+        return await rpc(host, 'host.language.set', { language: languageRef.current }, undefined, timeoutMs, syncSignal)
+      } catch (error) {
+        if (error instanceof RuntimeRpcError && error.code === 'UNSUPPORTED') throw new RuntimeCompatibilityError()
+        throw error
+      }
+    }, bootDeadlineAt === undefined ? () => new RuntimeRpcError('runtime RPC host.language.set timed out', 'TIMEOUT') : runtimeBootTimeoutError, signal)
     languageSync.current = next
     return next
   }, [])
@@ -158,6 +168,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
         && runtimeLifecycleAttemptActive(currentAppState, currentActivationRevision, activationRevision)
       let published = false
       try {
+        requireNativeLanguageSupport()
         // host.json survives process restarts. Do not publish its endpoint until
         // the currently running embedded host answers with the matching token.
         await rpc(hostInfo, 'host.snapshot', { afterSequence: 0 }, undefined, runtimeBootClientTimeoutMs(bootDeadlineAt, RUNTIME_BOOT_PROBE_TIMEOUT_MS), signal)
@@ -187,7 +198,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
             if (!runtimeHostPublicationReady(synchronized.snapshot.state, synchronizedNative.state)) {
               throw new Error(`embedded Node host entered ${synchronized.snapshot.state} while native runtime reported ${synchronizedNative.state} during credential synchronization`)
             }
-            await syncLanguage(hostInfo)
+            await syncLanguage(hostInfo, signal, bootDeadlineAt)
             if (!isActivationActive()) return
             setNativePreviewDiagnostic(NodeHost.takeNativePreviewDiagnostic() ?? undefined)
             setLastError(undefined)
@@ -237,7 +248,10 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
         if (native.state === 'running') {
           const published = parseRuntimeHostInfo(NodeHost.readHostInfo())
           if (published && isRequestedHost(published)) {
-            try { if (await activateHost(published, bootDeadlineAt, isBootActive, signal)) return } catch { /* native state can briefly outlive its localhost server */ }
+            try { if (await activateHost(published, bootDeadlineAt, isBootActive, signal)) return } catch (error) {
+              if (error instanceof RuntimeCompatibilityError) throw error
+              // Native state can briefly outlive its localhost server.
+            }
           }
         }
         if (!isBootActive()) return
@@ -258,6 +272,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
             try {
               if (await activateHost(hostInfo, bootDeadlineAt, isBootActive, signal)) return
             } catch (error) {
+              if (error instanceof RuntimeCompatibilityError) throw error
               lastBootError = error
             }
           }
@@ -335,6 +350,10 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
               if (await activateHost(published, recoveryDeadlineAt, isRecoveryActive, signal)) return
               return
             } catch (activationError) {
+              if (activationError instanceof RuntimeCompatibilityError) {
+                setLastError(activationError.message)
+                return
+              }
               recoveryError = activationError
             }
           }
@@ -446,7 +465,12 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   }, [languageReady, syncLanguage, publishHost])
 
   useEffect(() => {
-    if (info && languageReady) void syncLanguage(info).catch((error) => setLastError(error instanceof Error ? error.message : 'Language synchronization failed'))
+    if (!info || !languageReady) return
+    const controller = new AbortController()
+    void syncLanguage(info, controller.signal).catch((error) => {
+      if (!controller.signal.aborted) setLastError(error instanceof Error ? error.message : 'Language synchronization failed')
+    })
+    return () => controller.abort()
   }, [info, language, languageReady, syncLanguage])
 
   const readyHost = useCallback((signal?: AbortSignal) => readyHostRef.current(signal), [])
@@ -693,6 +717,14 @@ async function rpc<M extends MobileHostMethod>(info: HostInfo, method: M, params
 
 function runtimeBootTimeoutError(): Error {
   return new Error('embedded Node runtime connection timed out. Please retry.')
+}
+
+class RuntimeCompatibilityError extends Error {
+  constructor() { super('The installed runtime is outdated. Update RunWhale or rebuild and reinstall the Debug client.') }
+}
+
+function requireNativeLanguageSupport(): void {
+  if (typeof NodeHost.setLanguage !== 'function') throw new RuntimeCompatibilityError()
 }
 
 function runtimeBootClientTimeoutMs(bootDeadlineAt: number | undefined, maximumMs: number): number | undefined {
