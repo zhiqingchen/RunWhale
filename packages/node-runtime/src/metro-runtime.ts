@@ -580,7 +580,10 @@ async function writePreviewEntry(root: string, platform: MetroPlatform): Promise
     ? `${fastRefresh}import { AppRegistry } from 'react-native'\nimport App from '../app/index'\nAppRegistry.registerComponent('main', () => App)\n${platform === 'web' ? `AppRegistry.runApplication('main', { rootTag: document.getElementById('root') })\n` : ''}`
     : `${fastRefresh}import '../${projectEntry.path}'\n`
   await writePreviewSource(resolve(directory, 'preview-testing.js'), platform === 'web' ? webPreviewTestingScript : nativePreviewConsoleSource + nativeAssetSource)
-  await writePreviewSource(path, `import './preview-testing'\n${source}`)
+  // The embedded Metro serializer only pre-runs InitializeCore when it is in
+  // the graph. Native Preview must include it before any project or testing
+  // module can cause the host to forward a log to RCTLog.
+  await writePreviewSource(path, `${platform === 'web' ? '' : "import 'react-native/Libraries/Core/InitializeCore'\n"}import './preview-testing'\n${source}`)
   return path
 }
 

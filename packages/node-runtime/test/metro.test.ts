@@ -119,6 +119,7 @@ describe('MobileMetroRuntime', () => {
       for (const platform of ['ios', 'android'] as const) {
         const result = await metro.bundle(project, platform)
         expectNativePreviewAcceptanceSignals(result.code)
+        expect(result.code).toMatch(/registerModule\.default\)\(['"]RCTLog['"]/)
         expect(result.code).not.toContain("Deep imports from the 'react-native' package are deprecated")
 
         const served = await metro.serve(result)
