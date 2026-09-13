@@ -142,6 +142,7 @@ function AppNavigator() {
         <Stack.Screen name="shortcut/[projectId]" options={{ title: t('addToHomeScreen'), presentation: 'modal', headerLeft: modalHeaderLeft }} />
         <Stack.Screen name="run/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="workspace/[id]/index" options={{ headerShown: false }} />
+        {renderSlot('stack.screens')}
       </Stack>
     </>
 }

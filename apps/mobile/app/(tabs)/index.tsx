@@ -1,4 +1,5 @@
 import type { AppLanguage } from '@runwhale/mobile-protocol'
+import { renderSlot } from '#extensions'
 import { ProjectIcon } from '@/components/ProjectIcon'
 import { ProjectLoadFailure } from '@/components/ProjectLoadFailure'
 import { router, useFocusEffect } from 'expo-router'
@@ -130,6 +131,8 @@ export default function HomeScreen() {
         </View>
 
         <NewProjectButton />
+
+        {renderSlot('home.apps')}
 
         {projectLoadStatus === 'failed' || retryingProjects ? <View style={styles.continueSection}>
           <Text accessibilityRole="header" style={styles.sectionTitle}>{t('continueWorking')}</Text>

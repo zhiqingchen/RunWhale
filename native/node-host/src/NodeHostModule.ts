@@ -20,6 +20,7 @@ export interface NodeLogEvent {
 
 export type NativePreviewActionEvent =
   | { action: 'reload' }
+  | { action: 'close' }
   | { action: 'failure'; message: string }
 
 export interface NodeHostEventMap {

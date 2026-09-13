@@ -945,7 +945,9 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
                               message:@"Preview was minimized before content mounted."];
     return;
   }
-  [self closePreview];
+  [self closePreviewWithCompletion:^{
+    if (self.actionHandler != nil) self.actionHandler(@"close", nil);
+  }];
 }
 
 - (void)closePreview {
