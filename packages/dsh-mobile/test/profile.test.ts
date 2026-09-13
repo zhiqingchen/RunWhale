@@ -4,9 +4,10 @@ import { Context } from '@deepseek-ai/cordis'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import { ToolCallId, LlmAdapter, expandAssistantStream, type GenerateOptions, type StreamChunk } from '@deepseek-ai/dsh-llm'
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { MobileProjectFileSystem } from '@runwhale/mobile-runtime/sandbox'
 
 class MemorySecrets implements NativeSecretStore {
   values = new Map<string, string>()
@@ -100,7 +101,7 @@ describe('DSH mobile profile', () => {
   it('uses the real DSH agent loop with a deterministic replay adapter', async () => {
     const harness = await createMobileHarness({ mode: 'deterministic', secrets: new MemorySecrets(), deterministicReply: 'Completed request.' })
     expect(harness.context.tools.schemas().map((tool) => tool.name)).toEqual(expect.arrayContaining([
-      'read_file', 'read_files', 'write_file', 'write_files', 'list_files', 'typescript_diagnostics',
+      'read_file', 'read_files', 'write_file', 'write_files', 'edit_file', 'list_files', 'typescript_diagnostics',
       'node_task', 'typescript_program', 'package_install', 'preview_run', 'preview_reload', 'preview_stop', 'preview_logs',
       'git_status', 'git_diff', 'git_add', 'git_commit', 'git_log', 'git_branch', 'git_checkout', 'git_remote', 'git_fetch', 'git_pull', 'git_push',
       'get_goal', 'create_goal', 'update_goal', 'todo_write', 'skill', 'exit_plan_mode',
@@ -353,6 +354,8 @@ describe('DSH mobile profile', () => {
 
   it('enforces read-only sessions before project writes', async () => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-permissions-'))
+    await writeFile(join(root, 'editable.txt'), 'original')
+    const version = (await new MobileProjectFileSystem([root]).readText('editable.txt')).version
     const harness = await createMobileHarness({
       mode: 'deterministic',
       secrets: new MemorySecrets(),
@@ -366,7 +369,47 @@ describe('DSH mobile profile', () => {
     const denied = await harness.context.tools.execute({ signal, callId: ToolCallId('readonly-write'), name: 'write_file', arguments: { path: 'blocked.txt', content: 'blocked' }, agent })
     expect(denied.isError).toBe(true)
     expect(JSON.stringify(denied.content)).toContain('read-only')
+    const deniedEdit = await harness.context.tools.execute({ signal, callId: ToolCallId('readonly-edit'), name: 'edit_file', arguments: { path: 'editable.txt', oldString: 'original', newString: 'updated', expectedVersion: version }, agent })
+    expect(deniedEdit.isError).toBe(true)
+    expect(JSON.stringify(deniedEdit.content)).toContain('read-only')
+    expect(await readFile(join(root, 'editable.txt'), 'utf8')).toBe('original')
     await harness.dispose()
+  })
+
+  it('requires approval for focused edits in review mode and reports the applied version', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'runwhale-edit-approval-'))
+    await writeFile(join(root, 'app.ts'), 'first first')
+    const fs = new MobileProjectFileSystem([root])
+    const version = (await fs.readText('app.ts')).version
+    const approvals: string[] = []
+    let allow = false
+    const harness = await createMobileHarness({
+      mode: 'deterministic', secrets: new MemorySecrets(), deterministicReply: 'Ready.',
+      requestApproval: async ({ toolName }) => { approvals.push(toolName); return allow ? 'allowed-once' : 'rejected' },
+      workspaceServices: { permissionModeFor: () => 'review' },
+    })
+    try {
+      await harness.run({ sessionId: 'edit-approval-session', prompt: 'Inspect', seed: [], projectRoot: root })
+      const agent = harness.context.agents.get(SessionId('edit-approval-session'))!
+      const signal = new AbortController().signal
+      const arguments_ = { path: 'app.ts', oldString: 'first', newString: 'second', expectedVersion: version, replaceAll: true }
+      agent.session.append('turn/start', { turn: 2 })
+      const denied = await harness.context.tools.execute({ signal, callId: ToolCallId('denied-edit'), name: 'edit_file', arguments: arguments_, agent })
+      expect(denied.isError).toBe(true)
+      expect(await readFile(join(root, 'app.ts'), 'utf8')).toBe('first first')
+      allow = true
+      const applied = await harness.context.tools.execute({ signal, callId: ToolCallId('allowed-edit'), name: 'edit_file', arguments: arguments_, agent })
+      expect(applied.isError, JSON.stringify(applied.content)).not.toBe(true)
+      expect(JSON.parse((applied.content[0] as { text: string }).text)).toMatchObject({
+        path: 'app.ts', replacements: 2, version: (await fs.readText('app.ts')).version,
+      })
+      expect(await readFile(join(root, 'app.ts'), 'utf8')).toBe('second second')
+      expect(approvals).toEqual(['edit_file', 'edit_file'])
+      agent.session.append('turn/end', { turn: 2, reason: { kind: 'completed' } })
+    } finally {
+      await harness.dispose()
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
   it('uses standard write approval before dependency installs and honors the session permission mode', async () => {
@@ -536,10 +579,19 @@ describe('DSH mobile profile', () => {
     expect(await readFile(appFile, 'utf8')).toBe('allowed')
     expect(approvalRequests).toBe(0)
 
+    const version = (await new MobileProjectFileSystem([appRoot]).readText('full-access.txt')).version
+    const edited = await harness.context.tools.execute({ signal, callId: ToolCallId('full-access-edit'), name: 'edit_file', arguments: { path: appFile, oldString: 'allowed', newString: 'updated', expectedVersion: version }, agent })
+    expect(edited.isError).not.toBe(true)
+    expect(await readFile(appFile, 'utf8')).toBe('updated')
+    expect(approvalRequests).toBe(0)
+
     const outsideFile = join(outsideRoot, 'blocked.txt')
     const denied = await harness.context.tools.execute({ signal, callId: ToolCallId('full-access-outside'), name: 'write_file', arguments: { path: outsideFile, content: 'blocked' }, agent })
     expect(denied.isError).toBe(true)
     expect(JSON.stringify(denied.content)).toMatch(/outside|root|sandbox|escape/i)
+    const deniedEdit = await harness.context.tools.execute({ signal, callId: ToolCallId('full-access-edit-outside'), name: 'edit_file', arguments: { path: outsideFile, oldString: 'blocked', newString: 'updated', expectedVersion: version }, agent })
+    expect(deniedEdit.isError).toBe(true)
+    expect(JSON.stringify(deniedEdit.content)).toMatch(/outside|root|sandbox|escape/i)
     await harness.dispose()
   })
 

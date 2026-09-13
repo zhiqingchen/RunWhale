@@ -419,6 +419,24 @@ export function registerMobileWorkspaceTools(
   }))
 
   ctx.tools.register(defineTool({
+    name: 'edit_file',
+    description: 'Replace a literal text fragment in an existing UTF-8 workspace file. Read the file first and pass its version as expectedVersion; exactly one match is required unless replaceAll is true. Use this for focused edits instead of rewriting the whole file.',
+    parameters: {
+      path: { type: 'string', required: true },
+      oldString: { type: 'string', required: true },
+      newString: { type: 'string', required: true },
+      expectedVersion: { type: 'string', required: true },
+      replaceAll: { type: 'boolean' },
+    },
+    output: { schema: { type: 'json' }, render: renderJson },
+    async execute({ path, oldString, newString, expectedVersion, replaceAll = false }, exec) {
+      await requestWriteApproval(exec.agent, 'edit_file', exec.signal, undefined, exec.callId)
+      const result = await fileSystemFor(exec.agent).editText(path, oldString, newString, expectedVersion, replaceAll, exec.signal)
+      return { path, ...result }
+    },
+  }))
+
+  ctx.tools.register(defineTool({
     name: 'write_files',
     description: 'Atomically write each of up to eight related UTF-8 workspace files in one reviewed operation. Include expectedVersion for existing files. The batch stops at the first failed file.',
     parameters: {

@@ -105,6 +105,10 @@ describe('RunWhaleRuntimeHost', () => {
     expect(hasSuccessfulWorkspaceMutation(events.slice(0, 6))).toBe(false)
     expect(hasSuccessfulWorkspaceMutation(events)).toBe(true)
     expect(hasSuccessfulWorkspaceMutation(events, events.length)).toBe(false)
+    expect(hasSuccessfulWorkspaceMutation([
+      { type: 'tool/call', data: { callId: 'edit', name: 'edit_file' } },
+      { type: 'tool/result', data: { message: { source: { callId: 'edit' }, content: [{ type: 'tool-result', isError: false }] } } },
+    ])).toBe(true)
   })
 
   it('repairs only the legacy interrupted seed-boundary gap', () => {

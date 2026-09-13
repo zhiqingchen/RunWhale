@@ -64,7 +64,7 @@ import { SourceArchives } from './source-archive.js'
 import { emptyProjectFiles, emptyProjectManifest } from './project-manifest.js'
 import { providerCredentialRef, providerHasManagedCredential } from './provider-credential.js'
 
-const WORKSPACE_MUTATION_TOOLS = new Set(['write_file', 'write_files', 'node_task', 'typescript_program', 'generate_image'])
+const WORKSPACE_MUTATION_TOOLS = new Set(['write_file', 'write_files', 'edit_file', 'node_task', 'typescript_program', 'generate_image'])
 
 export interface RuntimeHostOptions {
   root: string
