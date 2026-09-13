@@ -19,6 +19,7 @@ export type { AppAppearance, BusyMessageMode, StoredPreferences } from './prefer
 const STORAGE_KEY = 'runwhale.preferences.v1'
 
 export function PreferencesProvider({ children }: PropsWithChildren) {
+  const [preferencesReady, setPreferencesReady] = useState(false)
   const [preferences, setPreferences] = useState<StoredPreferences>({ busyMessageMode: 'followup', modelProvider: 'deepseek', model: MOBILE_DEFAULT_MODELS.deepseek, modelProfiles: cloneDefaultModelProfiles(), appearance: 'system', agentPreset: 'standard', permissionMode: 'review' })
   const [persistenceError, setPersistenceError] = useState<string>()
   const preferencesRef = useRef(preferences)
@@ -49,7 +50,7 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
         preferencesRef.current = next
         setPreferences(next)
       } catch { /* malformed local preferences fall back to safe defaults */ }
-    })
+    }).finally(() => { if (active) setPreferencesReady(true) })
     return () => { active = false }
   }, [persistence])
   useEffect(() => {
@@ -84,6 +85,6 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
   const setAppearance = useCallback((appearance: AppAppearance) => { update((current) => ({ ...current, appearance })) }, [update])
   const setAgentPreset = useCallback((agentPreset: MobileAgentPreset) => { update((current) => ({ ...current, agentPreset })) }, [update])
   const setPermissionMode = useCallback((permissionMode: MobilePermissionMode) => { update((current) => ({ ...current, permissionMode })) }, [update])
-  const value = useMemo(() => ({ ...displayed, persistenceError, retryPersistence: persistence.retryLatest, setBusyMessageMode, setModelProvider, setModel, setModelProfile, setAppearance, setAgentPreset, setPermissionMode }), [persistence.retryLatest, persistenceError, displayed, setBusyMessageMode, setModelProvider, setModel, setModelProfile, setAppearance, setAgentPreset, setPermissionMode])
+  const value = useMemo(() => ({ ...displayed, preferencesReady, persistenceError, retryPersistence: persistence.retryLatest, setBusyMessageMode, setModelProvider, setModel, setModelProfile, setAppearance, setAgentPreset, setPermissionMode }), [preferencesReady, persistence.retryLatest, persistenceError, displayed, setBusyMessageMode, setModelProvider, setModel, setModelProfile, setAppearance, setAgentPreset, setPermissionMode])
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>
 }

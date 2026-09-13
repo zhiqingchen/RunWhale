@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AppDialog } from '@/components/AppDialog'
 import { AppIcon } from '@/components/AppIcon'
+import { FirstRunGuide } from '@/components/FirstRunGuide'
 import { X } from '@/components/icons'
 import { LocalPersistenceFeedback } from '@/components/LocalPersistenceFeedback'
 import { PendingButton } from '@/components/PendingButton'
@@ -135,8 +136,9 @@ function AppNavigator() {
         headerShadowVisible: false,
       }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="settings/[detail]" options={{ headerShown: false, presentation: 'card' }} />
-        <Stack.Screen name="new" options={{ title: t('newProjectTitle'), presentation: 'modal' }} />
+        <Stack.Screen name="new" options={{ title: t('newProjectTitle'), presentation: 'modal', headerLeft: modalHeaderLeft }} />
         <Stack.Screen name="g/[owner]/[repo]/[sha]" options={{ title: t('githubImportHeaderTitle'), presentation: 'modal', headerLeft: modalHeaderLeft }} />
         <Stack.Screen name="share/[projectId]" options={{ title: t('shareProject'), presentation: 'modal', headerLeft: modalHeaderLeft }} />
         <Stack.Screen name="shortcut/[projectId]" options={{ title: t('addToHomeScreen'), presentation: 'modal', headerLeft: modalHeaderLeft }} />
@@ -144,6 +146,7 @@ function AppNavigator() {
         <Stack.Screen name="workspace/[id]/index" options={{ headerShown: false }} />
         {renderSlot('stack.screens')}
       </Stack>
+      <FirstRunGuide />
     </>
 }
 

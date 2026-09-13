@@ -34,17 +34,32 @@ type CredentialError = 'credentialSaveFailed' | 'credentialActivationFailed' | '
 
 type ModelDraft = { id: string; name: string; contextWindow: string; maxTokens: string; imageGeneration?: boolean; webSearch?: boolean }
 
+export interface ModelCredentialState {
+  configured: boolean
+  busy: boolean
+  saving: boolean
+  hasDraft: boolean
+}
+
+interface ModelSettingsProps {
+  onInputBlur(input: TextInput | null): void
+  onInputFocus(input: TextInput | null): void
+  variant?: 'settings' | 'onboarding'
+  onCredentialStateChange?(state: ModelCredentialState): void
+}
+
 function maskCredential(value: string): string {
   const normalized = value.trim()
   return normalized.length > 12 ? `${normalized.slice(0, 8)}*****${normalized.slice(-4)}` : '*****'
 }
 
-function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: TextInput | null): void; onInputFocus(input: TextInput | null): void }) {
+function ByokModelSettings({ onInputBlur, onInputFocus, variant = 'settings', onCredentialStateChange }: ModelSettingsProps) {
   const [key, setKey] = useState('')
   const [credentialAction, setCredentialAction] = useState<CredentialAction>()
   const [credentialError, setCredentialError] = useState<CredentialError>()
   const [credentialLookup, setCredentialLookup] = useState<{ provider?: MobileModelProvider; state: CredentialLookupState; maskedKey?: string }>({ state: 'loading' })
   const [credentialLookupAttempt, setCredentialLookupAttempt] = useState(0)
+  const [activatedCredentialProvider, setActivatedCredentialProvider] = useState<MobileModelProvider>()
   const [credentialRemovalProvider, setCredentialRemovalProvider] = useState<MobileModelProvider>()
   const [pendingModelProvider, setPendingModelProvider] = useState<MobileModelProvider>()
   const [currentDraftPersisted, updateDraftPersistence] = useReducer(credentialDraftPersistenceReducer, false)
@@ -60,15 +75,19 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
   const keyInputRef = useRef<TextInput>(null)
   const baseURLInputRef = useRef<TextInput>(null)
   const runtime = useRuntime()
+  const request = runtime.request
   const { t } = useI18n()
   const colors = useAppColors()
   const controlColors = settingsControlColorsFor(colors)
   const styles = useSettingsStyles()
   const { fontScale, width: viewportWidth } = useWindowDimensions()
-  const providerColumns = settingsProviderColumnCount(viewportWidth, fontScale)
+  const providerColumns = variant === 'onboarding' && viewportWidth >= 320 && fontScale <= 1.3
+    ? 2
+    : settingsProviderColumnCount(viewportWidth, fontScale)
   const { modelProvider, model, modelProfiles, setModelProvider, setModel, setModelProfile } = usePreferences()
   const modelProfile = modelProfiles[modelProvider]
   const secureStoreAvailable = Platform.OS !== 'web'
+  const verifyCredentialActivation = variant === 'onboarding' || Boolean(onCredentialStateChange)
   const lookupPresentation = credentialLookupPresentation(credentialLookup.provider === modelProvider ? credentialLookup.state : 'loading')
   const credentialMutationReady = lookupPresentation.mutationReady
   const saved = lookupPresentation.saved
@@ -83,6 +102,14 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
   const credentialUnavailableMessage = lookupPresentation.showUnavailable
     ? t('credentialSecureStorageRequired')
     : lookupPresentation.showFailure ? t('credentialLoadFailed') : undefined
+  const credentialConfigured = saved && activatedCredentialProvider === modelProvider && !credentialError && !credentialAction
+  const credentialBusy = lookupPresentation.showLoading || Boolean(credentialAction)
+  const credentialSaving = credentialAction === 'saving'
+  const credentialHasDraft = key.trim().length > 0 && !currentDraftPersisted
+
+  useEffect(() => {
+    onCredentialStateChange?.({ configured: credentialConfigured, busy: credentialBusy, saving: credentialSaving, hasDraft: credentialHasDraft })
+  }, [credentialConfigured, credentialBusy, credentialSaving, credentialHasDraft, onCredentialStateChange])
 
   useEffect(() => {
     setCredentialError(undefined)
@@ -90,21 +117,36 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
     setPendingModelProvider(undefined)
     updateDraftPersistence('context-reset')
     setKey('')
+    setActivatedCredentialProvider(undefined)
     if (!secureStoreAvailable) {
       setCredentialLookup({ provider: modelProvider, state: 'unavailable' })
       return undefined
     }
     let cancelled = false
     let maskedKey: string | undefined
+    let storedValue: string | null = null
     setCredentialLookup({ provider: modelProvider, state: 'loading' })
     void loadCredentialPresence(async () => {
       const value = await SecureStore.getItemAsync(`${modelProvider}.api-key`)
+      storedValue = value
       if (value) maskedKey = maskCredential(value)
       return value
     })
-      .then((state) => { if (!cancelled) setCredentialLookup({ provider: modelProvider, state, ...(maskedKey ? { maskedKey } : {}) }) })
+      .then(async (state) => {
+        if (cancelled) return
+        if (verifyCredentialActivation && state === 'loaded-present' && storedValue) {
+          try {
+            await request('credential.set', { provider: modelProvider, value: storedValue })
+            if (!cancelled) setActivatedCredentialProvider(modelProvider)
+          } catch {
+            if (!cancelled) setCredentialError('credentialActivationFailed')
+          }
+        }
+        storedValue = null
+        if (!cancelled) setCredentialLookup({ provider: modelProvider, state, ...(maskedKey ? { maskedKey } : {}) })
+      })
     return () => { cancelled = true }
-  }, [credentialLookupAttempt, modelProvider, secureStoreAvailable])
+  }, [credentialLookupAttempt, modelProvider, request, secureStoreAvailable, verifyCredentialActivation])
 
   useEffect(() => {
     setBaseURLDraft(modelProfile.baseURL ?? '')
@@ -142,6 +184,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
     credentialActionRef.current = 'saving'
     setCredentialAction('saving')
     setCredentialError(undefined)
+    setActivatedCredentialProvider(undefined)
     updateDraftPersistence('save-started')
     try {
       await saveCredential({
@@ -150,6 +193,8 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
         activate: async (value) => { await runtime.request('credential.set', { provider: modelProvider, value }) },
       })
       setKey('')
+      if (variant === 'onboarding') Keyboard.dismiss()
+      setActivatedCredentialProvider(modelProvider)
       setCredentialLookup({ provider: modelProvider, state: 'loaded-present', maskedKey: maskCredential(key) })
       updateDraftPersistence('save-succeeded')
       setCredentialSaveAnnouncementToken((current) => current + 1)
@@ -179,11 +224,13 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
         remove: async () => SecureStore.deleteItemAsync(`${provider}.api-key`),
       })
       setCredentialLookup({ provider, state: 'loaded-absent' })
+      setActivatedCredentialProvider(undefined)
       updateDraftPersistence('durable-removal-succeeded')
       setCredentialRemovalProvider(undefined)
     } catch (cause) {
       if (cause instanceof CredentialRemovalError && !cause.durableRemovalFailed) {
         setCredentialLookup({ provider, state: 'loaded-absent' })
+        setActivatedCredentialProvider(undefined)
         updateDraftPersistence('durable-removal-succeeded')
         setCredentialError('credentialDeactivationFailed')
         setCredentialRemovalProvider(undefined)
@@ -221,6 +268,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
         const selected = modelProvider === provider
         return <Button
           key={provider}
+          testID={`model-provider-${provider}`}
           size="sm"
           variant={selected ? 'primary' : 'outline'}
           {...settingsChoiceAccessibility(t('provider'), providerName(provider))}
@@ -243,6 +291,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
     </View>
     <TextInput
       ref={keyInputRef}
+      testID="model-api-key-input"
       accessibilityLabel={t('providerApiKey', { provider: providerName(modelProvider) })}
       accessibilityHint={credentialUnavailableMessage}
       accessibilityState={{ disabled: !credentialMutationReady || Boolean(credentialAction) }}
@@ -260,7 +309,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
       autoCapitalize="none"
       autoCorrect={false}
       returnKeyType="done"
-      placeholder={saved ? credentialLookup.maskedKey ?? t('keySaved') : 'sk-…'}
+      placeholder={saved ? variant === 'onboarding' ? t('keySaved') : credentialLookup.maskedKey ?? t('keySaved') : 'sk-…'}
       placeholderTextColor={controlColors.choiceForeground}
       style={styles.textInput}
     />
@@ -293,7 +342,16 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
       <Alert.Indicator iconProps={{ size: 17 }} />
       <Alert.Content><Alert.Description style={styles.feedbackText}>{t(credentialError)}</Alert.Description></Alert.Content>
     </Alert> : null}
+    {verifyCredentialActivation && credentialError === 'credentialActivationFailed' && !key ? <Button
+      testID="model-api-key-activation-retry"
+      size="sm"
+      variant="secondary"
+      accessibilityRole={settingsAccessibilityContract.buttonRole}
+      onPress={retryCredentialLookup}
+      style={[styles.credentialRetryButton, styles.secondaryButton]}
+    ><Button.Label style={styles.secondaryButtonText}>{t('retry')}</Button.Label></Button> : null}
     <PendingButton
+      testID="model-api-key-save"
       variant="primary"
       accessibilityRole={settingsAccessibilityContract.buttonRole}
       accessibilityHint={credentialUnavailableMessage}
@@ -305,7 +363,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
       {isPending ? <Spinner color={controlColors.primaryForeground} size="sm" /> : null}
       <Button.Label style={styles.primaryButtonText}>{t(isPending ? 'saving' : 'saveSecurely')}</Button.Label>
     </>}</PendingButton>
-    {saved ? <Button
+    {variant === 'settings' && saved ? <Button
       variant="danger-soft"
       accessibilityRole={settingsAccessibilityContract.buttonRole}
       accessibilityState={{ disabled: !credentialMutationReady || Boolean(credentialAction) }}
@@ -318,7 +376,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
       }}
       style={styles.dangerButton}
     ><Button.Label style={styles.dangerButtonText}>{t('removeKey')}</Button.Label></Button> : null}
-    <Button
+    {variant === 'settings' ? <Button
       variant="ghost"
       accessibilityRole={settingsAccessibilityContract.buttonRole}
       accessibilityState={{ expanded: customModelSettingsOpen }}
@@ -335,8 +393,8 @@ function ByokModelSettings({ onInputBlur, onInputFocus }: { onInputBlur(input: T
         <Button.Label style={styles.customSettingsDisclosureLabel}>{t('customModelSettings')}</Button.Label>
         <Text style={styles.modelSettingsDescription}>{t('customModelSettingsDescription')}</Text>
       </View>
-    </Button>
-    {customModelSettingsOpen ? <View style={styles.customSettingsBody}>
+    </Button> : null}
+    {variant === 'settings' && customModelSettingsOpen ? <View style={styles.customSettingsBody}>
       <View style={styles.customSettingsToolbar}>
         <Button
           size="sm"
@@ -589,7 +647,7 @@ function validOptionalPositiveInteger(value: string): boolean {
   return Number.isSafeInteger(parsed) && parsed > 0
 }
 
-export function ModelSettings(props: Parameters<typeof ByokModelSettings>[0]) {
+export function ModelSettings(props: ModelSettingsProps) {
   const content = <ByokModelSettings {...props} />
-  return renderSlot('settings.models', { children: content }) ?? content
+  return renderSlot('settings.models', { children: content, variant: props.variant }) ?? content
 }

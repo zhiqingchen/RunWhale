@@ -5,6 +5,7 @@ export type BusyMessageMode = 'followup' | 'steer'
 export type AppAppearance = 'system' | 'light' | 'dark'
 
 interface PreferencesContextValue {
+  preferencesReady: boolean
   persistenceError?: string
   retryPersistence(): Promise<void>
   busyMessageMode: BusyMessageMode

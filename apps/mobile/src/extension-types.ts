@@ -5,6 +5,10 @@ export type PreferenceUpdate = (change: (current: StoredPreferences) => StoredPr
 export type StudioOperation = 'project_create' | 'preview_build'
 export type StudioOperationTarget = 'expo' | 'web' | 'repository' | 'ios' | 'android'
 export type StudioOperationOutcome = 'success' | 'failure' | 'cancelled'
+export interface OnboardingSubscriptionProps {
+  active: boolean
+  onUseApiKey?: () => void
+}
 export interface ModelAccessContext {
   modelProfiles: Readonly<Record<MobileModelProvider, MobileModelProviderProfile>>
   language: string

@@ -158,6 +158,7 @@ function RuntimeSettings() {
 }
 
 function AboutSettings() {
+  const router = useRouter()
   const { t } = useI18n()
   const colors = useAppColors()
   const styles = useSettingsStyles()
@@ -183,6 +184,7 @@ function AboutSettings() {
       <Row label={t('appVersion')} value={Application.nativeApplicationVersion ?? t('appMetadataUnavailable')} />
       <Row label={t('appBuildNumber')} value={Application.nativeBuildVersion ?? t('appMetadataUnavailable')} last />
     </View>
+    <Button variant="secondary" onPress={() => router.push({ pathname: '/onboarding', params: { replay: '1' } })} testID="settings-onboarding-replay"><Button.Label>{t('onboardingReplay')}</Button.Label></Button>
     <Button variant="ghost" accessibilityRole="link" accessibilityLabel={`${t('githubSourceCode')}, ${sourceUrl}`} onPress={() => { void openSource() }} style={styles.sourceLink}>
       <View style={styles.sourceIcon}><FontAwesome name="github" size={28} color={colors.text} /></View>
       <View style={styles.sourceCopy}>
