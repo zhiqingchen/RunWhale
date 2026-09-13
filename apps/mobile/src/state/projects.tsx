@@ -74,18 +74,6 @@ export function LocalProjectProvider({ children }: PropsWithChildren) {
     return setAndPersistProjects(removeProjectFromList(projectsRef.current, projectId))
   }, [setAndPersistProjects])
 
-  const updateFile = useCallback((projectId: string, path: string, content: string) => {
-    updateAndPersistProjects((current) => current.map((project) => project.id === projectId
-      ? { ...project, updatedAt: Date.now(), files: project.files.map((file) => file.path === path ? { ...file, content } : file) }
-      : project))
-  }, [updateAndPersistProjects])
-
-  const replaceFiles = useCallback((projectId: string, files: ProjectFile[]) => {
-    updateAndPersistProjects((current) => current.map((project) => project.id === projectId
-      ? { ...project, updatedAt: Date.now(), files }
-      : project))
-  }, [updateAndPersistProjects])
-
   const touchRecentFile = useCallback((projectId: string, path: string) => {
     updateAndPersistProjects((current) => current.map((project) => project.id === projectId
       ? { ...project, recentFiles: [path, ...(project.recentFiles ?? []).filter((item) => item !== path)].slice(0, 5) }
@@ -93,16 +81,12 @@ export function LocalProjectProvider({ children }: PropsWithChildren) {
   }, [updateAndPersistProjects])
 
   const value = useMemo<ProjectStore>(() => ({
-    drafts: [],
     loadFile: async (projectId, path) => {
       const file = projectsRef.current.find((project) => project.id === projectId)?.files.find((file) => file.path === path)
       if (!file) throw new Error('File is no longer available')
       return file
     },
-    flushFiles: () => persistence.retryLatest(),
     refreshFiles: async () => {},
-    applyDraft: async () => {},
-    discardDraft: async () => {},
     ready: loadStatus === 'ready',
     loadStatus,
     loadError,
@@ -113,10 +97,8 @@ export function LocalProjectProvider({ children }: PropsWithChildren) {
     addProject,
     renameProject,
     removeProject,
-    updateFile,
-    replaceFiles,
     touchRecentFile,
-  }), [addProject, loadError, loadStatus, persistence.retryLatest, persistenceError, projects, removeProject, renameProject, replaceFiles, retryLoad, touchRecentFile, updateFile])
+  }), [addProject, loadError, loadStatus, persistence.retryLatest, persistenceError, projects, removeProject, renameProject, retryLoad, touchRecentFile])
 
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>
 }

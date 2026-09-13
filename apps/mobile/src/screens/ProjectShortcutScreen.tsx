@@ -29,7 +29,7 @@ export default function ProjectShortcutScreen() {
 }
 
 function ShortcutSetup({ projectId }: { projectId: string }) {
-  const { projects, loadStatus, retryLoad, loadFile, flushFiles } = useProjects()
+  const { projects, loadStatus, retryLoad, loadFile } = useProjects()
   const project = projects.find((item) => item.id === projectId)
   const runtime = useRuntime()
   const { t } = useI18n()
@@ -88,7 +88,6 @@ function ShortcutSetup({ projectId }: { projectId: string }) {
 
   const prepareLaunch = async () => {
     if (!project) return
-    await flushFiles(projectId)
     const manifest = await loadFile(projectId, 'runwhale.json')
     const configuration = projectPreviewConfiguration({ ...project, files: [manifest] }, isIOS ? 'ios' : 'android')
     if ('error' in configuration) throw new Error(configuration.error)

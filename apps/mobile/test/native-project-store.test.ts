@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { NativeProjectStore, type NativeProjectFiles } from '../src/state/native-project-store'
 import { nativeProjectStorage } from '../src/state/native-project-storage'
 import { type StudioProject, type ProjectSnapshotStorage } from '../src/state/project-data'
@@ -23,9 +23,8 @@ function fixture(initial: Record<string, Record<string, string>> = { 'project-1'
       return { version: content }
     }),
   }
-  return { storage, runtime, files, store: new NativeProjectStore(storage, runtime), saved: () => JSON.parse(saved!) as { projects: unknown[]; drafts: unknown[] } }
+  return { storage, runtime, files, store: new NativeProjectStore(storage, runtime), saved: () => JSON.parse(saved!) as { projects: unknown[]; drafts?: unknown[] } }
 }
-afterEach(() => vi.useRealTimers())
 
 describe('native project ownership', () => {
   it('synchronizes agent manifest renames on file and terminal refreshes and repairs stale titles on restart', async () => {
@@ -45,18 +44,13 @@ describe('native project ownership', () => {
     expect(restarted.projects[0]?.name).toBe('Final name')
   })
 
-  it('uses saved manifest names without letting unsaved or invalid edits replace the title', async () => {
+  it('keeps the last valid manifest title when the runtime file becomes invalid', async () => {
     const f = fixture({ 'project-1': { 'runwhale.json': JSON.stringify({ name: 'Original' }) } })
     await f.store.load(async () => null)
-    await f.store.loadFile('project-1', 'runwhale.json')
-    f.store.edit('project-1', 'runwhale.json', JSON.stringify({ name: 'Edited name' }))
-    expect(f.store.projects[0]?.name).toBe('Original')
-    await f.store.flush('project-1')
-    expect(f.store.projects[0]?.name).toBe('Edited name')
     for (const content of ['{', 'null', '{}', '{"name":42}', '{"name":" "}']) {
       f.files.get('project-1')!.set('runwhale.json', content)
       await f.store.refresh('project-1', 'runwhale.json')
-      expect(f.store.projects[0]?.name).toBe('Edited name')
+      expect(f.store.projects[0]?.name).toBe('Original')
     }
   })
 
@@ -96,35 +90,23 @@ describe('native project ownership', () => {
     expect(f.runtime.createProject).not.toHaveBeenCalled()
   })
 
-  it('does not discard missing-project drafts or treat runtime failure as an empty project list', async () => {
+  it('does not treat runtime failure as an empty project list', async () => {
     const f = fixture()
-    await f.store.load(async () => JSON.stringify([project()]))
+    await f.store.load(async () => null)
     const before = f.saved()
     vi.mocked(f.runtime.listProjects).mockRejectedValueOnce(new Error('runtime unavailable'))
     await expect(f.store.load(async () => null)).rejects.toThrow('runtime unavailable')
     expect(f.saved()).toEqual(before)
-    f.files.clear()
-    f.runtime.listFiles = vi.fn(async () => { throw new Error('project folder missing') })
-    const restarted = new NativeProjectStore(f.storage, f.runtime)
-    await expect(restarted.load(async () => null)).rejects.toThrow('project folder missing')
-    expect(f.saved()).toEqual(before)
-    expect(restarted.drafts).toMatchObject([{ projectId: 'project-1', content: 'legacy', status: 'recovered' }])
   })
 
-  it('keeps runtime contents active and recovers differing and missing legacy files outside projects', async () => {
+  it('keeps runtime contents active when a legacy snapshot differs', async () => {
     const f = fixture()
     const legacy = JSON.stringify([project('project-1', [{ path: 'index.ts', content: 'legacy' }, { path: 'local.ts', content: 'local only' }])])
     await f.store.load(async () => legacy)
     expect(f.files.get('project-1')?.get('index.ts')).toBe('runtime')
     expect(f.files.get('project-1')?.has('local.ts')).toBe(false)
-    expect(f.store.drafts.map((draft) => [draft.path, draft.status])).toEqual([['index.ts', 'recovered'], ['local.ts', 'recovered']])
     expect(f.saved().projects).toEqual([{ id: 'project-1', name: 'project-1', description: '', updatedAt: 1 }])
-    await expect(f.store.flush('project-1')).resolves.toBeUndefined()
-    await f.store.apply('project-1', 'local.ts')
-    expect(f.files.get('project-1')?.get('local.ts')).toBe('local only')
-    await f.store.discard('project-1', 'index.ts')
     await expect(f.store.loadFile('project-1', 'index.ts')).resolves.toEqual({ path: 'index.ts', content: 'runtime' })
-    await expect(f.store.flush('project-1')).resolves.toBeUndefined()
   })
 
   it('restarts an interrupted local-only restoration without duplicating or overwriting runtime work', async () => {
@@ -140,7 +122,6 @@ describe('native project ownership', () => {
     expect(f.runtime.createProject).toHaveBeenCalledTimes(1)
     expect(f.files.get('legacy-only')?.get('last.ts')).toBe('last')
     expect(f.files.get('legacy-only')?.get('first.ts')).toBe('runtime edit')
-    expect(restarted.drafts).toMatchObject([{ path: 'first.ts', content: 'first', status: 'recovered' }])
   })
 
   it('replaces only the scaffold created while restoring a legacy-only project', async () => {
@@ -149,7 +130,6 @@ describe('native project ownership', () => {
     await f.store.load(async () => JSON.stringify([project('legacy-only')]))
     expect(f.files.get('legacy-only')?.get('index.ts')).toBe('legacy')
     expect(f.runtime.writeFile).toHaveBeenCalledWith('legacy-only', 'index.ts', 'legacy', 'generated scaffold')
-    expect(f.store.drafts).toEqual([])
   })
 
   it('loads file contents only when opened, invalidates them after changes, and never persists clean contents', async () => {
@@ -167,82 +147,20 @@ describe('native project ownership', () => {
     expect(JSON.stringify(f.saved())).not.toContain('agent edit')
   })
 
-  it('serializes a debounced edit and a newer edit during its write before Agent and Preview proceed', async () => {
-    vi.useFakeTimers()
+  it('ignores saved Studio drafts and shows the runtime file after upgrading', async () => {
     const f = fixture()
+    await f.storage.write(JSON.stringify({
+      version: 3, phase: 'ready', restoring: [], projects: [{ id: 'project-1', name: 'project-1', description: '', updatedAt: 1 }],
+      drafts: [{ projectId: 'project-1', path: 'index.ts', content: 'old Studio draft', baseVersion: 'runtime', status: 'pending' }],
+    }))
     await f.store.load(async () => null)
-    await f.store.loadFile('project-1', 'index.ts')
-    const write = f.runtime.writeFile
-    let release!: () => void
-    let started!: () => void
-    const admitted = new Promise<void>((resolve) => { started = resolve })
-    const gate = new Promise<void>((resolve) => { release = resolve })
-    f.runtime.writeFile = vi.fn(async (...args: Parameters<NativeProjectFiles['writeFile']>) => { if (args[2] === 'first') { started(); await gate }; return write(...args) })
-    f.store.edit('project-1', 'index.ts', 'first')
-    await vi.advanceTimersByTimeAsync(299)
+    expect(await f.store.loadFile('project-1', 'index.ts')).toEqual({ path: 'index.ts', content: 'runtime' })
     expect(f.runtime.writeFile).not.toHaveBeenCalled()
-    await vi.advanceTimersByTimeAsync(1)
-    await admitted
-    f.store.edit('project-1', 'index.ts', 'second')
-    let agentStarted = false
-    const agent = f.store.flush('project-1').then(() => { agentStarted = true; f.files.get('project-1')!.set('index.ts', 'agent output') })
-    expect(agentStarted).toBe(false)
-    release()
-    await agent
-    await f.store.refresh('project-1')
-    await f.store.flush('project-1')
-    expect((await f.store.loadFile('project-1', 'index.ts')).content).toBe('agent output')
-    expect(vi.mocked(f.runtime.writeFile).mock.calls.map((call) => call.slice(2))).toEqual([['first', 'runtime'], ['second', 'first']])
-    expect(f.store.drafts).toEqual([])
-  })
-
-  it('retains failed saves across restart without blocking runs using saved files', async () => {
-    const f = fixture()
-    await f.store.load(async () => null)
-    await f.store.loadFile('project-1', 'index.ts')
-    const write = f.runtime.writeFile
-    f.runtime.writeFile = vi.fn(async () => { throw new Error('disk full') })
-    f.store.edit('project-1', 'index.ts', 'unsaved')
-    await expect(f.store.flush('project-1')).resolves.toBeUndefined()
-    expect(f.files.get('project-1')?.get('index.ts')).toBe('runtime')
-    const restarted = new NativeProjectStore(f.storage, f.runtime)
-    await restarted.load(async () => { throw new Error('legacy must not be read after migration') })
-    expect(restarted.drafts).toMatchObject([{ content: 'unsaved', status: 'failed' }])
-    await expect(restarted.flush('project-1')).resolves.toBeUndefined()
-    f.runtime.writeFile = write
-    await restarted.retry()
-    await restarted.flush('project-1')
-    expect(f.files.get('project-1')?.get('index.ts')).toBe('unsaved')
-  })
-
-  it('keeps version conflicts as drafts until explicit apply or discard', async () => {
-    const f = fixture()
-    await f.store.load(async () => null)
-    await f.store.loadFile('project-1', 'index.ts')
-    f.store.edit('project-1', 'index.ts', 'studio edit')
-    f.files.get('project-1')!.set('index.ts', 'external edit')
-    await expect(f.store.flush('project-1')).resolves.toBeUndefined()
-    expect(f.store.drafts[0]?.status).toBe('conflict')
-    expect(f.files.get('project-1')?.get('index.ts')).toBe('external edit')
-    await f.store.apply('project-1', 'index.ts')
-    expect(f.files.get('project-1')?.get('index.ts')).toBe('studio edit')
-    expect(f.store.drafts).toEqual([])
-  })
-
-  it('does not write runtime files if the durable draft checkpoint fails', async () => {
-    const f = fixture()
-    await f.store.load(async () => null)
-    await f.store.loadFile('project-1', 'index.ts')
-    f.storage.write.mockRejectedValue(new Error('storage unavailable'))
-    f.store.edit('project-1', 'index.ts', 'keep me')
-    await expect(f.store.flush('project-1')).resolves.toBeUndefined()
-    expect(f.files.get('project-1')?.get('index.ts')).toBe('runtime')
-    expect(f.runtime.writeFile).not.toHaveBeenCalled()
-    expect(f.store.drafts[0]?.content).toBe('keep me')
+    expect(f.saved().drafts).toBeUndefined()
   })
 })
 
-describe('native draft storage publication', () => {
+describe('native metadata storage publication', () => {
   it('retains the previous verified generation if publishing a new snapshot is interrupted', async () => {
     const values = new Map<string, string>()
     const storage: ProjectSnapshotStorage = {
@@ -256,7 +174,7 @@ describe('native draft storage publication', () => {
     await snapshots.write('previous')
     const original = storage.multiSet
     storage.multiSet = async (entries) => { if (entries.some(([key]) => key === 'runwhale.projects.v3')) throw new Error('interrupted'); await original(entries) }
-    await expect(snapshots.write('new draft'.repeat(50_000))).rejects.toThrow('interrupted')
+    await expect(snapshots.write('new metadata'.repeat(50_000))).rejects.toThrow('interrupted')
     expect(await snapshots.read()).toBe('previous')
     storage.multiSet = original
     await snapshots.write('recovered')

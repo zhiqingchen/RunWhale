@@ -217,7 +217,6 @@ describe('iOS runtime connection recovery', () => {
   it('waits for foreground activation before sending a session action exactly once', async () => {
     await changeAppState('inactive')
     let settled = false
-    runtime.registerFileFlush(async () => undefined)
     const request = runtime.request('agent.resume', { projectId: 'project', sessionId: 'session' }).then(() => { settled = true })
     await advance(500)
     expect(settled).toBe(false)
@@ -232,7 +231,6 @@ describe('iOS runtime connection recovery', () => {
   })
 
   it('rechecks the connection after native background scheduling yields to iOS', async () => {
-    runtime.registerFileFlush(async () => undefined)
     native.beginContinuedAgentTask.mockImplementation(async () => {
       native.appState = 'inactive'
       native.onAppState?.('inactive')
@@ -286,7 +284,6 @@ describe('iOS runtime connection recovery', () => {
   })
 
   it('binds a user submission to its native continued task', async () => {
-    runtime.registerFileFlush(async () => undefined)
     const id = 'app.runwhale.community.agent.ui-test'
     native.beginContinuedAgentTask.mockResolvedValue(id)
     await act(async () => { await runtime.runAgent({ id: 'project', name: 'Project', description: '', updatedAt: 0, files: [] }, { sessionId: 'session', prompt: 'Make the change' }) })
@@ -296,7 +293,6 @@ describe('iOS runtime connection recovery', () => {
   })
 
   it('still submits foreground work when native background scheduling fails', async () => {
-    runtime.registerFileFlush(async () => undefined)
     native.beginContinuedAgentTask.mockRejectedValue(new Error('Background scheduling unavailable'))
     await act(async () => { await runtime.runAgent({ id: 'project', name: 'Project', description: '', updatedAt: 0, files: [] }, { sessionId: 'session', prompt: 'Make the change' }) })
     const requests = vi.mocked(fetch).mock.calls.map(([, init]) => JSON.parse(init!.body as string))
@@ -304,7 +300,6 @@ describe('iOS runtime connection recovery', () => {
   })
 
   it('distinguishes a lost client connection from a provider authentication failure', async () => {
-    runtime.registerFileFlush(async () => undefined)
     vi.mocked(fetch).mockRejectedValueOnce(new Error('fetch failed: UnexpectedException: The network connection was lost. (at ExpoModulesCore/Promise.swift:56)'))
     await expect(runtime.request('agent.run', { projectId: 'project', sessionId: 'session', prompt: 'Test' })).rejects.toBeInstanceOf(RuntimeTransportError)
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => ({ ok: false, error: { code: 'AUTH_FAILED', message: 'Provider rejected the credential.' } }) } as Response)

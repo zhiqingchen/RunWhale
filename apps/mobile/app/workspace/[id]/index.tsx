@@ -8,7 +8,7 @@ import { Button } from 'heroui-native/button'
 import { Spinner } from 'heroui-native/spinner'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { AgentSessionSummary } from '@runwhale/mobile-protocol'
-import CodeEditor from '@/components/CodeEditor'
+import CodeViewer from '@/components/CodeViewer'
 import { AgentPanel } from '@/components/AgentPanel'
 import { PreviewPanel, type PreviewPanelHandle, type PreviewPanelPresentation } from '@/components/PreviewPanel'
 import { localizedSessionState, ProjectSessionNavigation, type ProjectSessionSurface } from '@/components/ProjectSessionNavigation'
@@ -21,7 +21,6 @@ import { createMobileSessionId } from '@/utils/session-id'
 import { firstPromptSessionTitle, loadSessionSummariesOnce, sessionRefreshPresentationStatus, shouldInitializeSessionTitle } from '@/utils/session-actions'
 import { actionErrorPresentation, runExclusiveAction } from '@/utils/action-progress'
 import { workspaceAndroidBackAction, workspaceEditorContentState, workspaceFilePaneVisibility, workspacePreferredFilePath, workspacePreviewAutoOpenRequested, workspaceProjectRouteState, workspaceSupportsEmbeddedPreview, type WorkspaceFilePane, type WorkspacePreviewPresentation } from '@/utils/workspace-layout'
-import { EditorDraftNotice } from '@/components/EditorDraftNotice'
 import { latestAgentLifecycleState } from '@/utils/agent-lifecycle'
 import { returnFromSecondaryPage } from '@/utils/secondary-page-navigation'
 
@@ -29,7 +28,7 @@ type ProjectSessionSummaryStatus = 'loading' | 'failed' | 'ready'
 
 export default function WorkspaceScreen() {
   const { id, sessionId: requestedSessionId, preview, repairPrompt } = useLocalSearchParams<{ id: string; sessionId?: string; preview?: string; repairPrompt?: string }>()
-  const { projects, loadStatus: projectLoadStatus, retryLoad: retryProjectLoad, updateFile, loadFile, refreshFiles, touchRecentFile } = useProjects()
+  const { projects, loadStatus: projectLoadStatus, retryLoad: retryProjectLoad, loadFile, refreshFiles, touchRecentFile } = useProjects()
   const runtime = useRuntime()
   const { t } = useI18n()
   const colors = useAppColors()
@@ -208,16 +207,15 @@ export default function WorkspaceScreen() {
           </Button> : null}
           <Text numberOfLines={1} style={styles.activeFileText}>{filePath || t('noFileSelected')}</Text>
         </View>
-        <EditorDraftNotice projectId={project.id} path={filePath} />
         {filePath && !file ? <View style={styles.editorEmpty}>
           {fileError ? <><Text style={styles.editorEmptyDescription}>{fileError}</Text><Button size="sm" onPress={() => setFileRetry((value) => value + 1)}><Button.Label>{t('retry')}</Button.Label></Button></> : <Spinner color={colors.accent} />}
         </View> : null}
         {editorContentState === 'file' && file
-          ? <CodeEditor value={file.content} path={file.path} onChange={async (value) => updateFile(project.id, file.path, value)} dom={{ scrollEnabled: true, bounces: false, useExpoDOMWebView: true, unstable_useExpoModulesBridge: false, style: styles.codeEditor }} />
-          : !filePath ? <View accessible accessibilityRole="text" accessibilityLabel={`${t('noFileSelected')}. ${projectFilePaths(project).length === 0 ? t('projectHasNoFiles') : t('selectFileToEdit')}`} style={styles.editorEmpty}>
+          ? <CodeViewer value={file.content} path={file.path} dom={{ scrollEnabled: true, bounces: false, useExpoDOMWebView: true, unstable_useExpoModulesBridge: false, style: styles.codeEditor }} />
+          : !filePath ? <View accessible accessibilityRole="text" accessibilityLabel={`${t('noFileSelected')}. ${projectFilePaths(project).length === 0 ? t('projectHasNoFiles') : t('selectFileToView')}`} style={styles.editorEmpty}>
             <AppIcon icon={FileCode2} color={colors.muted} size={24} />
             <Text style={styles.editorEmptyText}>{t('noFileSelected')}</Text>
-            <Text style={styles.editorEmptyDescription}>{projectFilePaths(project).length === 0 ? t('projectHasNoFiles') : t('selectFileToEdit')}</Text>
+            <Text style={styles.editorEmptyDescription}>{projectFilePaths(project).length === 0 ? t('projectHasNoFiles') : t('selectFileToView')}</Text>
           </View> : null}
       </View> : null}
     </View>

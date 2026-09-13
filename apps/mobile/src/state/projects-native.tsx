@@ -10,10 +10,9 @@ export interface NativeProjectProviderProps {
   nativeFiles?: NativeProjectFiles
   runtimeReady?: boolean
   events?: readonly HostEvent[]
-  registerFileFlush?(flush: (projectId: string) => Promise<void>): () => void
 }
 
-export function NativeProjectProvider({ children, nativeFiles, runtimeReady, events = [], registerFileFlush }: PropsWithChildren<NativeProjectProviderProps>) {
+export function NativeProjectProvider({ children, nativeFiles, runtimeReady, events = [] }: PropsWithChildren<NativeProjectProviderProps>) {
   const [, render] = useState(0)
   const [loadStatus, setLoadStatus] = useState<ProjectLoadStatus>('loading')
   const [loadError, setLoadError] = useState<string>()
@@ -40,21 +39,12 @@ export function NativeProjectProvider({ children, nativeFiles, runtimeReady, eve
       addProject: (project) => requireStore().add(project),
       renameProject: (projectId, name) => requireStore().rename(projectId, name),
       removeProject: (projectId) => requireStore().remove(projectId),
-      updateFile: (projectId, path, content) => requireStore().edit(projectId, path, content),
-      replaceFiles: (projectId) => { void requireStore().refresh(projectId).catch(() => undefined) },
       touchRecentFile: (projectId, path) => requireStore().touch(projectId, path),
       loadFile: (projectId, path) => requireStore().loadFile(projectId, path),
-      flushFiles: (projectId) => requireStore().flush(projectId),
       refreshFiles: (projectId) => requireStore().refresh(projectId),
-      applyDraft: (projectId, path) => requireStore().apply(projectId, path),
-      discardDraft: (projectId, path) => requireStore().discard(projectId, path),
-    } satisfies Omit<ProjectStore, 'ready' | 'loadStatus' | 'loadError' | 'persistenceError' | 'projects' | 'drafts'>
+    } satisfies Omit<ProjectStore, 'ready' | 'loadStatus' | 'loadError' | 'persistenceError' | 'projects'>
   }, [runtimeReady, store])
   useEffect(() => { void actions.retryLoad() }, [actions.retryLoad])
-  useEffect(() => registerFileFlush?.(async (projectId) => {
-    if (loadStatus !== 'ready') throw new Error('Project drafts must finish loading before continuing.')
-    await actions.flushFiles(projectId)
-  }), [actions.flushFiles, loadStatus, registerFileFlush])
 
   const [observed, setObserved] = useState(0)
   useEffect(() => {
@@ -74,5 +64,5 @@ export function NativeProjectProvider({ children, nativeFiles, runtimeReady, eve
     for (const [id, path] of changed) void store.refresh(id, path).catch((error: unknown) => setLoadError(String(error)))
   }, [events, loadStatus, observed, store])
 
-  return <ProjectContext.Provider value={{ ...actions, ready: loadStatus === 'ready', loadStatus, loadError, persistenceError: store?.persistenceError, projects: store?.projects ?? [], drafts: store?.drafts ?? [] }}>{children}</ProjectContext.Provider>
+  return <ProjectContext.Provider value={{ ...actions, ready: loadStatus === 'ready', loadStatus, loadError, persistenceError: store?.persistenceError, projects: store?.projects ?? [] }}>{children}</ProjectContext.Provider>
 }

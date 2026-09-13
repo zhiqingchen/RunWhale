@@ -49,7 +49,7 @@ function RuntimeProjectProvider({ children }: PropsWithChildren) {
     readFile: (projectId: string, path: string) => runtime.request('project.read', { projectId, path }),
     writeFile: (projectId: string, path: string, content: string, expectedVersion?: string) => runtime.request('project.write', { projectId, path, content, ...(expectedVersion ? { expectedVersion } : {}) }),
   }), [runtime.request])
-  return <ProjectProvider nativeFiles={nativeFiles} runtimeReady={Boolean(runtime.info)} events={runtime.events} registerFileFlush={runtime.registerFileFlush}>{children}</ProjectProvider>
+  return <ProjectProvider nativeFiles={nativeFiles} runtimeReady={Boolean(runtime.info)} events={runtime.events}>{children}</ProjectProvider>
 }
 
 function RuntimeStartupBoundary({ children }: PropsWithChildren) {

@@ -29,7 +29,6 @@ interface RuntimeContextValue {
   liveTranscriptEvents: HostEvent[]
   retryRuntime(): Promise<void>
   request<M extends MobileHostMethod>(method: M, params: MobileHostRequestMap[M]['params']): Promise<MobileHostRequestMap[M]['result']>
-  registerFileFlush(flush: (projectId: string) => Promise<void>): () => void
   initializeProject(project: StudioProject): Promise<string>
   cloneProject(repositoryUrl: string, name?: string, onProgress?: (progress: ProjectCloneProgress) => void): Promise<StudioProject>
   importGithubSnapshot(reference: GitHubCommitReference, onProgress?: (progress: ProjectCloneProgress) => void): Promise<StudioProject>
@@ -488,22 +487,11 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     await retryBootRef.current()
   }, [publishHost])
 
-  const fileFlush = useRef<(projectId: string) => Promise<void>>(async () => { throw new Error('Project drafts are still loading.') })
-  const registerFileFlush = useCallback((flush: (projectId: string) => Promise<void>) => {
-    fileFlush.current = flush
-    return () => { if (fileFlush.current === flush) fileFlush.current = async () => { throw new Error('Project drafts are unavailable.') } }
-  }, [])
-
   const request = useCallback(async <M extends MobileHostMethod>(method: M, params: MobileHostRequestMap[M]['params']) => {
-    if (['agent.run', 'agent.resume', 'agent.message', 'agent.goal.create', 'agent.goal.edit', 'agent.goal.resume', 'preview.run', 'preview.open'].includes(method)) {
-      const { projectId } = params as { projectId: string }
-      await fileFlush.current(projectId)
-    }
     return rpc(await readyHost(), method, params)
   }, [readyHost])
 
   const activateProject = useCallback(async (projectId: string): Promise<string> => {
-    await fileFlush.current(projectId)
     activeProjectId.current = projectId
     await request('host.start', { projectRoot: projectId })
     return projectId
@@ -623,7 +611,6 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
 
   const openPreview = useCallback(async (projectId: string, platform: 'android' | 'ios' | 'web', requestId: string) => {
     if (cancelledPreviewLaunches.current.has(requestId)) throw new Error('Preview launch cancelled')
-    await fileFlush.current(projectId)
     const hostInfo = infoRef.current
     if (!hostInfo) throw new Error('embedded Node runtime is still starting')
     try {
@@ -686,7 +673,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     if (hostInfo) void cancelRpc(hostInfo, requestId, 'Preview route changed').catch(() => undefined)
   }, [nativePreviewLauncher])
 
-  const value = useMemo<RuntimeContextValue>(() => ({ snapshot, info, lastError, credentialSyncWarning, dismissCredentialSyncWarning, nativePreviewDiagnostic, events, liveTranscriptEvents, retryRuntime, request, registerFileFlush, initializeProject, cloneProject, importGithubSnapshot, deleteProject, runAgent, cancelAgent, openPreview, runPreview, openNativePreview, cancelPreviewLaunch }), [snapshot, info, lastError, credentialSyncWarning, dismissCredentialSyncWarning, nativePreviewDiagnostic, events, liveTranscriptEvents, retryRuntime, request, registerFileFlush, initializeProject, cloneProject, importGithubSnapshot, deleteProject, runAgent, cancelAgent, openPreview, runPreview, openNativePreview, cancelPreviewLaunch])
+  const value = useMemo<RuntimeContextValue>(() => ({ snapshot, info, lastError, credentialSyncWarning, dismissCredentialSyncWarning, nativePreviewDiagnostic, events, liveTranscriptEvents, retryRuntime, request, initializeProject, cloneProject, importGithubSnapshot, deleteProject, runAgent, cancelAgent, openPreview, runPreview, openNativePreview, cancelPreviewLaunch }), [snapshot, info, lastError, credentialSyncWarning, dismissCredentialSyncWarning, nativePreviewDiagnostic, events, liveTranscriptEvents, retryRuntime, request, initializeProject, cloneProject, importGithubSnapshot, deleteProject, runAgent, cancelAgent, openPreview, runPreview, openNativePreview, cancelPreviewLaunch])
   return <RuntimeContext.Provider value={value}>{children}</RuntimeContext.Provider>
 }
 

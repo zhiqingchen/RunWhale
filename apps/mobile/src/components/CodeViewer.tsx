@@ -7,31 +7,25 @@ import { json } from '@codemirror/lang-json'
 import { markdown } from '@codemirror/lang-markdown'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { Compartment, EditorState, type Extension } from '@codemirror/state'
-import { EditorView, keymap, lineNumbers } from '@codemirror/view'
-import { defaultKeymap } from '@codemirror/commands'
+import { EditorView, lineNumbers } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 import { useEffect, useRef } from 'react'
 
-interface CodeEditorProps {
+interface CodeViewerProps {
   value: string
   path: string
-  onChange(value: string): Promise<void>
   dom?: import('expo/dom').DOMProps
 }
 
-export default function CodeEditor({ value, path, onChange }: CodeEditorProps) {
+export default function CodeViewer({ value, path }: CodeViewerProps) {
   const host = useRef<HTMLDivElement>(null)
   const editor = useRef<EditorView | null>(null)
-  const applyingExternalValue = useRef(false)
-  const latest = useRef(onChange)
   const initialDocument = useRef({ path, value })
   const configuredPath = useRef(path)
   const compartments = useRef({
     language: new Compartment(),
     label: new Compartment(),
   })
-  latest.current = onChange
-
   useEffect(() => {
     if (!host.current) return
     const initial = initialDocument.current
@@ -56,13 +50,11 @@ export default function CodeEditor({ value, path, onChange }: CodeEditorProps) {
         doc: initial.value,
         extensions: [
           lineNumbers(),
-          keymap.of(defaultKeymap),
+          EditorState.readOnly.of(true),
+          EditorView.editable.of(false),
           language.of(languageForPath(initial.path)),
           label.of(EditorView.contentAttributes.of({ 'aria-label': initial.path })),
           theme.of(editorAppearance(media.matches)),
-          EditorView.updateListener.of((update) => {
-            if (update.docChanged && !applyingExternalValue.current) void latest.current(update.state.doc.toString())
-          }),
         ],
       }),
     })
@@ -83,19 +75,14 @@ export default function CodeEditor({ value, path, onChange }: CodeEditorProps) {
     const { language, label } = compartments.current
     const pathChanged = configuredPath.current !== path
     if (currentValue === value && !pathChanged) return
-    applyingExternalValue.current = true
-    try {
-      view.dispatch({
-        ...(currentValue === value ? {} : { changes: { from: 0, to: currentValue.length, insert: value } }),
-        ...(pathChanged ? { effects: [
-          language.reconfigure(languageForPath(path)),
-          label.reconfigure(EditorView.contentAttributes.of({ 'aria-label': path })),
-        ] } : {}),
-      })
-      configuredPath.current = path
-    } finally {
-      applyingExternalValue.current = false
-    }
+    view.dispatch({
+      ...(currentValue === value ? {} : { changes: { from: 0, to: currentValue.length, insert: value } }),
+      ...(pathChanged ? { effects: [
+        language.reconfigure(languageForPath(path)),
+        label.reconfigure(EditorView.contentAttributes.of({ 'aria-label': path })),
+      ] } : {}),
+    })
+    configuredPath.current = path
   }, [path, value])
 
   return <div ref={host} style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0, overflow: 'hidden', background: '#0D131E' }} />

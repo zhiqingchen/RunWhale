@@ -163,7 +163,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
   onFixWithAgent(prompt: string): void
 }>(function PreviewPanel({ project, sessionId, autoOpen = false, agentRunning = false, onBusyChange, presentation = 'overlay', onPresentationRequested, onFixWithAgent }, ref) {
   const runtime = useRuntime()
-  const { loadFile, flushFiles } = useProjects()
+  const { loadFile } = useProjects()
   const { t } = useI18n()
   const { agentLabel, setAgentControl } = usePreviewAgentControl(project.id, sessionId, agentRunning, t('previewAgentOperating'))
   const colors = useAppColors()
@@ -279,7 +279,6 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
     let bundleUrl: string | undefined
     let bundlePublished = false
     try {
-      await flushFiles(project.id)
       const manifest = await loadFile(project.id, 'runwhale.json')
       const configuration = projectPreviewConfiguration({ ...project, files: [manifest] }, runtimePlatform)
       if ('error' in configuration) throw new Error(configuration.error)
@@ -319,7 +318,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
       if (pendingLaunchRequest.current === requestId) pendingLaunchRequest.current = undefined
       if (isCurrent()) operationInFlight.current = false
     }
-  }, [active, fail, flushFiles, loadFile, runtimePlatform, onPresentationRequested, presentation, project, runtime.openNativePreview, runtime.openPreview, runtime.runPreview, sessionId, setAgentControl])
+  }, [active, fail, loadFile, runtimePlatform, onPresentationRequested, presentation, project, runtime.openNativePreview, runtime.openPreview, runtime.runPreview, sessionId, setAgentControl])
 
   const run = useCallback(() => launch('run'), [launch])
   const openCachedOrRun = useCallback(() => launch('open'), [launch])

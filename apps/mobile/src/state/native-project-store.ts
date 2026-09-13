@@ -2,21 +2,12 @@ import { validatedProjectName, type ProjectImage } from '@runwhale/mobile-protoc
 import { deserializeProjects, validateStoredProjects, type ProjectFile, type StudioProject } from './project-data'
 
 export type ProjectMetadata = Omit<StudioProject, 'files' | 'filePaths' | 'icon'>
-export interface EditorDraft {
-  projectId: string
-  path: string
-  content: string
-  baseVersion?: string
-  status: 'pending' | 'recovered' | 'failed' | 'conflict'
-  error?: string
-}
 interface SavedProjects {
   version: 3
   phase: 'migrating' | 'ready'
   restoring: string[]
   restoreVersions?: Record<string, Record<string, string>>
   projects: ProjectMetadata[]
-  drafts: EditorDraft[]
 }
 export interface NativeProjectFiles {
   readProjectIcon?(projectId: string): Promise<{ icon?: ProjectImage }>
@@ -34,34 +25,30 @@ const keyOf = (projectId: string, path: string) => JSON.stringify([projectId, pa
 const messageOf = (cause: unknown) => cause instanceof Error ? cause.message : String(cause)
 const metadata = ({ files: _files, filePaths: _paths, icon: _icon, ...project }: StudioProject): ProjectMetadata => project
 
-/** Runtime files are authoritative. Only metadata and unresolved edits survive a Studio restart. */
+/** Runtime files are authoritative. Studio only persists project metadata. */
 export class NativeProjectStore {
   projects: StudioProject[] = []
-  drafts: EditorDraft[] = []
   persistenceError: string | undefined
-  private saved: SavedProjects = { version: 3, phase: 'migrating', restoring: [], projects: [], drafts: [] }
+  private saved: SavedProjects = { version: 3, phase: 'migrating', restoring: [], projects: [] }
   private readonly contents = new Map<string, { content: string; version: string }>()
   private readonly reads = new Map<string, Promise<ProjectFile>>()
   private readonly epochs = new Map<string, number>()
   private loaded = false
   private loading: Promise<void> | undefined
   private persistence = Promise.resolve()
-  private writes = Promise.resolve()
-  private timer: ReturnType<typeof setTimeout> | undefined
 
   constructor(private readonly storage: Storage, private readonly runtime: NativeProjectFiles, private readonly changed: () => void = () => {}) {}
 
   private publish(): void {
     this.projects = this.projects.map((project) => ({ ...project, files: (project.filePaths ?? []).flatMap((path) => {
-      const draft = this.drafts.find((item) => item.projectId === project.id && item.path === path)
       const cached = this.contents.get(keyOf(project.id, path))
-      return draft || cached ? [{ path, content: draft?.content ?? cached!.content }] : []
+      return cached ? [{ path, content: cached.content }] : []
     }) }))
     this.changed()
   }
 
   private persist(): Promise<void> {
-    this.saved = { ...this.saved, projects: this.projects.map(metadata), drafts: this.drafts }
+    this.saved = { ...this.saved, projects: this.projects.map(metadata) }
     const snapshot = JSON.stringify(this.saved)
     const operation = this.persistence.catch(() => undefined).then(() => this.storage.write(snapshot))
     this.persistence = operation
@@ -89,28 +76,23 @@ export class NativeProjectStore {
     if (raw) {
       const saved = JSON.parse(raw) as SavedProjects
       if (saved.version !== 3 || !['ready', 'migrating'].includes(saved.phase) || !Array.isArray(saved.restoring)
-        || !Array.isArray(saved.projects) || !Array.isArray(saved.drafts)
-        || !saved.drafts.every((draft) => typeof draft.projectId === 'string' && typeof draft.path === 'string' && typeof draft.content === 'string'
-          && ['pending', 'recovered', 'failed', 'conflict'].includes(draft.status))) throw new Error('Saved project metadata or drafts are invalid.')
+        || !Array.isArray(saved.projects)) throw new Error('Saved project metadata is invalid.')
       validateStoredProjects(saved.projects.map((project) => ({ ...project, files: [] })))
-      this.saved = saved
+      const { version, phase, restoring, restoreVersions, projects } = saved
+      this.saved = { version, phase, restoring, restoreVersions, projects }
     }
     this.projects = this.saved.projects.map((project) => ({ ...project, files: [], filePaths: [] }))
-    this.drafts = this.saved.drafts
     if (this.saved.phase === 'migrating') await this.migrate(readLegacy)
     await this.refreshProjects()
     this.loaded = true
     this.publish()
-    void this.flushPending().catch(() => undefined)
   }
 
   private async refreshProjects(): Promise<void> {
     const summaries = await this.runtime.listProjects()
     const existing = new Set(summaries.map((project) => project.id))
-    const draftProjects = new Set(this.drafts.map((draft) => draft.projectId))
     // A deleted runtime folder must not survive as a stale Studio shortcut.
-    // Retain entries with unresolved edits so recovery data is not discarded.
-    this.projects = this.projects.filter((project) => existing.has(project.id) || draftProjects.has(project.id))
+    this.projects = this.projects.filter((project) => existing.has(project.id))
     for (const summary of summaries) {
       if (!this.projects.some((project) => project.id === summary.id)) this.projects.push({ ...summary, description: '', files: [], filePaths: [] })
     }
@@ -158,9 +140,6 @@ export class NativeProjectStore {
             await this.runtime.writeFile(project.id, file.path, file.content, active.version)
             continue
           }
-          if (active?.content !== file.content && !this.drafts.some((draft) => draft.projectId === project.id && draft.path === file.path)) {
-            this.drafts.push({ projectId: project.id, ...file, ...(active ? { baseVersion: active.version } : {}), status: 'recovered' })
-          }
         }
       }
     }
@@ -183,12 +162,9 @@ export class NativeProjectStore {
   }
 
   async remove(projectId: string): Promise<void> {
-    if (this.timer) clearTimeout(this.timer)
-    await this.writes
     for (const path of this.projects.find((project) => project.id === projectId)?.filePaths ?? []) this.contents.delete(keyOf(projectId, path))
     this.epochs.set(projectId, (this.epochs.get(projectId) ?? 0) + 1)
     this.projects = this.projects.filter((project) => project.id !== projectId)
-    this.drafts = this.drafts.filter((draft) => draft.projectId !== projectId)
     await this.persist()
     this.publish()
   }
@@ -225,16 +201,13 @@ export class NativeProjectStore {
       ? await this.runtime.readFile(projectId, 'runwhale.json') : undefined
     if (this.epochs.get(projectId) !== epoch) return
     const renamed = manifest ? this.updateManifestName(projectId, manifest.content) : false
-    const pending = this.drafts.filter((draft) => draft.projectId === projectId).map((draft) => draft.path)
-    this.projects = this.projects.map((item) => item.id === projectId ? { ...item, icon: appearance?.icon, filePaths: [...new Set([...paths, ...pending])].sort() } : item)
+    this.projects = this.projects.map((item) => item.id === projectId ? { ...item, icon: appearance?.icon, filePaths: [...paths].sort() } : item)
     this.publish()
     if (renamed) await this.persist()
   }
 
   async loadFile(projectId: string, path: string): Promise<ProjectFile> {
     const key = keyOf(projectId, path)
-    const draft = this.drafts.find((item) => item.projectId === projectId && item.path === path)
-    if (draft) return { path, content: draft.content }
     const cached = this.contents.get(key)
     if (cached) return { path, content: cached.content }
     const reading = this.reads.get(key)
@@ -253,88 +226,7 @@ export class NativeProjectStore {
     return request
   }
 
-  edit(projectId: string, path: string, content: string): void {
-    const previous = this.drafts.find((draft) => draft.projectId === projectId && draft.path === path)
-    const cached = this.contents.get(keyOf(projectId, path))
-    if (!previous && !cached) throw new Error('Open the file before editing it.')
-    this.projects = this.projects.map((project) => project.id === projectId ? { ...project, updatedAt: Date.now() } : project)
-    const draft: EditorDraft = { projectId, path, content, baseVersion: previous?.baseVersion ?? cached?.version, status: previous?.status === 'recovered' || previous?.status === 'conflict' ? previous.status : 'pending' }
-    this.drafts = [...this.drafts.filter((item) => item !== previous), draft]
-    this.publish()
-    // Persist the draft immediately; only runtime writes are debounced.
-    void this.persist().catch(() => undefined)
-    if (this.timer) clearTimeout(this.timer)
-    this.timer = setTimeout(() => {
-      this.timer = undefined
-      void this.flushPending().catch(() => undefined)
-    }, 300)
-  }
-
-  private async save(draft: EditorDraft): Promise<void> {
-    try {
-      const result = await this.runtime.writeFile(draft.projectId, draft.path, draft.content, draft.baseVersion)
-      if (draft.path === 'runwhale.json') this.updateManifestName(draft.projectId, draft.content)
-      this.contents.set(keyOf(draft.projectId, draft.path), { content: draft.content, version: result.version })
-      this.drafts = this.drafts.flatMap((current) => {
-        if (current.projectId !== draft.projectId || current.path !== draft.path) return [current]
-        return current === draft ? [] : [{ ...current, baseVersion: result.version }]
-      })
-      await this.persist()
-    } catch (error) {
-      // A failed metadata checkpoint must retain a recoverable copy too.
-      const status = (error as { code?: string }).code === 'CONFLICT' ? 'conflict' : 'failed'
-      const current = this.drafts.find((item) => item.projectId === draft.projectId && item.path === draft.path) ?? draft
-      this.drafts = [...this.drafts.filter((item) => item.projectId !== draft.projectId || item.path !== draft.path), { ...current, status, error: messageOf(error) }]
-      await this.persist().catch(() => undefined)
-      throw error
-    } finally { this.publish() }
-  }
-
-  private flushPending(projectId?: string): Promise<void> {
-    const operation = this.writes.catch(() => undefined).then(async () => {
-      await this.persistence
-      for (;;) {
-        const draft = this.drafts.find((item) => (!projectId || item.projectId === projectId) && item.status === 'pending')
-        if (!draft) break
-        await this.save(draft)
-      }
-    })
-    this.writes = operation.catch(() => undefined)
-    return operation
-  }
-
-  async flush(projectId: string): Promise<void> {
-    if (this.timer) clearTimeout(this.timer)
-    this.timer = undefined
-    // Runs use runtime files. Keep unsaved edits available in Files without
-    // requiring draft recovery before Agent or Preview can continue.
-    await this.flushPending(projectId).catch(() => undefined)
-  }
-
-  async apply(projectId: string, path: string): Promise<void> {
-    await this.writes
-    const draft = this.drafts.find((item) => item.projectId === projectId && item.path === path)
-    if (!draft) return
-    const paths = await this.runtime.listFiles(projectId)
-    const active = paths.includes(path) ? await this.runtime.readFile(projectId, path) : undefined
-    const next: EditorDraft = { ...draft, baseVersion: active?.version, status: 'pending' }
-    this.drafts = this.drafts.map((item) => item === draft ? next : item)
-    await this.persist()
-    await this.flushPending(projectId)
-  }
-
-  async discard(projectId: string, path: string): Promise<void> {
-    await this.writes
-    const previous = this.drafts
-    this.drafts = this.drafts.filter((draft) => draft.projectId !== projectId || draft.path !== path)
-    try { await this.persist() } catch (error) { this.drafts = previous; throw error }
-    await this.refresh(projectId, path)
-  }
-
   async retry(): Promise<void> {
     await this.persist()
-    this.drafts = this.drafts.map((draft) => draft.status === 'failed' ? { ...draft, status: 'pending', error: undefined } : draft)
-    await this.persist()
-    await this.flushPending()
   }
 }

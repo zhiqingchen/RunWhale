@@ -13,7 +13,7 @@ export function nativeProjectStorage(storage: ProjectSnapshotStorage) {
       const chunks = new Map(await storage.multiGet(keys))
       return keys.map((key) => {
         const chunk = chunks.get(key)
-        if (typeof chunk !== 'string') throw new Error('Saved project drafts are incomplete.')
+        if (typeof chunk !== 'string') throw new Error('Saved project metadata is incomplete.')
         return chunk
       }).join('')
     },
@@ -29,7 +29,7 @@ export function nativeProjectStorage(storage: ProjectSnapshotStorage) {
       }
       await storage.multiSet(entries)
       const verified = new Map(await storage.multiGet(entries.map(([key]) => key)))
-      if (entries.some(([key, chunk]) => verified.get(key) !== chunk)) throw new Error('Project drafts could not be verified.')
+      if (entries.some(([key, chunk]) => verified.get(key) !== chunk)) throw new Error('Project metadata could not be verified.')
       const manifest = JSON.stringify(entries.map(([key]) => key))
       await storage.multiSet([[KEY, manifest]])
       if (await storage.getItem(KEY) !== manifest) throw new Error('Project metadata could not be verified.')
