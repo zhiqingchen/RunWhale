@@ -3,6 +3,7 @@ import type { AdditionalHostRequests } from '#extensions'
 import type { MobileModelProvider } from './model-providers.js'
 export { MOBILE_DEFAULT_MODELS, type MobileModelProvider } from './model-providers.js'
 import type { LibraryApp, LibraryInstallInput, ReleaseTransfer } from './app-library.js'
+import type { SourceAttribution, SourceImportInput } from './source-archive.js'
 import type { PreviewTestCommand, PreviewTestResult } from './preview-testing.js'
 
 export const MOBILE_HOST_PROTOCOL_VERSION = 1 as const
@@ -308,6 +309,12 @@ export interface MobileHostRequestMap extends AdditionalHostRequests {
   'release.export': { params: { projectId: string; platform: PreviewPlatform }; result: ReleaseTransfer }
   'release.read': { params: { id: string; offset: number }; result: { chunk: string; done: boolean } }
   'release.discard': { params: { id: string }; result: { discarded: true } }
+  'source.export': { params: { projectId: string; attribution: SourceAttribution }; result: ReleaseTransfer }
+  'source.read': { params: { id: string; offset: number }; result: { chunk: string; done: boolean } }
+  'source.discard': { params: { id: string }; result: { discarded: true } }
+  'source.import.begin': { params: SourceImportInput; result: { id: string } }
+  'source.import.chunk': { params: { id: string; offset: number; chunk: string }; result: { offset: number } }
+  'source.import.commit': { params: { id: string }; result: ProjectSummary }
   'library.begin': { params: LibraryInstallInput; result: { id: string } }
   'library.chunk': { params: { id: string; offset: number; chunk: string }; result: { offset: number } }
   'library.commit': { params: { id: string }; result: LibraryApp }

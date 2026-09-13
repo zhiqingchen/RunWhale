@@ -60,6 +60,7 @@ import { MobileTaskRunner } from '@runwhale/mobile-runtime/task-runner'
 import { MobileMetroRuntime } from './metro-runtime.js'
 import { readPreviewArtifact, writePreviewArtifact } from './preview-artifact.js'
 import { AppLibrary } from './app-library.js'
+import { SourceArchives } from './source-archive.js'
 import { emptyProjectFiles, emptyProjectManifest } from './project-manifest.js'
 import { providerCredentialRef, providerHasManagedCredential } from './provider-credential.js'
 
@@ -92,6 +93,7 @@ type ContinuedAgentWork = {
 
 export class RunWhaleRuntimeHost {
   private readonly library: AppLibrary
+  private readonly sources: SourceArchives
   private readonly projectsRoot: string
   private readonly server: MobileHostServer
   private readonly metro: MobileMetroRuntime
@@ -123,6 +125,7 @@ export class RunWhaleRuntimeHost {
   constructor(private readonly options: RuntimeHostOptions) {
     this.library = new AppLibrary(resolve(options.root, 'app-library'), options.platform)
     this.projectsRoot = resolve(options.root, 'projects')
+    this.sources = new SourceArchives(this.projectsRoot, resolve(options.root, 'source-staging'))
     // Mobile Node's recursive fs.watch support varies by OS release. Keep a
     // bounded project-only poller active while Preview is open so Metro HMR
     // still receives precise file-map invalidations on real devices.
@@ -383,6 +386,17 @@ export class RunWhaleRuntimeHost {
       }),
       'release.read': async ({ id, offset }) => this.library.read(id, offset),
       'release.discard': async ({ id }) => this.library.discard(id),
+      'source.export': async ({ projectId, attribution }, { signal }) => this.withProjectWork(projectId,
+        () => this.sources.export(this.projectRoot(projectId), attribution, signal)),
+      'source.read': async ({ id, offset }) => this.sources.read(id, offset),
+      'source.discard': async ({ id }) => this.sources.discard(id),
+      'source.import.begin': async (input) => this.sources.begin(input),
+      'source.import.chunk': async ({ id, offset, chunk }) => this.sources.chunk(id, offset, chunk),
+      'source.import.commit': async ({ id }, { signal }) => {
+        const project = await this.sources.commit(id, signal)
+        this.server.emit('project.changed', { projectId: project.id, imported: true })
+        return project
+      },
       'library.begin': async (input) => this.library.begin(input),
       'library.chunk': async ({ id, offset, chunk }) => this.library.chunk(id, offset, chunk),
       'library.commit': async ({ id }) => this.library.commit(id),
