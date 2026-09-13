@@ -14,6 +14,7 @@ interface TestingOptions {
   webView: React.RefObject<WebView | null>
   webCaptureView: React.RefObject<View | null>
   closePreview(): Promise<void>
+  onAgentInteraction?(): void
 }
 
 export function usePreviewTesting(options: TestingOptions) {
@@ -57,6 +58,7 @@ export function usePreviewTesting(options: TestingOptions) {
           const observedGeneration = generation.current
           if (!selected.enabled) throw new Error('The project Preview is no longer focused. Open it and inspect again.')
           if (!active || active.revision !== probe.revision || selected.projectId !== probe.projectId) throw new Error('The requested Preview revision is not mounted. Run Preview and wait for startup.')
+          selected.onAgentInteraction?.()
           if (claimed.command.kind === 'close') {
             generation.current += 1
             for (const reply of webReplies.current.values()) {

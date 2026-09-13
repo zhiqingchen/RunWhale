@@ -510,5 +510,6 @@
   "runtimeStartupFailedTitle": "No se pudo iniciar el entorno local",
   "runtimeStartupFailedBody": "Intenta iniciar el entorno local de nuevo.",
   "maxTokensReached": "Límite de tokens alcanzado",
+  "previewAgentOperating": "Modelo en acción",
   "nativePreviewClose": "Cerrar Preview"
 }

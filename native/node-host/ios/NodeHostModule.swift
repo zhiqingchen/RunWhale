@@ -36,6 +36,9 @@ public final class NodeHostModule: Module {
       self.runtime.removeStateListener(id: self.stateListenerID)
     }
     Function("snapshot") { self.runtime.snapshot.dictionary }
+    Function("setNativePreviewAgentStatus") { (projectId: String, label: String) in
+      DispatchQueue.main.async { RunWhaleSetNativePreviewAgentStatus(projectId, label) }
+    }
     AsyncFunction("beginContinuedAgentTask") { (copy: [String: String], promise: Promise) in
       NodeHostModule.backgroundLifecycle.beginContinuedTask(copy: copy) { promise.resolve($0) }
     }.runOnQueue(.main)

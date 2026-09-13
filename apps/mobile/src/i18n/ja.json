@@ -510,5 +510,6 @@
   "runtimeStartupFailedTitle": "ローカルランタイムを起動できませんでした",
   "runtimeStartupFailedBody": "ローカルランタイムを再起動してください。",
   "maxTokensReached": "トークン数の上限に達しました",
+  "previewAgentOperating": "モデルが操作中",
   "nativePreviewClose": "Previewを閉じる"
 }

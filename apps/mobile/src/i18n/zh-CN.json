@@ -510,5 +510,6 @@
   "shareFailed": "无法分享项目",
   "showMoreSessions": "展开其余 {count} 条会话",
   "collapseSessions": "收起至最近会话",
+  "previewAgentOperating": "模型正在操作",
   "nativePreviewClose": "关闭 Preview"
 }

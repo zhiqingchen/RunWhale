@@ -32,8 +32,9 @@ describe('Preview lifecycle', () => {
     expect(state.webVisible).toBe(false)
   })
 
-  it('keeps a 48-point Web Preview close control with visible press feedback', () => {
-    expect(webPreviewOverlayControlContract.closeSize).toBe(48)
+  it('keeps a compact Web Preview close control with visible press feedback', () => {
+    expect(webPreviewOverlayControlContract.closeSize).toBe(30)
+    expect(webPreviewOverlayControlContract.closeWidth).toBe(42)
     expect(webPreviewOverlayControlContract.feedbackVariant).toBe('scale-highlight')
   })
 
@@ -41,9 +42,11 @@ describe('Preview lifecycle', () => {
     const viewport = { width: 390, height: 844 }
     const insets = { top: 47, right: 0, bottom: 34, left: 0 }
 
-    expect(webPreviewControlInitialPosition(viewport, insets)).toEqual({ x: 334, y: 55 })
+    expect(webPreviewControlInitialPosition(viewport, insets)).toEqual({ x: 340, y: 55 })
     expect(clampWebPreviewControlPosition({ x: -100, y: -100 }, viewport, insets)).toEqual({ x: 8, y: 55 })
-    expect(clampWebPreviewControlPosition({ x: 1_000, y: 1_000 }, viewport, insets)).toEqual({ x: 334, y: 754 })
+    expect(clampWebPreviewControlPosition({ x: 1_000, y: 1_000 }, viewport, insets)).toEqual({ x: 340, y: 772 })
+    expect(webPreviewControlInitialPosition(viewport, insets, 160)).toEqual({ x: 222, y: 55 })
+    expect(clampWebPreviewControlPosition({ x: 1_000, y: 1_000 }, viewport, insets, 160)).toEqual({ x: 222, y: 772 })
   })
 
   it('keeps one mounted Web Preview instance inert while minimized and reuses it when reopened', () => {

@@ -19,6 +19,7 @@ afterEach(async () => {
 
 it('captures the native Web Preview container and completes a claimed request only once', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const onAgentInteraction = vi.fn()
   const captureView = { nativeTag: 42 }
   const webView = { injectJavaScript: vi.fn(), goForward: vi.fn() }
   const request = vi.fn(async (method: string) => method === 'preview.test.claim' ? { command: { kind: 'screenshot' } } : { accepted: true })
@@ -28,12 +29,13 @@ it('captures the native Web Preview container and completes a claimed request on
     usePreviewTesting({
       projectId: 'notes', enabled: true, active: { revision: 2, bundleUrl: 'http://127.0.0.1/preview', target: 'web', opened: true },
       webVisible: true, events, request: request as never,
-      closePreview: async () => undefined,
+      closePreview: async () => undefined, onAgentInteraction,
       webView: { current: webView } as never, webCaptureView: { current: captureView } as never,
     })
     return null
   }
   await act(async () => { tree = create(<Harness events={[event]} />) })
+  expect(onAgentInteraction).toHaveBeenCalledOnce()
   expect(native.findNodeHandle).toHaveBeenCalledWith(captureView)
   expect(native.captureWebPreview).toHaveBeenCalledWith(42)
   expect(webView.injectJavaScript).not.toHaveBeenCalled()
@@ -100,6 +102,7 @@ it('closes through Studio and rejects unfinished observations and late Web repli
 
 it('does not execute a claimed request after its route loses focus', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const onAgentInteraction = vi.fn()
   let claim!: (value: { command: { kind: 'screenshot' } }) => void
   const request = vi.fn(async (method: string) => method === 'preview.test.claim'
     ? new Promise((resolve) => { claim = resolve }) : { accepted: true })
@@ -107,7 +110,7 @@ it('does not execute a claimed request after its route loses focus', async () =>
   function Harness({ enabled }: { enabled: boolean }) {
     usePreviewTesting({
       projectId: 'notes', enabled, active: { revision: 2, bundleUrl: 'preview', target: 'web', opened: true },
-      webVisible: true, events, request: request as never, closePreview: async () => undefined,
+      webVisible: true, events, request: request as never, closePreview: async () => undefined, onAgentInteraction,
       webView: { current: null }, webCaptureView: { current: { nativeTag: 42 } } as never,
     })
     return null
@@ -115,6 +118,7 @@ it('does not execute a claimed request after its route loses focus', async () =>
   await act(async () => { tree = create(<Harness enabled />) })
   await act(async () => tree.update(<Harness enabled={false} />))
   await act(async () => claim({ command: { kind: 'screenshot' } }))
+  expect(onAgentInteraction).not.toHaveBeenCalled()
   expect(native.captureWebPreview).not.toHaveBeenCalled()
   expect(request).toHaveBeenLastCalledWith('preview.test.complete', expect.objectContaining({ result: expect.objectContaining({ error: expect.stringContaining('no longer focused') }) }))
 })

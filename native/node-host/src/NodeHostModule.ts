@@ -46,6 +46,7 @@ declare class NodeHostNativeModule extends NativeModule<{
   pinProjectShortcut?(projectId: string, name: string, iconUri: string): Promise<'requested' | 'updated' | 'unsupported'>
   readHostInfo(): string | null
   takeNativePreviewDiagnostic(): string | null
+  setNativePreviewAgentStatus?(projectId: string, label: string): void
   openNativePreview(bundleUrl: string, requestId: string, projectId: string): Promise<{ opened: boolean }>
   cancelNativePreviewOpen(requestId: string): boolean
   testNativePreview?(projectId: string, bundleUrl: string, command: string): Promise<string>

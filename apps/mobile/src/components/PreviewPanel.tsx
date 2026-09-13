@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState } from 'react'
 import { Columns2, Maximize2, X } from '@/components/icons'
 import type { PreviewEndpoint } from '@runwhale/mobile-protocol'
-import { Animated, BackHandler, Keyboard, PanResponder, Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, BackHandler, Easing, Keyboard, PanResponder, Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { FullWindowOverlay } from 'react-native-screens'
 import { useFocusEffect } from 'expo-router'
@@ -16,6 +16,7 @@ import { useRuntime } from '@/state/runtime'
 import { useI18n } from '@/i18n'
 import { AppIcon } from '@/components/AppIcon'
 import { NativePreviewHost, NodeHost } from '@runwhale/node-host'
+import { usePreviewAgentControl } from '@/hooks/use-preview-agent-control'
 import { usePreviewTesting } from '@/hooks/use-preview-testing'
 import { webPreviewTestingScript } from '@runwhale/mobile-protocol'
 import {
@@ -54,29 +55,45 @@ function nextPreviewLaunchRequestId(): string {
   return `preview-${Date.now().toString(36)}-${previewLaunchSequence.toString(36)}`
 }
 
+function PreviewAgentDot({ active, color }: { active: boolean; color: string }) {
+  const opacity = useRef(new Animated.Value(1)).current
+  useEffect(() => {
+    if (!active) return
+    const pulse = Animated.loop(Animated.sequence([
+      Animated.timing(opacity, { toValue: 0.4, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true, isInteraction: false }),
+      Animated.timing(opacity, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true, isInteraction: false }),
+    ]))
+    pulse.start()
+    return () => { pulse.stop(); opacity.setValue(1) }
+  }, [active, opacity])
+  return <Animated.View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: color, opacity }} />
+}
+
 function DraggablePreviewClose({
-  accentColor,
+  agentLabel,
   insets,
   label,
   onPress,
   styles,
   visible,
 }: {
-  accentColor: string
+  agentLabel: string
   insets: WebPreviewControlInsets
   label: string
   onPress(): void
   styles: ReturnType<typeof createStyles>
   visible: boolean
 }) {
+  const colors = useAppColors()
   const viewport = useWindowDimensions()
-  const initialPosition = webPreviewControlInitialPosition(viewport, insets)
+  const [controlWidth, setControlWidth] = useState<number>(webPreviewOverlayControlContract.closeWidth)
+  const initialPosition = webPreviewControlInitialPosition(viewport, insets, controlWidth)
   const position = useRef(new Animated.ValueXY(initialPosition)).current
   const currentPosition = useRef(initialPosition)
   const dragStart = useRef(initialPosition)
   const wasVisible = useRef(false)
-  const viewportRef = useRef({ viewport, insets })
-  viewportRef.current = { viewport, insets }
+  const viewportRef = useRef({ viewport, insets, controlWidth })
+  viewportRef.current = { viewport, insets, controlWidth }
 
   const setPosition = useCallback((next: WebPreviewControlPosition) => {
     currentPosition.current = next
@@ -85,11 +102,11 @@ function DraggablePreviewClose({
 
   useEffect(() => {
     const next = visible && !wasVisible.current
-      ? webPreviewControlInitialPosition(viewport, insets)
-      : clampWebPreviewControlPosition(currentPosition.current, viewport, insets)
+      ? webPreviewControlInitialPosition(viewport, insets, controlWidth)
+      : clampWebPreviewControlPosition(currentPosition.current, viewport, insets, controlWidth)
     wasVisible.current = visible
     setPosition(next)
-  }, [insets.bottom, insets.left, insets.right, insets.top, setPosition, viewport.height, viewport.width, visible])
+  }, [controlWidth, insets.bottom, insets.left, insets.right, insets.top, setPosition, viewport.height, viewport.width, visible])
 
   const panResponder = useRef(PanResponder.create({
     onMoveShouldSetPanResponder: (_event, gesture) => Math.hypot(gesture.dx, gesture.dy) >= 6,
@@ -100,18 +117,28 @@ function DraggablePreviewClose({
       setPosition(clampWebPreviewControlPosition({
         x: dragStart.current.x + gesture.dx,
         y: dragStart.current.y + gesture.dy,
-      }, bounds.viewport, bounds.insets))
+      }, bounds.viewport, bounds.insets, bounds.controlWidth))
     },
   })).current
 
   return (
-    <Animated.View {...panResponder.panHandlers} style={[styles.closeControlPosition, position.getLayout()]}>
+    <Animated.View {...panResponder.panHandlers} onLayout={(event) => {
+      const width = event.nativeEvent.layout.width
+      if (width === controlWidth) return
+      setPosition({ x: currentPosition.current.x + controlWidth - width, y: currentPosition.current.y })
+      setControlWidth(width)
+    }} style={[styles.closeControlPosition, position.getLayout()]}>
+      {agentLabel ? <View style={styles.agentStatus} testID="preview-agent-status">
+        <PreviewAgentDot active={visible} color={colors.accent} />
+        <Text numberOfLines={1} style={styles.agentStatusText}>{agentLabel}</Text>
+        <View style={styles.controlDivider} />
+      </View> : null}
       <Button
         isIconOnly
-        size="md"
+        size="sm"
         variant="secondary"
         feedbackVariant={webPreviewOverlayControlContract.feedbackVariant}
-        animation={{ highlight: { backgroundColor: { value: accentColor }, opacity: { value: [0, 0.31] } } }}
+        animation={{ highlight: { backgroundColor: { value: '#000000' }, opacity: { value: [0, 0.08] } } }}
         testID="web-preview-minimize"
         accessibilityLabel={label}
         accessibilityRole="button"
@@ -119,7 +146,7 @@ function DraggablePreviewClose({
         onPress={onPress}
         style={styles.closeControl}
       >
-        <AppIcon icon={X} color={accentColor} size={20} />
+        <AppIcon icon={X} color="#262626" size={16} />
       </Button>
     </Animated.View>
   )
@@ -129,14 +156,16 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
   project: StudioProject
   sessionId: string
   autoOpen?: boolean
+  agentRunning?: boolean
   onBusyChange?(busy: boolean): void
   presentation?: PreviewPanelPresentation
   onPresentationRequested?(presentation: PreviewPanelPresentation | 'hidden'): void
   onFixWithAgent(prompt: string): void
-}>(function PreviewPanel({ project, sessionId, autoOpen = false, onBusyChange, presentation = 'overlay', onPresentationRequested, onFixWithAgent }, ref) {
+}>(function PreviewPanel({ project, sessionId, autoOpen = false, agentRunning = false, onBusyChange, presentation = 'overlay', onPresentationRequested, onFixWithAgent }, ref) {
   const runtime = useRuntime()
   const { loadFile, flushFiles } = useProjects()
   const { t } = useI18n()
+  const { agentLabel, setAgentControl } = usePreviewAgentControl(project.id, sessionId, agentRunning, t('previewAgentOperating'))
   const colors = useAppColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const safeAreaInsets = useSafeAreaInsets()
@@ -154,10 +183,13 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
   const handledAgentPublicationSequence = useRef(runtime.events.reduce((latest, event) => Math.max(latest, event.sequence), 0))
   const active = selectedActivePreview(state)
   const [focused, setFocused] = useState(false)
+  const agentControlRef = useRef(setAgentControl)
+  agentControlRef.current = setAgentControl
   useFocusEffect(useCallback(() => {
     setFocused(true)
     return () => {
       setFocused(false)
+      agentControlRef.current(false)
       launchGeneration.current += 1
       operationInFlight.current = false
       const requestId = pendingLaunchRequest.current
@@ -182,10 +214,11 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
       webViewRef.current?.injectJavaScript("if (window.__runwhalePreviewTest) window.__runwhalePreviewTest(null, {kind:'close'}); true;")
     }
     if (launchGeneration.current !== generation) throw new Error('Preview changed while closing. Inspect the current revision.')
+    setAgentControl(false)
     dispatch({ type: 'preview-closed' })
     onPresentationRequested?.('hidden')
-  }, [active, project.id, runtime.cancelPreviewLaunch, onPresentationRequested])
-  const receiveTestMessage = usePreviewTesting({ projectId: project.id, enabled: focused, active, webVisible: state.webVisible, events: runtime.events, request: runtime.request, webView: webViewRef, webCaptureView: webCaptureRef, closePreview })
+  }, [active, project.id, runtime.cancelPreviewLaunch, onPresentationRequested, setAgentControl])
+  const receiveTestMessage = usePreviewTesting({ projectId: project.id, enabled: focused, active, webVisible: state.webVisible, events: runtime.events, request: runtime.request, webView: webViewRef, webCaptureView: webCaptureRef, closePreview, onAgentInteraction: () => setAgentControl(true) })
   const activeNativeBundleUrl = active?.target === 'native' ? active.bundleUrl : undefined
   const deviceReport = previewDeviceReport(state, publishedAgentPreview.current)
   const reportKey = deviceReport ? `${deviceReport.sessionId}:${deviceReport.revision}:${deviceReport.status}` : undefined
@@ -217,6 +250,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
   }, [project.id, runtime.cancelPreviewLaunch])
 
   const fail = useCallback((cause: unknown, bundleUrl?: string) => {
+    agentControlRef.current(false)
     if (cause instanceof NativePreviewLaunchCancelled) {
       dispatch({ type: 'launch-cancelled' })
       return
@@ -233,6 +267,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
     Keyboard.dismiss()
     onPresentationRequested?.(presentation === 'overlay' ? 'overlay' : presentation)
     if (operationInFlight.current) return
+    setAgentControl(false)
     publishedAgentPreview.current = undefined
     operationInFlight.current = true
     const generation = launchGeneration.current + 1
@@ -284,7 +319,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
       if (pendingLaunchRequest.current === requestId) pendingLaunchRequest.current = undefined
       if (isCurrent()) operationInFlight.current = false
     }
-  }, [active, fail, flushFiles, loadFile, runtimePlatform, onPresentationRequested, presentation, project, runtime.openNativePreview, runtime.openPreview, runtime.runPreview, sessionId])
+  }, [active, fail, flushFiles, loadFile, runtimePlatform, onPresentationRequested, presentation, project, runtime.openNativePreview, runtime.openPreview, runtime.runPreview, sessionId, setAgentControl])
 
   const run = useCallback(() => launch('run'), [launch])
   const openCachedOrRun = useCallback(() => launch('open'), [launch])
@@ -308,6 +343,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
     handledAgentPublicationSequence.current = publication.sequence
     if (publication.endpoint.revision <= (active?.revision ?? 0)) return
 
+    setAgentControl(true)
     publishedAgentPreview.current = publication.endpoint
     onPresentationRequested?.(presentation === 'overlay' ? 'overlay' : presentation)
     operationInFlight.current = true
@@ -335,24 +371,26 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
         if (isCurrent()) operationInFlight.current = false
       }
     })()
-  }, [active?.revision, fail, focused, onPresentationRequested, presentation, previewConfiguration, project.id, runtime.events, runtime.openNativePreview, sessionId, state.operation])
+  }, [active?.revision, fail, focused, onPresentationRequested, presentation, previewConfiguration, project.id, runtime.events, runtime.openNativePreview, sessionId, setAgentControl, state.operation])
 
   useEffect(() => {
     const subscription = NodeHost.addListener('onNativePreviewAction', (event) => {
+      if (event.action === 'close' || event.action === 'failure') setAgentControl(false)
       if (event.action === 'reload') void run()
       const message = event.action === 'failure' ? event.message : undefined
       if (message && activeNativeBundleUrl) fail(new Error(message), activeNativeBundleUrl)
     })
     return () => subscription.remove()
-  }, [activeNativeBundleUrl, fail, run])
+  }, [activeNativeBundleUrl, fail, run, setAgentControl])
 
   const webActive = state.active?.target === 'web' && state.active.pageUrl ? state.active : undefined
   const webSource = useMemo(() => webActive ? { uri: webActive.pageUrl! } : undefined, [webActive?.pageUrl])
   const webOverlay = webPreviewOverlayPresentation(Boolean(webActive && webSource), state.webVisible)
   const minimizeWeb = useCallback(() => {
     Keyboard.dismiss()
+    setAgentControl(false)
     dispatch({ type: 'minimize-web' })
-  }, [])
+  }, [setAgentControl])
 
   useImperativeHandle(ref, () => ({ open: openOrRun, run, minimize: minimizeWeb }), [minimizeWeb, openOrRun, run])
 
@@ -397,7 +435,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
     >
       {webViewContent}
       <DraggablePreviewClose
-        accentColor={colors.accent}
+        agentLabel={agentLabel}
         insets={safeAreaInsets}
         label={t('minimizePreview')}
         onPress={minimizeWeb}
@@ -411,6 +449,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
     <View style={styles.embeddedToolbar}>
       <Text numberOfLines={1} style={styles.embeddedTitle}>{t('preview')}</Text>
       <View style={styles.embeddedActions}>
+        {agentLabel ? <View style={styles.embeddedAgentStatus}><PreviewAgentDot active={focused} color={colors.accent} /><Text style={styles.agentStatusText}>{agentLabel}</Text></View> : null}
         <Button
           isIconOnly
           size="sm"
@@ -477,14 +516,28 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   closeControlPosition: {
     position: 'absolute',
     zIndex: 10,
-  },
-  closeControl: {
-    width: webPreviewOverlayControlContract.closeSize,
+    flexDirection: 'row',
+    alignItems: 'center',
     height: webPreviewOverlayControlContract.closeSize,
-    borderRadius: webPreviewOverlayControlContract.closeSize / 2,
+    borderRadius: 15,
+    backgroundColor: 'rgba(250, 250, 250, 0.94)',
+    borderWidth: 0.5,
+    borderColor: '#d4d4d4',
+  },
+  agentStatus: { flexDirection: 'row', alignItems: 'center', paddingLeft: 10, gap: 6 },
+  embeddedAgentStatus: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, height: 30, borderRadius: 15, backgroundColor: '#fafafa' },
+  agentStatusText: { maxWidth: 160, color: '#525252', fontSize: 11, fontWeight: '500' },
+  controlDivider: { width: 0.5, height: 14, backgroundColor: '#d4d4d4', marginLeft: 4 },
+  closeControl: {
+    width: webPreviewOverlayControlContract.closeWidth,
+    aspectRatio: webPreviewOverlayControlContract.closeWidth / webPreviewOverlayControlContract.closeSize,
+    height: webPreviewOverlayControlContract.closeSize,
+    minHeight: 0,
+    borderRadius: 15,
+    paddingHorizontal: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(7, 24, 42, 0.72)',
+    backgroundColor: 'transparent',
     borderWidth: 0,
     elevation: 0,
     shadowOpacity: 0,

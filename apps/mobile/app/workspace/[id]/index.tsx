@@ -302,6 +302,7 @@ export default function WorkspaceScreen() {
           project={project}
           sessionId={sessionId}
           autoOpen={autoOpenPreview}
+          agentRunning={sessionRunning}
           onBusyChange={setPreviewBusy}
           presentation={previewPresentation === 'hidden' ? 'overlay' : previewPresentation}
           onPresentationRequested={requestPreviewPresentation}

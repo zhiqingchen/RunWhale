@@ -510,5 +510,6 @@
   "runtimeStartupFailedTitle": "Local runtime could not start",
   "runtimeStartupFailedBody": "Try starting the local runtime again.",
   "maxTokensReached": "Max tokens reached",
+  "previewAgentOperating": "Model operating",
   "nativePreviewClose": "Close Preview"
 }

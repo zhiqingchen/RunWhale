@@ -1,5 +1,7 @@
 package com.runwhale.nodehost
 
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
@@ -19,6 +21,10 @@ import android.view.ViewTreeObserver
 import android.view.WindowInsets
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.graphics.Typeface
+import android.text.TextUtils
 import androidx.appcompat.app.AppCompatActivity
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -54,7 +60,12 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
   private var surface: ReactSurface? = null
   private var previewView: ViewGroup? = null
   private var previewRoot: FrameLayout? = null
-  private var previewControl: ImageButton? = null
+  private var previewControl: LinearLayout? = null
+  private var previewCloseButton: ImageButton? = null
+  private var previewAgentLabel: TextView? = null
+  private var previewAgentDot: View? = null
+  private var previewAgentPulse: ObjectAnimator? = null
+  private var previewControlDivider: View? = null
   private var safeWindowInsets = SafeWindowInsets(0, 0, 0, 0)
   private var firstDrawListener: ViewTreeObserver.OnDrawListener? = null
   private var readinessTimeout: Runnable? = null
@@ -423,7 +434,8 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
 
   override fun onResume() {
     super.onResume()
-    previewControl?.contentDescription = NativePreviewLanguage.closePreviewLabel
+    previewCloseButton?.contentDescription = NativePreviewLanguage.closePreviewLabel
+    updateAgentStatus()
     // Studio owns Agent RPC and test dispatch. Its host must keep processing
     // events and timers while this in-app Preview is the foreground activity.
     (application as ReactApplication).reactHost?.onHostResume(this, this)
@@ -432,6 +444,8 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
   }
 
   override fun onPause() {
+    previewAgentPulse?.cancel()
+    previewAgentPulse = null
     NativePreviewTesting.deactivate(this)
     host?.onHostPause(this)
     (application as ReactApplication).reactHost?.onHostPause(this)
@@ -450,6 +464,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
   override fun onConfigurationChanged(newConfig: Configuration) {
     super.onConfigurationChanged(newConfig)
     host?.onConfigurationChanged(this)
+    updateAgentStatus()
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -541,21 +556,57 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
   }
 
   private fun installMinimizeControl(root: FrameLayout) {
-    val close = previewControl(
-      drawable = R.drawable.runwhale_close,
-      label = NativePreviewLanguage.closePreviewLabel,
-      onClick = ::minimizeToStudio,
-    )
-    previewControl = close
-    val layoutParams = FrameLayout.LayoutParams(
-      dp(48),
-      dp(48),
-      Gravity.TOP or Gravity.END,
-    ).apply {
-      topMargin = dp(8)
-      marginEnd = dp(8)
+    val capsule = LinearLayout(this).apply {
+      orientation = LinearLayout.HORIZONTAL
+      gravity = Gravity.CENTER_VERTICAL
+      background = GradientDrawable().apply {
+        cornerRadius = dp(15).toFloat()
+        setColor(Color.argb(240, 250, 250, 250))
+        setStroke(max(1, (resources.displayMetrics.density * 0.5f).toInt()), Color.rgb(212, 212, 212))
+      }
+      elevation = 0f
     }
-    root.addView(close, layoutParams)
+    previewControl = capsule
+    val dot = View(this)
+    previewAgentDot = dot
+    capsule.addView(dot, LinearLayout.LayoutParams(dp(5), dp(5)).apply { marginStart = dp(10) })
+    val status = TextView(this).apply {
+      textSize = 11f
+      typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+      setTextColor(Color.rgb(82, 82, 82))
+      setPadding(dp(6), 0, dp(10), 0)
+      maxWidth = dp(176)
+      isSingleLine = true
+      ellipsize = TextUtils.TruncateAt.END
+      includeFontPadding = false
+    }
+    previewAgentLabel = status
+    capsule.addView(status, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+    val divider = View(this).apply { setBackgroundColor(Color.rgb(212, 212, 212)) }
+    previewControlDivider = divider
+    capsule.addView(divider, LinearLayout.LayoutParams(max(1, (resources.displayMetrics.density * 0.5f).toInt()), dp(14)))
+    val close = ImageButton(this).apply {
+      contentDescription = NativePreviewLanguage.closePreviewLabel
+      setImageResource(R.drawable.runwhale_close)
+      imageTintList = ColorStateList.valueOf(Color.rgb(38, 38, 38))
+      setPadding(dp(13), dp(7), dp(13), dp(7))
+      background = RippleDrawable(
+        ColorStateList.valueOf(Color.argb(20, 0, 0, 0)),
+        GradientDrawable().apply { cornerRadius = dp(15).toFloat(); setColor(Color.TRANSPARENT) },
+        GradientDrawable().apply { cornerRadius = dp(15).toFloat(); setColor(Color.WHITE) },
+      )
+      elevation = 0f
+      stateListAnimator = null
+      setOnClickListener { minimizeToStudio() }
+    }
+    previewCloseButton = close
+    capsule.addView(close, LinearLayout.LayoutParams(dp(42), dp(30)))
+    root.addView(capsule, FrameLayout.LayoutParams(
+      ViewGroup.LayoutParams.WRAP_CONTENT, dp(30), Gravity.TOP or Gravity.END,
+    ).apply { topMargin = dp(8); marginEnd = dp(8) })
+    installPreviewControlDrag(capsule)
+    installPreviewControlDrag(close)
+    updateAgentStatus()
     root.setOnApplyWindowInsetsListener { _, windowInsets ->
       safeWindowInsets = safeInsets(windowInsets)
       clampPreviewControlPosition()
@@ -565,31 +616,41 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
     root.requestApplyInsets()
   }
 
-  private fun previewControl(drawable: Int, label: String, onClick: () -> Unit) =
-    ImageButton(this).apply {
-      val accent = previewThemeAccent()
-      contentDescription = label
-      setImageResource(drawable)
-      imageTintList = ColorStateList.valueOf(accent)
-      setPadding(dp(14), dp(14), dp(14), dp(14))
-      background = RippleDrawable(
-        ColorStateList.valueOf(Color.argb(80, Color.red(accent), Color.green(accent), Color.blue(accent))),
-        GradientDrawable().apply {
-          shape = GradientDrawable.OVAL
-          setColor(Color.argb(184, 7, 24, 42))
-        },
-        null,
-      )
-      elevation = 0f
-      stateListAnimator = null
-      isFocusable = true
-      setOnClickListener { onClick() }
-      this@NativePreviewActivity.installPreviewControlDrag(this)
+  private fun updateAgentStatus() {
+    val label = agentLabels[projectIdentifier ?: intent.getStringExtra(EXTRA_PROJECT_ID)].orEmpty()
+    previewAgentLabel?.text = label
+    previewAgentDot?.apply {
+      visibility = if (label.isEmpty()) View.GONE else View.VISIBLE
+      background = GradientDrawable().apply {
+        shape = GradientDrawable.OVAL
+        setColor(if (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) {
+          Color.rgb(109, 145, 255)
+        } else {
+          Color.rgb(53, 108, 255)
+        })
+      }
     }
+    if (label.isNotEmpty() && previewAgentPulse == null) {
+      previewAgentPulse = ObjectAnimator.ofFloat(previewAgentDot, View.ALPHA, 1f, 0.4f).apply {
+        duration = 900
+        repeatMode = ValueAnimator.REVERSE
+        repeatCount = ValueAnimator.INFINITE
+        start()
+      }
+    } else if (label.isEmpty()) {
+      previewAgentPulse?.cancel()
+      previewAgentPulse = null
+      previewAgentDot?.alpha = 1f
+    }
+    previewAgentLabel?.visibility = if (label.isEmpty()) View.GONE else View.VISIBLE
+    previewControlDivider?.visibility = if (label.isEmpty()) View.GONE else View.VISIBLE
+    previewControl?.post { clampPreviewControlPosition() }
+  }
 
-  private fun installPreviewControlDrag(control: ImageButton) {
+  private fun installPreviewControlDrag(touchTarget: View) {
     val touchSlop = ViewConfiguration.get(this).scaledTouchSlop
-    control.setOnTouchListener(object : View.OnTouchListener {
+    val control = previewControl ?: return
+    touchTarget.setOnTouchListener(object : View.OnTouchListener {
       private var downX = 0f
       private var downY = 0f
       private var startTop = 0
@@ -646,8 +707,8 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
     val control = previewControl ?: return
     val minimumTop = safeWindowInsets.top + dp(8)
     val minimumEnd = safeWindowInsets.right + dp(8)
-    val maximumTop = max(minimumTop, root.height - safeWindowInsets.bottom - dp(56))
-    val maximumEnd = max(minimumEnd, root.width - safeWindowInsets.left - dp(56))
+    val maximumTop = max(minimumTop, root.height - safeWindowInsets.bottom - dp(8) - control.height)
+    val maximumEnd = max(minimumEnd, root.width - safeWindowInsets.left - dp(8) - control.width)
     val current = control.layoutParams as FrameLayout.LayoutParams
     current.topMargin = current.topMargin.coerceIn(minimumTop, maximumTop)
     current.marginEnd = current.marginEnd.coerceIn(minimumEnd, maximumEnd)
@@ -728,14 +789,14 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
 
   private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
-  private fun previewThemeAccent(): Int =
-    if (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) {
-      Color.rgb(109, 145, 255)
-    } else {
-      Color.rgb(53, 108, 255)
+  companion object {
+    private val agentLabels = mutableMapOf<String, String>()
+
+    internal fun setAgentStatus(projectId: String, label: String) {
+      if (label.isEmpty()) agentLabels.remove(projectId) else agentLabels[projectId] = label
+      NativePreviewTesting.activeActivity()?.takeIf { it.projectIdentifier == projectId }?.updateAgentStatus()
     }
 
-  companion object {
     const val EXTRA_BUNDLE_PATH = "runwhale.bundle.path"
     const val EXTRA_SOURCE_ID = "runwhale.bundle.source-id"
     const val EXTRA_REQUEST_ID = "runwhale.preview.request-id"

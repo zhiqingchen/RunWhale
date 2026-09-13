@@ -53,6 +53,11 @@ class NodeHostModule : Module() {
     }
 
     Function("snapshot") { nodeRuntime.snapshot().toMap() }
+    Function("setNativePreviewAgentStatus") { projectId: String, label: String ->
+      nativePreviewMainHandler.post {
+        NativePreviewActivity.setAgentStatus(projectId, label)
+      }
+    }
     AsyncFunction("testNativePreview") { projectId: String, bundleUrl: String, command: String, promise: Promise ->
       nativePreviewMainHandler.post {
         val activity = NativePreviewTesting.activeActivity()

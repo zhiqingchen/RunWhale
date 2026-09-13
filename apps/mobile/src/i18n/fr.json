@@ -510,5 +510,6 @@
   "runtimeStartupFailedTitle": "Impossible de démarrer l’environnement local",
   "runtimeStartupFailedBody": "Essayez de redémarrer l’environnement local.",
   "maxTokensReached": "Limite de tokens atteinte",
+  "previewAgentOperating": "Modèle en action",
   "nativePreviewClose": "Fermer Preview"
 }

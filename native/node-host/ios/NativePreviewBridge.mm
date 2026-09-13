@@ -40,8 +40,10 @@
 static NSString *const RunWhaleNativePreviewDiagnosticKey = @"RunWhaleNativePreviewLastDiagnostic";
 static NSString *const RunWhaleNativePreviewAppIdentifier = @"runwhale_native_preview";
 static NSTimeInterval const RunWhaleNativePreviewStartupTimeout = 20.0;
-static CGFloat const RunWhalePreviewControlSize = 48.0;
+static CGFloat const RunWhalePreviewControlSize = 30.0;
 static CGFloat const RunWhalePreviewControlGap = 8.0;
+static CGFloat const RunWhalePreviewCloseWidth = 42.0;
+static NSMutableDictionary<NSString *, NSString *> *RunWhalePreviewAgentLabels;
 static NSString *const RunWhaleNativePreviewStorageErrorDomain = @"RunWhaleNativePreviewStorage";
 
 static NSURL *_Nullable RunWhaleCanonicalFileURL(NSURL *url) {
@@ -233,31 +235,15 @@ static void RunWhaleInstallNativePreviewAppIdentifier(facebook::jsi::Runtime &ru
       facebook::jsi::String::createFromUtf8(runtime, RunWhaleNativePreviewAppIdentifier.UTF8String));
 }
 
-static UIColor *RunWhalePreviewAccentColor(void) {
-  return [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traitCollection) {
-    if (traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
-      return [UIColor colorWithRed:109.0 / 255.0 green:145.0 / 255.0 blue:255.0 / 255.0 alpha:1.0];
-    }
-    return [UIColor colorWithRed:53.0 / 255.0 green:108.0 / 255.0 blue:255.0 / 255.0 alpha:1.0];
-  }];
-}
-
-static UIColor *RunWhalePreviewControlBackgroundColor(void) {
-  return [UIColor colorWithRed:7.0 / 255.0
-                         green:24.0 / 255.0
-                          blue:42.0 / 255.0
-                         alpha:184.0 / 255.0];
-}
-
 static UIButtonConfiguration *RunWhalePreviewControlConfiguration(UIImage *image, BOOL highlighted) {
   UIButtonConfiguration *configuration = [UIButtonConfiguration plainButtonConfiguration];
   configuration.image = image;
-  configuration.baseForegroundColor = RunWhalePreviewAccentColor();
-  configuration.contentInsets = NSDirectionalEdgeInsetsMake(14.0, 14.0, 14.0, 14.0);
+  configuration.baseForegroundColor = [UIColor colorWithWhite:0.15 alpha:1.0];
+  configuration.contentInsets = NSDirectionalEdgeInsetsMake(7.0, 13.0, 7.0, 13.0);
   configuration.cornerStyle = UIButtonConfigurationCornerStyleFixed;
   configuration.background.backgroundColor = highlighted
-      ? [RunWhalePreviewAccentColor() colorWithAlphaComponent:80.0 / 255.0]
-      : RunWhalePreviewControlBackgroundColor();
+      ? [UIColor colorWithWhite:0.0 alpha:0.08]
+      : UIColor.clearColor;
   configuration.background.cornerRadius = RunWhalePreviewControlSize / 2.0;
   return configuration;
 }
@@ -599,7 +585,12 @@ static void RunWhaleInstallNativePreviewFatalReporter(
 @property(nonatomic, copy) NSString *sourceIdentifier;
 @property(nonatomic, copy) NSString *projectIdentifier;
 @property(nonatomic, strong) UIView *previewView;
-@property(nonatomic, strong) UIButton *previewControl;
+@property(nonatomic, strong) UIView *previewControl;
+@property(nonatomic, strong) UIButton *previewCloseButton;
+@property(nonatomic, strong) UILabel *previewAgentLabel;
+@property(nonatomic, strong) UIView *previewAgentDot;
+@property(nonatomic, strong) UIView *previewControlDivider;
+@property(nonatomic, strong) NSLayoutConstraint *previewControlWidthConstraint;
 @property(nonatomic, strong) NSLayoutConstraint *previewControlTopConstraint;
 @property(nonatomic, strong) NSLayoutConstraint *previewControlTrailingConstraint;
 @property(nonatomic, strong) id contentObserver;
@@ -718,7 +709,8 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
-  self.previewControl.accessibilityLabel = RunWhaleSettings.closePreviewLabel;
+  self.previewCloseButton.accessibilityLabel = RunWhaleSettings.closePreviewLabel;
+  [self updateAgentStatus];
   [self resetPreviewControlPosition];
   [self installRestrictedComponentProvider];
 }
@@ -736,6 +728,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
 
 - (void)viewWillDisappear:(BOOL)animated {
   self.appeared = NO;
+  [self.previewAgentDot.layer removeAnimationForKey:@"preview-agent-pulse"];
   [super viewWillDisappear:animated];
 }
 
@@ -748,7 +741,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
                                  label:(NSString *)label
                             identifier:(NSString *)identifier
                                 action:(SEL)action {
-  UIImageSymbolConfiguration *symbolConfiguration = [UIImageSymbolConfiguration configurationWithPointSize:20.0
+  UIImageSymbolConfiguration *symbolConfiguration = [UIImageSymbolConfiguration configurationWithPointSize:16.0
                                                                                                       weight:UIImageSymbolWeightMedium];
   UIImage *controlImage = [UIImage systemImageNamed:image withConfiguration:symbolConfiguration];
   UIButton *control = [UIButton buttonWithConfiguration:RunWhalePreviewControlConfiguration(controlImage, NO)
@@ -761,10 +754,8 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
   control.accessibilityIdentifier = identifier;
   control.exclusiveTouch = YES;
   [control addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
-  [control addGestureRecognizer:[[UIPanGestureRecognizer alloc] initWithTarget:self
-                                                                        action:@selector(dragPreviewControl:)]];
   [NSLayoutConstraint activateConstraints:@[
-    [control.widthAnchor constraintEqualToConstant:RunWhalePreviewControlSize],
+    [control.widthAnchor constraintEqualToConstant:RunWhalePreviewCloseWidth],
     [control.heightAnchor constraintEqualToConstant:RunWhalePreviewControlSize],
   ]];
   return control;
@@ -775,18 +766,89 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
                                               label:RunWhaleSettings.closePreviewLabel
                                          identifier:@"runwhale-native-preview-back"
                                              action:@selector(minimizePreview)];
-  self.previewControl = close;
-  [self.view addSubview:close];
+  self.previewCloseButton = close;
+  UIView *capsule = [UIView new];
+  capsule.translatesAutoresizingMaskIntoConstraints = NO;
+  capsule.backgroundColor = [UIColor colorWithWhite:250.0 / 255.0 alpha:0.94];
+  capsule.layer.cornerRadius = RunWhalePreviewControlSize / 2.0;
+  capsule.layer.borderWidth = 0.5;
+  capsule.layer.borderColor = [UIColor colorWithWhite:212.0 / 255.0 alpha:1.0].CGColor;
+  [capsule addGestureRecognizer:[[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(dragPreviewControl:)]];
+  self.previewControl = capsule;
+  [self.view addSubview:capsule];
+  [capsule addSubview:close];
+
+  UIView *dot = [UIView new];
+  dot.translatesAutoresizingMaskIntoConstraints = NO;
+  dot.layer.cornerRadius = 2.5;
+  dot.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traits) {
+    return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+        ? [UIColor colorWithRed:109.0 / 255.0 green:145.0 / 255.0 blue:1.0 alpha:1.0]
+        : [UIColor colorWithRed:53.0 / 255.0 green:108.0 / 255.0 blue:1.0 alpha:1.0];
+  }];
+  self.previewAgentDot = dot;
+  [capsule addSubview:dot];
+  UILabel *status = [UILabel new];
+  status.translatesAutoresizingMaskIntoConstraints = NO;
+  status.font = [UIFont systemFontOfSize:11.0 weight:UIFontWeightMedium];
+  status.textColor = [UIColor colorWithWhite:82.0 / 255.0 alpha:1.0];
+  status.lineBreakMode = NSLineBreakByTruncatingTail;
+  self.previewAgentLabel = status;
+  [capsule addSubview:status];
+  UIView *divider = [UIView new];
+  divider.translatesAutoresizingMaskIntoConstraints = NO;
+  divider.backgroundColor = [UIColor colorWithWhite:212.0 / 255.0 alpha:1.0];
+  self.previewControlDivider = divider;
+  [capsule addSubview:divider];
 
   UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
-  self.previewControlTopConstraint = [close.topAnchor constraintEqualToAnchor:safe.topAnchor
-                                                                      constant:RunWhalePreviewControlGap];
-  self.previewControlTrailingConstraint = [close.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor
-                                                                                constant:-RunWhalePreviewControlGap];
+  self.previewControlTopConstraint = [capsule.topAnchor constraintEqualToAnchor:safe.topAnchor constant:RunWhalePreviewControlGap];
+  self.previewControlTrailingConstraint = [capsule.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-RunWhalePreviewControlGap];
+  self.previewControlWidthConstraint = [capsule.widthAnchor constraintEqualToConstant:RunWhalePreviewCloseWidth];
   [NSLayoutConstraint activateConstraints:@[
     self.previewControlTopConstraint,
     self.previewControlTrailingConstraint,
+    self.previewControlWidthConstraint,
+    [capsule.heightAnchor constraintEqualToConstant:RunWhalePreviewControlSize],
+    [close.trailingAnchor constraintEqualToAnchor:capsule.trailingAnchor],
+    [close.centerYAnchor constraintEqualToAnchor:capsule.centerYAnchor],
+    [dot.leadingAnchor constraintEqualToAnchor:capsule.leadingAnchor constant:10.0],
+    [dot.widthAnchor constraintEqualToConstant:5.0],
+    [dot.heightAnchor constraintEqualToConstant:5.0],
+    [dot.centerYAnchor constraintEqualToAnchor:capsule.centerYAnchor],
+    [status.leadingAnchor constraintEqualToAnchor:dot.trailingAnchor constant:6.0],
+    [status.widthAnchor constraintLessThanOrEqualToConstant:160.0],
+    [status.centerYAnchor constraintEqualToAnchor:capsule.centerYAnchor],
+    [divider.widthAnchor constraintEqualToConstant:0.5],
+    [divider.heightAnchor constraintEqualToConstant:14.0],
+    [divider.trailingAnchor constraintEqualToAnchor:close.leadingAnchor],
+    [divider.centerYAnchor constraintEqualToAnchor:capsule.centerYAnchor],
   ]];
+  [self updateAgentStatus];
+}
+
+- (void)updateAgentStatus {
+  NSString *label = RunWhalePreviewAgentLabels[self.projectIdentifier];
+  BOOL active = label.length > 0;
+  self.previewAgentLabel.text = label;
+  self.previewAgentDot.hidden = !active;
+  self.previewAgentLabel.hidden = !active;
+  self.previewControlDivider.hidden = !active;
+  CGFloat statusWidth = active ? MIN(160.0, ceil(self.previewAgentLabel.intrinsicContentSize.width)) + 31.0 : 0.0;
+  self.previewControlWidthConstraint.constant = RunWhalePreviewCloseWidth + statusWidth;
+  if (active && [self.previewAgentDot.layer animationForKey:@"preview-agent-pulse"] == nil) {
+    CABasicAnimation *pulse = [CABasicAnimation animationWithKeyPath:@"opacity"];
+    pulse.fromValue = @1.0;
+    pulse.toValue = @0.4;
+    pulse.duration = 0.9;
+    pulse.autoreverses = YES;
+    pulse.repeatCount = HUGE_VALF;
+    pulse.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+    [self.previewAgentDot.layer addAnimation:pulse forKey:@"preview-agent-pulse"];
+  } else if (!active) {
+    [self.previewAgentDot.layer removeAnimationForKey:@"preview-agent-pulse"];
+  }
+  [self clampPreviewControlPosition];
 }
 
 - (void)resetPreviewControlPosition {
@@ -800,7 +862,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
   CGFloat maximumTop = MAX(RunWhalePreviewControlGap,
                            safeSize.height - RunWhalePreviewControlSize - RunWhalePreviewControlGap);
   CGFloat minimumTrailing = MIN(-RunWhalePreviewControlGap,
-                                RunWhalePreviewControlSize + RunWhalePreviewControlGap - safeSize.width);
+                                self.previewControlWidthConstraint.constant + RunWhalePreviewControlGap - safeSize.width);
   self.previewControlTopConstraint.constant = MIN(maximumTop,
                                                   MAX(RunWhalePreviewControlGap,
                                                       self.previewControlTopConstraint.constant));
@@ -1149,6 +1211,15 @@ void RunWhaleCancelNativePreviewController(UIViewController *controller) {
   } else {
     dispatch_async(dispatch_get_main_queue(), cancel);
   }
+}
+
+void RunWhaleSetNativePreviewAgentStatus(NSString *projectId, NSString *label) {
+  NSCAssert(NSThread.isMainThread, @"Preview status must update on the main thread");
+  if (RunWhalePreviewAgentLabels == nil) RunWhalePreviewAgentLabels = [NSMutableDictionary new];
+  if (label.length > 0) RunWhalePreviewAgentLabels[projectId] = label;
+  else [RunWhalePreviewAgentLabels removeObjectForKey:projectId];
+  RunWhaleNativePreviewController *controller = RunWhaleActiveNativePreviewController;
+  if ([controller.projectIdentifier isEqualToString:projectId]) [controller updateAgentStatus];
 }
 
 NSString *RunWhaleTestNativePreview(NSString *projectId, NSString *sourceId, NSString *command) {
