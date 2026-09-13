@@ -2,8 +2,9 @@ import { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Button } from 'heroui-native/button'
 import { Spinner } from 'heroui-native/spinner'
-import { ArrowLeft, ChevronDown, FolderTree, RefreshCw, Smartphone } from '@/components/icons'
+import { ChevronDown, FolderTree, RefreshCw, Smartphone } from '@/components/icons'
 import { AppIcon } from '@/components/AppIcon'
+import { PageBackButton } from '@/components/PageBackButton'
 import { PendingButton } from '@/components/PendingButton'
 import { type ThemeColors, useAppColors } from '@/theme/tokens'
 import { useI18n } from '@/i18n'
@@ -50,7 +51,7 @@ export function ProjectSessionNavigation({
 
   return (
     <View style={styles.header}>
-      {onBack ? <Button isIconOnly size="sm" variant="ghost" accessibilityLabel={backLabel ?? t('back')} onPress={onBack} style={styles.headerAction}><AppIcon icon={ArrowLeft} color={colors.accent} size={21} /></Button> : null}
+      {onBack ? <PageBackButton label={backLabel} onPress={onBack} /> : null}
       <Pressable accessibilityRole={onOpenDetails ? 'button' : 'header'} accessibilityLabel={onOpenDetails ? `${title} · ${t('sessionDetails')}` : title} onPress={onOpenDetails} disabled={!onOpenDetails} testID="session-details-action" style={({ pressed }) => [styles.identity, pressed && styles.identityPressed]}>
         <View style={styles.titleRow}><Text numberOfLines={1} style={styles.title}>{title}</Text>{onOpenDetails ? <AppIcon icon={ChevronDown} color={colors.muted} size={13} /> : null}</View>
         {status ? <View style={styles.statusRow}><View style={[styles.statusDot, !statusActive && styles.statusDotIdle]} /><Text numberOfLines={1} style={styles.status}>{status}</Text>{statusMeta ? <Text numberOfLines={1} style={styles.statusMeta}>· {statusMeta}</Text> : null}</View> : null}
@@ -101,7 +102,6 @@ export function localizedSessionState(state: string, t: ReturnType<typeof useI18
 
 function createStyles(colors: ThemeColors) { return StyleSheet.create({
   header: { minHeight: projectSessionNavigationContract.headerMinHeight, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.panel },
-  headerAction: { width: projectSessionNavigationContract.backActionSize, height: projectSessionNavigationContract.backActionSize, paddingHorizontal: 0, alignItems: 'center', justifyContent: 'center' },
   identity: { flex: 1, minWidth: 0, height: 44, paddingHorizontal: 2, alignItems: 'flex-start', justifyContent: 'center', gap: 3 },
   identityPressed: { opacity: 0.65 },
   titleRow: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 5 },

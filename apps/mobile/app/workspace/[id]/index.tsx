@@ -23,6 +23,7 @@ import { actionErrorPresentation, runExclusiveAction } from '@/utils/action-prog
 import { workspaceAndroidBackAction, workspaceEditorContentState, workspaceFilePaneVisibility, workspacePreferredFilePath, workspacePreviewAutoOpenRequested, workspaceProjectRouteState, workspaceSupportsEmbeddedPreview, type WorkspaceFilePane, type WorkspacePreviewPresentation } from '@/utils/workspace-layout'
 import { EditorDraftNotice } from '@/components/EditorDraftNotice'
 import { latestAgentLifecycleState } from '@/utils/agent-lifecycle'
+import { returnFromSecondaryPage } from '@/utils/secondary-page-navigation'
 
 type ProjectSessionSummaryStatus = 'loading' | 'failed' | 'ready'
 
@@ -150,10 +151,7 @@ export default function WorkspaceScreen() {
     })
   }, [retryProjectLoad])
 
-  const leaveProject = () => {
-    if (router.canGoBack()) router.back()
-    else router.replace('/(tabs)/workspace')
-  }
+  const leaveProject = () => returnFromSecondaryPage(router, '/(tabs)/workspace')
 
   if (projectRouteState === 'loading') return <SafeAreaView style={styles.safe}><View accessible accessibilityRole="progressbar" accessibilityLabel={t('working')} accessibilityLiveRegion="polite" style={styles.routeState}><Spinner color={colors.accent} /><Text style={styles.routeStateText}>{t('working')}</Text></View></SafeAreaView>
   if (projectRouteState === 'failed') {

@@ -10,6 +10,8 @@ const state = vi.hoisted(() => ({
   projects: [] as Array<{ id: string; name: string }>,
   link: undefined as ((event: { url: string }) => void) | undefined,
   open: vi.fn(async () => undefined),
+  back: vi.fn(),
+  canGoBack: vi.fn(() => false),
   replace: vi.fn(),
   retryLoad: vi.fn(async () => undefined),
 }))
@@ -23,7 +25,7 @@ vi.mock('react-native', () => ({
 }))
 vi.mock('expo-router', async () => {
   const { useEffect } = await import('react')
-  return { router: { replace: state.replace }, useLocalSearchParams: () => ({ id: state.id }), useFocusEffect: (callback: () => (() => void)) => useEffect(callback, [callback]) }
+  return { router: { back: state.back, canGoBack: state.canGoBack, replace: state.replace }, useLocalSearchParams: () => ({ id: state.id }), useFocusEffect: (callback: () => (() => void)) => useEffect(callback, [callback]) }
 })
 vi.mock('expo-image', () => ({ Image: 'Image' }))
 vi.mock('heroui-native/button', async () => {
@@ -33,7 +35,11 @@ vi.mock('heroui-native/button', async () => {
 vi.mock('heroui-native/spinner', () => ({ Spinner: 'Spinner' }))
 vi.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }))
 vi.mock('@/components/AppIcon', () => ({ AppIcon: 'AppIcon' }))
-vi.mock('@/components/icons', () => ({ ArrowLeft: 'ArrowLeft', Pencil: 'Pencil', Play: 'Play' }))
+vi.mock('@/components/PageBackButton', async () => {
+  const { createElement } = await import('react')
+  return { PageBackButton: ({ onPress }: { onPress(): void }) => createElement('button', { id: 'page-back-button', onPress }) }
+})
+vi.mock('@/components/icons', () => ({ Pencil: 'Pencil', Play: 'Play' }))
 vi.mock('@/components/PendingButton', () => ({ PendingButton: ({ children }: { children: unknown }) => typeof children === 'function' ? children({ isPending: false }) : children }))
 vi.mock('@/components/ProjectLoadFailure', () => ({ ProjectLoadFailure: 'ProjectLoadFailure' }))
 vi.mock('@/components/PreviewPanel', async () => {
@@ -59,6 +65,10 @@ beforeEach(() => {
   state.loadStatus = 'loading'
   state.projects = []
   state.open.mockClear()
+  state.back.mockClear()
+  state.canGoBack.mockReset()
+  state.canGoBack.mockReturnValue(false)
+  state.replace.mockClear()
 })
 afterEach(async () => {
   await act(async () => tree?.unmount())
@@ -68,6 +78,19 @@ afterEach(async () => {
 })
 
 describe('Home Screen launch route', () => {
+  it('returns to its caller when possible and falls back to Workspace for a direct link', async () => {
+    await act(async () => { tree = create(<ProjectRunScreen />) })
+    const backButton = tree.root.findAllByType('button').find((node) => node.props.id === 'page-back-button')!
+    state.canGoBack.mockReturnValue(true)
+    await act(async () => backButton.props.onPress())
+    expect(state.back).toHaveBeenCalledOnce()
+    expect(state.replace).not.toHaveBeenCalled()
+
+    state.canGoBack.mockReturnValue(false)
+    await act(async () => backButton.props.onPress())
+    expect(state.replace).toHaveBeenCalledExactlyOnceWith('/(tabs)/workspace')
+  })
+
   it('waits for local projects, then auto-opens Preview without mounting an editor', async () => {
     // The store can publish its project list before draft hydration is ready.
     state.projects = [{ id: state.id, name: 'Notes' }]

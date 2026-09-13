@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { SETTINGS_DETAILS, isSettingsDetail, returnToSettingsHome, settingsDetailRoutes, settingsHomeRoute } from '../src/utils/settings-routes'
+import { SETTINGS_DETAILS, isSettingsDetail, settingsDetailRoutes, settingsHomeRoute } from '../src/utils/settings-routes'
+import { returnFromSecondaryPage } from '../src/utils/secondary-page-navigation'
 
 describe('Settings detail navigation', () => {
   it('places every detail outside the tab route', () => {
@@ -23,9 +24,18 @@ describe('Settings detail navigation', () => {
     expect(isSettingsDetail(['models'])).toBe(false)
   })
 
-  it('handles every back action by dismissing directly to Settings home', () => {
-    const dismissed: string[] = []
-    expect(returnToSettingsHome({ dismissTo: (href) => dismissed.push(href) })).toBe(true)
-    expect(dismissed).toEqual([settingsHomeRoute])
+  it('returns to the previous page, or Settings home for a direct link', () => {
+    const actions: string[] = []
+    const router = {
+      canGoBack: () => true,
+      back: () => { actions.push('back') },
+      replace: (href: string) => { actions.push(href) },
+    }
+    expect(returnFromSecondaryPage(router, settingsHomeRoute)).toBe(true)
+    expect(actions).toEqual(['back'])
+
+    router.canGoBack = () => false
+    expect(returnFromSecondaryPage(router, settingsHomeRoute)).toBe(true)
+    expect(actions).toEqual(['back', settingsHomeRoute])
   })
 })

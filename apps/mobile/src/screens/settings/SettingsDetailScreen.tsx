@@ -2,8 +2,9 @@ import { APP_LANGUAGE_OPTIONS, type AppLanguage } from '@runwhale/mobile-protoco
 import { renderSlot } from '#extensions'
 import { AppDialog } from '@/components/AppDialog'
 import { AppIcon } from '@/components/AppIcon'
+import { PageBackButton } from '@/components/PageBackButton'
 import { PendingButton } from '@/components/PendingButton'
-import { ArrowLeft, Bot, Cpu, Database, ExternalLink, Info, KeyRound, PlugZap, SlidersHorizontal, type LucideIcon } from '@/components/icons'
+import { Bot, Cpu, Database, ExternalLink, Info, KeyRound, PlugZap, SlidersHorizontal, type LucideIcon } from '@/components/icons'
 import { useI18n } from '@/i18n'
 import { usePreferences } from '@/state/preferences'
 import { useRuntime } from '@/state/runtime'
@@ -13,7 +14,8 @@ import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll'
 import { permissionModeChangeRequiresConfirmation, permissionModeDescriptionKeys } from '@/utils/permission-mode'
 import { settingsAccessibilityContract, settingsChoiceAccessibility, settingsRadioAccessibilityState } from '@/utils/settings-accessibility'
 import { settingsUseStackedRows } from '@/utils/settings-layout'
-import { returnToSettingsHome, type SettingsDetail } from '@/utils/settings-routes'
+import { settingsHomeRoute, type SettingsDetail } from '@/utils/settings-routes'
+import { returnFromSecondaryPage } from '@/utils/secondary-page-navigation'
 import { loadRuntimeEnvironment, runtimeSettingsPresentation, shouldLoadRuntimeEnvironment, type RuntimeEnvironmentLoadState } from '@/utils/settings-runtime'
 import type { MobilePermissionMode } from '@runwhale/mobile-protocol'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
@@ -36,7 +38,7 @@ export function SettingsDetailScreen({ detail }: { detail: SettingsDetail }) {
   const { t } = useI18n()
   const colors = useAppColors()
   const styles = useMemo(() => createStyles(colors), [colors])
-  const handleBack = useCallback(() => returnToSettingsHome(router), [router])
+  const handleBack = useCallback(() => returnFromSecondaryPage(router, settingsHomeRoute), [router])
   const { scrollRef, onScroll, rememberFocusedInput, forgetFocusedInput } = useFocusedInputScroll()
 
   useFocusEffect(useCallback(() => {
@@ -47,9 +49,7 @@ export function SettingsDetailScreen({ detail }: { detail: SettingsDetail }) {
 
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
     <View style={styles.detailHeader}>
-      <Button isIconOnly size="sm" variant="ghost" accessibilityRole={settingsAccessibilityContract.buttonRole} accessibilityLabel={t('back')} onPress={handleBack} style={styles.backButton}>
-        <AppIcon icon={ArrowLeft} color={colors.accent} size={21} />
-      </Button>
+      <PageBackButton onPress={handleBack} />
       <Text accessibilityRole="header" numberOfLines={2} style={styles.detailTitle}>{detailTitle(detail, t)}</Text>
       <View style={styles.headerSpacer} />
     </View>

@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Linking, Platform, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AppIcon } from '@/components/AppIcon'
-import { ArrowLeft, Pencil, Play } from '@/components/icons'
+import { Pencil, Play } from '@/components/icons'
+import { PageBackButton } from '@/components/PageBackButton'
 import { PendingButton } from '@/components/PendingButton'
 import { PreviewPanel, type PreviewPanelHandle } from '@/components/PreviewPanel'
 import { ProjectLoadFailure } from '@/components/ProjectLoadFailure'
@@ -15,6 +16,7 @@ import { useProjects } from '@/state/projects'
 import { type ThemeColors, useAppColors } from '@/theme/tokens'
 import { projectIdFromLaunchUrl, type ProjectShortcutAppearance } from '@/utils/project-shortcut'
 import { loadProjectShortcut } from '@/utils/project-shortcut-storage'
+import { returnFromSecondaryPage } from '@/utils/secondary-page-navigation'
 
 export default function ProjectRunScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -50,7 +52,7 @@ function ProjectRun({ id }: { id: string }) {
 
   const edit = (repairPrompt?: string) => router.replace({ pathname: '/workspace/[id]', params: { id, ...(repairPrompt ? { repairPrompt } : {}) } })
   return <SafeAreaView style={styles.safe}>
-    <View style={styles.header}><Button variant="ghost" style={styles.textButton} onPress={() => router.replace('/(tabs)/workspace')}><AppIcon icon={ArrowLeft} color={colors.accent} size={18} /><Button.Label style={styles.linkLabel}>{t('workspace')}</Button.Label></Button></View>
+    <View style={styles.header}><PageBackButton onPress={() => returnFromSecondaryPage(router, '/(tabs)/workspace')} /></View>
     <View style={styles.center}>
       {loadStatus === 'failed' ? <ProjectLoadFailure retrying={retrying} disabled={retrying} onRetry={() => { setRetrying(true); void retryLoad().catch(() => undefined).finally(() => setRetrying(false)) }} /> : loadStatus === 'loading' ? <Spinner color={colors.accent} /> : !project ? <>
         <Text style={styles.title}>{t('projectNotFound')}</Text><Text style={styles.body}>{t('shortcutMissingProject')}</Text>

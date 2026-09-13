@@ -4,15 +4,6 @@ export type SettingsDetail = (typeof SETTINGS_DETAILS)[number]
 
 export const settingsHomeRoute = '/(tabs)/settings' as const
 
-export interface SettingsHomeRouter {
-  dismissTo(href: typeof settingsHomeRoute): void
-}
-
-export function returnToSettingsHome(router: SettingsHomeRouter): true {
-  router.dismissTo(settingsHomeRoute)
-  return true
-}
-
 export const settingsDetailRoutes: Record<SettingsDetail, `/settings/${SettingsDetail}`> = {
   general: '/settings/general',
   models: '/settings/models',

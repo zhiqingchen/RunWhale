@@ -17,7 +17,6 @@ export function createStyles(colors: ThemeColors) {
   keyboard: { flex: 1 },
   detailHeader: { minHeight: 56, paddingHorizontal: 12, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, backgroundColor: colors.canvas },
   detailTitle: { flex: 1, minWidth: 0, color: colors.text, fontSize: typeScale.heading, fontWeight: '900', textAlign: 'center' },
-  backButton: { width: settingsLayout.minimumTouchTarget, height: settingsLayout.minimumTouchTarget, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   headerSpacer: { width: settingsLayout.minimumTouchTarget, height: settingsLayout.minimumTouchTarget },
   detailContent: { width: '100%', maxWidth: deviceLayout.readableContentMaximumWidth, alignSelf: 'center', paddingHorizontal: settingsLayout.detailHorizontalPadding, paddingTop: 18, paddingBottom: 24, gap: 14 },
   detailIntroduction: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 2, paddingVertical: 2 },
