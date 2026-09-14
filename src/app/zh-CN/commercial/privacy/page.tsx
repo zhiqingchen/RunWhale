@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { ContentPage } from "@/app/content-page";
 import { indexableRobots } from "@/app/seo-metadata";
 
-const title = "哪里跑商业版隐私政策";
+const title = "哪里跑隐私政策";
 const description =
-  "哪里跑商业版隐私政策：了解本地工作区数据、联网 AI 服务、账号、订阅、使用统计与网站托管的数据处理方式。";
+  "哪里跑隐私政策：了解本地工作区数据、联网 AI 服务、账号、订阅、使用统计与网站托管的数据处理方式。";
 const socialImage = {
   url: `${siteUrl}/media/optimized/v1/runwhale-og-1200x630.png`,
   width: 1200,
@@ -47,26 +47,25 @@ export default function ChineseCommercialPrivacyPage() {
       locale="zh-CN"
       languageHref="/commercial/privacy"
       privacyHref="/zh-CN/commercial/privacy"
-      eyebrow="商业版"
-      title="商业版隐私政策"
-      summary="本政策适用于哪里跑商业版，说明本地工作区数据、联网 AI 服务、账号、订阅、使用统计与网站托管的数据处理方式。"
+      eyebrow="隐私"
+      title="隐私政策"
+      summary="本政策适用于哪里跑应用及本网站，说明本地工作区数据、联网 AI 服务、账号、订阅、使用统计与网站托管的数据处理方式。"
       updated="2026 年 9 月 15 日"
       updatedIso="2026-09-15"
     >
       <section>
         <h2>适用范围</h2>
-        <p>本政策适用于哪里跑商业版移动应用和本网站，说明我们自身的数据处理与共享行为。所链接的模型服务商、Git 托管服务、软件包注册表及其他联网服务政策，补充说明各自的处理方式，不替代我们在本政策中承担的责任。</p>
-        <p>开源社区版适用单独的<a href={sitePath("/zh-CN/privacy")}>社区版隐私政策</a>。</p>
+        <p>本政策适用于哪里跑移动应用和本网站，说明我们自身的数据处理与共享行为。所链接的模型服务商、Git 托管服务、软件包注册表及其他联网服务政策，补充说明各自的处理方式，不替代我们在本政策中承担的责任。</p>
       </section>
 
       <section>
         <h2>应用处理的信息</h2>
         <p>哪里跑会将项目、Git 历史、智能体会话、附件、偏好设置、项目缓存和生成的项目数据保存在设备上的应用本地容器中。模型服务商的 API 密钥和设备的 Git SSH 私钥使用操作系统的安全存储保存。</p>
-        <p>商业版提供可选的账号和订阅功能；账号服务不会保存你的项目或智能体会话副本。</p>
+        <p>账号和订阅功能为可选功能；账号服务不会保存你的项目或智能体会话副本。</p>
       </section>
 
       <section>
-        <h2>商业版账号与订阅</h2>
+        <h2>账号与订阅</h2>
         <p>使用已开放的 Google 或 Apple 登录方式时，哪里跑会验证服务商提供的身份凭证，并保存账号标识、关联的登录服务商标识、服务商提供的已验证邮箱，以及账号和会话的时间信息。登录令牌保存在应用的安全存储中，服务端仅保存令牌哈希；令牌不会提供给用户项目、智能体会话或 Preview。</p>
         <p>Cloudflare 托管账号 API 和数据库，并处理提供这些服务所需的网络请求。RevenueCat 接收你的哪里跑账号标识和商店购买信息，以验证订阅、试用、续订和退款。哪里跑记录订阅状态和用量账目。商店付款由 Apple 或 Google 处理，哪里跑不会接收你的银行卡资料。</p>
       </section>
@@ -99,8 +98,8 @@ export default function ChineseCommercialPrivacyPage() {
       </section>
 
       <section>
-        <h2>商业版应用使用统计</h2>
-        <p>商业版移动应用使用 Google Analytics for Firebase，在应用启动时自动启用，以了解功能使用情况并改善可靠性。Debug 构建不发送这些统计。商业版不会单独弹出统计授权提示，也不提供统计开关。</p>
+        <h2>应用使用统计</h2>
+        <p>应用使用 Google Analytics for Firebase，在应用启动时自动启用，以了解功能使用情况并改善可靠性。Debug 构建不发送这些统计。应用不会单独弹出统计授权提示，也不提供统计开关。</p>
         <p>Google 会接收应用打开与互动信息、项目创建和 Preview 的事件类别、结果与耗时、应用版本、设备型号、操作系统、语言，以及随机生成的应用实例标识。Google 可能根据连接的 IP 地址推算大致位置；Analytics 不记录或存储单独的 IP 地址。我们不会将你的哪里跑账号标识、邮箱、代码、提示词、项目名称、文件内容、路径、URL 或日志作为统计事件数据发送。</p>
         <p>广告标识收集、广告个性化和自动屏幕上报均已关闭。统计限于哪里跑应用本身，Firebase SDK 不向 Native Preview 中运行的用户项目开放。Google 会在其基础设施上处理统计数据，处理地点可能在你所在国家或地区以外，具体遵循 <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google 隐私政策</a>及其 <a href="https://support.google.com/analytics/answer/6004245" target="_blank" rel="noreferrer">Analytics 数据保护说明</a>。</p>
         <p>统计记录按我们 Google Analytics 媒体资源的数据保留设置保存。删除哪里跑账号或本地项目，不会自动删除此前收集的统计数据；我们不通过账号标识关联这些统计。如需提出统计数据的隐私或删除请求，请通过下方邮箱联系我们。</p>
@@ -121,7 +120,7 @@ export default function ChineseCommercialPrivacyPage() {
       <section>
         <h2>保留、删除与个人选择</h2>
         <p>你可以控制设备上存储的应用数据。本地工作区数据会保留到你在应用中删除它，或在设备上移除应用数据；临时缓存可能提前清理。可在工作区删除单个会话或项目，在“设置 → 模型”移除 API 密钥，并在设置中删除或轮换 Git SSH 密钥。安全存储内容可能在卸载后保留，因此请先移除，并同时在模型服务商或 Git 托管服务处撤销凭证。删除本地数据不会删除已经发送给模型服务商、Git 托管服务、软件包注册表或其他第三方的副本；如需对这些服务控制的数据行使权利，请直接联系对应服务。</p>
-        <p>在商业版中，重新登录后可在“我的”页面删除账号。删除操作会移除账号身份和会话，并保留本地项目。使用化名标识的用量记录会保留至定时清理，通常为三至四个月；用于防止重建账号重置额度的临时哈希标识会保留至下一个 UTC 日历月。删除账号不会取消 App Store 或 Google Play 订阅，请在商店管理取消操作。商店的账单记录和 RevenueCat 记录遵循各自的数据保留政策。</p>
+        <p>重新登录后可在“我的”页面删除账号。删除操作会移除账号身份和会话，并保留本地项目。使用化名标识的用量记录会保留至定时清理，通常为三至四个月；用于防止重建账号重置额度的临时哈希标识会保留至下一个 UTC 日历月。删除账号不会取消 App Store 或 Google Play 订阅，请在商店管理取消操作。商店的账单记录和 RevenueCat 记录遵循各自的数据保留政策。</p>
         <p>如需咨询哪里跑控制的信息、申请删除数据，或在适用情况下撤回同意，请发送邮件至 <a href="mailto:runwhale@runwhale.dev">runwhale@runwhale.dev</a>。</p>
         <p>联系支持时，我们会接收你的邮箱和消息以便回复，并在处理请求或履行法律义务所需期间保留邮件。你也可以通过同一邮箱提出访问、更正或其他隐私请求。请勿发送 API 密钥或私钥。</p>
       </section>

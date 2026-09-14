@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { ContentPage } from "@/app/content-page";
 import { indexableRobots } from "@/app/seo-metadata";
 
-const title = "RunWhale Commercial Edition Privacy Policy";
+const title = "RunWhale Privacy Policy";
 const description =
-  "Privacy Policy for the RunWhale commercial edition: local workspace data, connected AI services, accounts, subscriptions, usage analytics, and website hosting.";
+  "RunWhale privacy policy: local workspace data, connected AI services, accounts, subscriptions, usage analytics, and website hosting.";
 const socialImage = {
   url: `${siteUrl}/media/optimized/v1/runwhale-og-1200x630.png`,
   width: 1200,
@@ -46,26 +46,25 @@ export default function CommercialPrivacyPage() {
     <ContentPage
       languageHref="/zh-CN/commercial/privacy"
       privacyHref="/commercial/privacy"
-      eyebrow="Commercial edition"
-      title="Commercial Edition Privacy Policy"
-      summary="This policy covers the RunWhale commercial edition: local workspace data, connected AI services, accounts, subscriptions, usage analytics, and website hosting."
+      eyebrow="Privacy"
+      title="Privacy Policy"
+      summary="This policy covers the RunWhale app and this website: local workspace data, connected AI services, accounts, subscriptions, usage analytics, and website hosting."
       updated="September 15, 2026"
       updatedIso="2026-09-15"
     >
       <section>
         <h2>Scope</h2>
-        <p>This policy applies to the RunWhale commercial mobile app and this RunWhale website. It explains our own data handling and sharing. The linked policies of model providers, Git hosts, package registries, and other connected services provide additional information about those services; they do not replace our responsibilities described here.</p>
-        <p>The open-source community edition has a separate <a href={sitePath("/privacy")}>Community Edition Privacy Policy</a>.</p>
+        <p>This policy applies to the RunWhale mobile app and this RunWhale website. It explains our own data handling and sharing. The linked policies of model providers, Git hosts, package registries, and other connected services provide additional information about those services; they do not replace our responsibilities described here.</p>
       </section>
 
       <section>
         <h2>Information handled by the app</h2>
         <p>RunWhale stores projects, Git history, agent sessions, attachments, preferences, project caches, and generated project data in the app’s local container on your device. Model-provider API keys and the device&apos;s Git SSH private key are stored using the operating system’s secure storage.</p>
-        <p>The commercial edition offers optional accounts and subscriptions; its account service does not store copies of your projects or agent sessions.</p>
+        <p>Accounts and subscriptions are optional. The account service does not store copies of your projects or agent sessions.</p>
       </section>
 
       <section>
-        <h2>Commercial accounts and subscriptions</h2>
+        <h2>Accounts and subscriptions</h2>
         <p>When you sign in with an available Google or Apple login option, RunWhale verifies the provider&apos;s identity proof and stores your account identifier, linked provider identifiers, verified email address when supplied, and account and session timestamps. Login tokens stay in the app&apos;s secure storage; the server stores token hashes. They are not supplied to your projects, agent sessions, or Preview.</p>
         <p>Cloudflare hosts the account API and database and processes the network requests needed to provide them. RevenueCat receives your RunWhale account identifier and store purchase information to verify subscriptions, trials, renewals, and refunds. RunWhale records subscription status and usage accounting. Apple or Google processes store payments; RunWhale does not receive your payment-card details.</p>
       </section>
@@ -98,8 +97,8 @@ export default function CommercialPrivacyPage() {
       </section>
 
       <section>
-        <h2>Commercial app usage analytics</h2>
-        <p>The commercial mobile app uses Google Analytics for Firebase, enabled automatically when the app starts, to understand feature usage and improve reliability. Debug builds do not send these analytics. The commercial app does not show a separate analytics permission prompt or provide an analytics switch.</p>
+        <h2>App usage analytics</h2>
+        <p>The app uses Google Analytics for Firebase, enabled automatically when the app starts, to understand feature usage and improve reliability. Debug builds do not send these analytics. The app does not show a separate analytics permission prompt or provide an analytics switch.</p>
         <p>Google receives app opens and engagement information, project creation and Preview event categories, outcomes and durations, app version, device model, operating system, language, and a randomly generated app-instance identifier. Google may derive approximate location from the connection&apos;s IP address; Analytics does not log or store individual IP addresses. We do not send your RunWhale account identifier, email, code, prompts, project names, file contents, paths, URLs, or logs as analytics event data.</p>
         <p>Advertising identifier collection, advertising personalization, and automatic screen reporting are disabled. Analytics is limited to the RunWhale app; the Firebase SDK is not exposed to projects running in Native Preview. Google processes analytics data on its infrastructure, which may be outside your country, according to the <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google Privacy Policy</a> and its <a href="https://support.google.com/analytics/answer/6004245" target="_blank" rel="noreferrer">Analytics data safeguards</a>.</p>
         <p>Analytics records follow the retention settings of our Google Analytics property. Deleting a RunWhale account or local projects does not automatically delete previously collected analytics, which are not linked by us to your account identifier. Contact us using the address below for analytics privacy or deletion requests.</p>
@@ -120,7 +119,7 @@ export default function CommercialPrivacyPage() {
       <section>
         <h2>Retention, deletion, and your choices</h2>
         <p>You control app data stored on your device. Local workspace data remains until you delete it in the app or remove the app&apos;s data on your device; temporary caches may be cleared earlier. Delete individual sessions or projects in the workspace, remove saved API keys in Settings → Models, and remove or rotate the Git SSH key in Settings. Secure-storage items may survive uninstalling the app, so remove them first. Revoke credentials with the model provider or Git host as well. Deleting local data does not delete copies already sent to a model provider, Git host, package registry, or other third party; contact that service to exercise rights over data it controls.</p>
-        <p>In the commercial edition, you can delete your account from the Me tab after signing in again. Deletion removes account identities and sessions while preserving local projects. Pseudonymous usage records remain until scheduled cleanup, generally three to four months; a temporary hashed identifier prevents quota-reset abuse until the next UTC calendar month. Deleting the account does not cancel an App Store or Google Play subscription. Manage cancellation in the store, whose billing records and RevenueCat records follow their own retention policies.</p>
+        <p>You can delete your account from the Me tab after signing in again. Deletion removes account identities and sessions while preserving local projects. Pseudonymous usage records remain until scheduled cleanup, generally three to four months; a temporary hashed identifier prevents quota-reset abuse until the next UTC calendar month. Deleting the account does not cancel an App Store or Google Play subscription. Manage cancellation in the store, whose billing records and RevenueCat records follow their own retention policies.</p>
         <p>To ask about information controlled by RunWhale, request deletion, or withdraw consent where applicable, email <a href="mailto:runwhale@runwhale.dev">runwhale@runwhale.dev</a>.</p>
         <p>If you contact support, we receive your email address and message to respond. We keep support correspondence while needed to handle your request or meet legal obligations. You can use the same address for access, correction, or other privacy requests. Do not send API keys or private keys.</p>
       </section>

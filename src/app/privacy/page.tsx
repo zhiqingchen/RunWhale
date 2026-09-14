@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { ContentPage } from "../content-page";
 import { indexableRobots } from "../seo-metadata";
 
-const title = "RunWhale Community Edition Privacy Policy";
+const title = "RunWhale Privacy Policy";
 const description =
-  "Privacy policy for the free, open-source RunWhale Community Edition: local data, third-party AI sharing, deletion, and website hosting.";
+  "RunWhale privacy policy: local data, third-party AI sharing, deletion, and website hosting.";
 const socialImage = {
   url: `${siteUrl}/media/optimized/v1/runwhale-og-1200x630.png`,
   width: 1200,
@@ -46,21 +46,21 @@ export default function PrivacyPage() {
     <ContentPage
       languageHref="/zh-CN/privacy"
       eyebrow="Privacy"
-      title="Community Edition Privacy Policy"
-      summary="This policy covers the free, open-source RunWhale Community Edition and this website. It explains what stays on your device, what is shared with services you choose, and your privacy choices."
+      title="Privacy Policy"
+      summary="This policy covers the RunWhale app and this website. It explains what stays on your device, what is shared with services you choose, and your privacy choices."
       updated="September 15, 2026"
       updatedIso="2026-09-15"
     >
       <section>
         <h2>Scope</h2>
-        <p>This policy applies to the open-source RunWhale Community Edition mobile app and this RunWhale website. It explains our own data handling and sharing. The linked policies of model providers, Git hosts, package registries, and other connected services provide additional information about those services; they do not replace our responsibilities described here.</p>
-        <p>RunWhale Community Edition is free and does not require a RunWhale account. It does not send usage analytics or advertising identifiers to RunWhale.</p>
+        <p>This policy applies to the RunWhale mobile app and this RunWhale website. It explains our own data handling and sharing. The linked policies of model providers, Git hosts, package registries, and other connected services provide additional information about those services; they do not replace our responsibilities described here.</p>
+        <p>The app does not require a RunWhale account. It does not send usage analytics or advertising identifiers to RunWhale.</p>
       </section>
 
       <section>
         <h2>Information handled by the app</h2>
         <p>RunWhale stores projects, Git history, agent sessions, attachments, preferences, project caches, and generated project data in the app’s local container on your device. Model-provider API keys and the device&apos;s Git SSH private key are stored using the operating system’s secure storage.</p>
-        <p>RunWhale Community Edition runs without a RunWhale account or server. RunWhale does not upload copies of your projects or Agent sessions to a RunWhale server.</p>
+        <p>RunWhale does not upload copies of your projects or Agent sessions to a RunWhale server.</p>
       </section>
 
       <section>
@@ -105,7 +105,7 @@ export default function PrivacyPage() {
       <section>
         <h2>Retention, deletion, and your choices</h2>
         <p>You control app data stored on your device. Local workspace data remains until you delete it in the app or remove the app&apos;s data on your device; temporary caches may be cleared earlier. Delete individual sessions or projects in the workspace, remove saved API keys in Settings → Models, and remove or rotate the Git SSH key in Settings. Secure-storage items may survive uninstalling the app, so remove them first. Revoke credentials with the model provider or Git host as well. Deleting local data does not delete copies already sent to a model provider, Git host, package registry, or other third party; contact that service to exercise rights over data it controls.</p>
-        <p>Withdraw AI consent in Settings → About → Privacy Policy → AI data sharing. Revocation stops active agents and prevents further model requests until you consent again. It does not remove information that a third party has already received. The app includes an offline copy of the community edition&apos;s privacy policy.</p>
+        <p>Withdraw AI consent in Settings → About → Privacy Policy → AI data sharing. Revocation stops active agents and prevents further model requests until you consent again. It does not remove information that a third party has already received. The app includes an offline copy of this privacy policy.</p>
         <p>To ask about information controlled by RunWhale, request deletion, or withdraw consent where applicable, email <a href="mailto:runwhale@runwhale.dev">runwhale@runwhale.dev</a>.</p>
         <p>If you contact support, we receive your email address and message to respond. We keep support correspondence while needed to handle your request or meet legal obligations. You can use the same address for access, correction, or other privacy requests. Do not send API keys or private keys.</p>
       </section>
