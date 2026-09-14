@@ -68,13 +68,13 @@ export default function TermsPage() {
 
       <section>
         <h2>账号删除与服务变更</h2>
-        <p>你可以在商业版应用的「我的」中申请删除账号，本地项目仍保留在设备上。账号删除及数据处理方式见隐私政策；删除账号前，请另外取消任何商店订阅。</p>
+        <p>你可以在商业版应用的「我的」中申请删除账号，本地项目仍保留在设备上。账号删除及数据处理方式见<a href={sitePath("/zh-CN/commercial/privacy")}>商业版隐私政策</a>；删除账号前，请另外取消任何商店订阅。</p>
         <p>为处理滥用、安全风险或法律要求，我们可能限制账号服务。我们可能随着服务变化更新条款，页面日期标识最新版本；依法需要时，我们会在重大变更生效前通知你。本条款不排除适用法律不允许排除的权利或救济。</p>
       </section>
 
       <section>
         <h2>隐私与联系</h2>
-        <p>有关数据处理，请阅读<a href={sitePath("/zh-CN/privacy")}>隐私政策</a>。如需帮助，请访问<a href={sitePath("/zh-CN/support")}>支持页面</a>或发送邮件至 <a href="mailto:runwhale@runwhale.dev">runwhale@runwhale.dev</a>。</p>
+        <p>有关数据处理，请按使用的版本阅读<a href={sitePath("/zh-CN/privacy")}>社区版隐私政策</a>或<a href={sitePath("/zh-CN/commercial/privacy")}>商业版隐私政策</a>。如需帮助，请访问<a href={sitePath("/zh-CN/support")}>支持页面</a>或发送邮件至 <a href="mailto:runwhale@runwhale.dev">runwhale@runwhale.dev</a>。</p>
       </section>
     </ContentPage>
   );

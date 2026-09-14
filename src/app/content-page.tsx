@@ -55,6 +55,7 @@ const navigation = {
 export function ContentPage({
   locale = "en",
   languageHref,
+  privacyHref,
   eyebrow,
   title,
   summary,
@@ -66,6 +67,7 @@ export function ContentPage({
 }: {
   locale?: WebsiteLocale;
   languageHref: string;
+  privacyHref?: string;
   eyebrow: string;
   title: string;
   summary: string;
@@ -140,7 +142,7 @@ export function ContentPage({
           <Link href={copy.links.guide.href}>{copy.links.guide.label}</Link>
           <Link href={copy.links.faq.href}>{copy.links.faq.label}</Link>
           <Link href={copy.links.support.href}>{copy.links.support.label}</Link>
-          <Link href={copy.links.privacy.href}>{copy.links.privacy.label}</Link>
+          <Link href={privacyHref ?? copy.links.privacy.href}>{copy.links.privacy.label}</Link>
           <Link href={copy.links.terms.href}>{copy.links.terms.label}</Link>
           <Link href={languageHref} hrefLang={copy.languageCode}>{copy.languageLabel}</Link>
           <a href={githubUrl} target="_blank" rel="noreferrer">GitHub</a>

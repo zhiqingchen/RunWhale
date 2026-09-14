@@ -68,13 +68,13 @@ export default function TermsPage() {
 
       <section>
         <h2>Account deletion and service changes</h2>
-        <p>You can request account deletion from Me in the commercial app. Local projects remain on your device. Account deletion and data handling are explained in the Privacy Policy; cancel any store subscription separately before deleting your account.</p>
+        <p>You can request account deletion from Me in the commercial app. Local projects remain on your device. Account deletion and data handling are explained in the <a href={sitePath("/commercial/privacy")}>Commercial Edition Privacy Policy</a>; cancel any store subscription separately before deleting your account.</p>
         <p>We may restrict account services where needed to address abuse, security risks, or legal requirements. We may update these terms as the service changes and will identify the latest version by the date on this page. Where required, material changes will be communicated before they take effect. These terms do not exclude rights or remedies that applicable law does not allow us to exclude.</p>
       </section>
 
       <section>
         <h2>Privacy and contact</h2>
-        <p>For data handling, read the <a href={sitePath("/privacy")}>Privacy Policy</a>. For help, visit <a href={sitePath("/support")}>Support</a> or email <a href="mailto:runwhale@runwhale.dev">runwhale@runwhale.dev</a>.</p>
+        <p>For data handling, read the <a href={sitePath("/privacy")}>Community Edition Privacy Policy</a> or the <a href={sitePath("/commercial/privacy")}>Commercial Edition Privacy Policy</a> for your edition. For help, visit <a href={sitePath("/support")}>Support</a> or email <a href="mailto:runwhale@runwhale.dev">runwhale@runwhale.dev</a>.</p>
       </section>
     </ContentPage>
   );

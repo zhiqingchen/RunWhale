@@ -69,11 +69,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${siteUrl}/privacy`,
+      lastModified: "2026-09-15",
       alternates: languageAlternates("/privacy", "/zh-CN/privacy"),
     },
     {
       url: `${siteUrl}/zh-CN/privacy`,
+      lastModified: "2026-09-15",
       alternates: languageAlternates("/privacy", "/zh-CN/privacy"),
+    },
+    {
+      url: `${siteUrl}/commercial/privacy`,
+      lastModified: "2026-09-15",
+      alternates: languageAlternates("/commercial/privacy", "/zh-CN/commercial/privacy"),
+    },
+    {
+      url: `${siteUrl}/zh-CN/commercial/privacy`,
+      lastModified: "2026-09-15",
+      alternates: languageAlternates("/commercial/privacy", "/zh-CN/commercial/privacy"),
     },
     {
       url: `${siteUrl}/terms`,

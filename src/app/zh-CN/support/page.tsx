@@ -77,7 +77,7 @@ export default function ChineseSupportPage() {
 
       <section>
         <h2>隐私与安全报告</h2>
-        <p>有关本地应用数据、所连接的服务、网站托管、数据删除和隐私请求的详细说明，请阅读<a href={sitePath("/zh-CN/privacy")}>哪里跑隐私政策</a>。</p>
+        <p>有关本地应用数据、所连接的服务、网站托管、数据删除和隐私请求的详细说明，请按使用的版本阅读<a href={sitePath("/zh-CN/privacy")}>社区版隐私政策</a>或<a href={sitePath("/zh-CN/commercial/privacy")}>商业版隐私政策</a>。</p>
         <p>如果你认为发现了安全漏洞，或需要在隐私请求中提供敏感细节，请发送邮件至 <a href="mailto:runwhale@runwhale.dev">runwhale@runwhale.dev</a>，不要创建公开 Issue。</p>
       </section>
 

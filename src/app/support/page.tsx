@@ -76,7 +76,7 @@ export default function SupportPage() {
 
       <section>
         <h2>Privacy and security reports</h2>
-        <p>Read the <a href={sitePath("/privacy")}>RunWhale Privacy Policy</a> for details about local app data, connected services, website hosting, deletion, and privacy requests.</p>
+        <p>Read the <a href={sitePath("/privacy")}>Community Edition Privacy Policy</a> or the <a href={sitePath("/commercial/privacy")}>Commercial Edition Privacy Policy</a> for details about local app data, connected services, website hosting, deletion, and privacy requests for your edition.</p>
         <p>If you believe you found a security vulnerability, or need to share sensitive details with a privacy request, email <a href="mailto:runwhale@runwhale.dev">runwhale@runwhale.dev</a> instead of opening a public Issue.</p>
       </section>
 
