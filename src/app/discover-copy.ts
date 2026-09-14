@@ -15,8 +15,8 @@ export const discoverCopy = {
       downloadNote: "Model API key required. Provider usage is billed separately.",
       summary: "Bring your idea and a model API key.",
       items: [
-        { title: "One-time app purchase", body: "The purchase gives you the RunWhale workspace. Check the App Store for your local price and availability." },
-        { title: "Model usage is separate", body: "Bring your own provider API key. Model usage is billed by that provider and is not included in the app purchase." },
+        { title: "Free community edition", body: "RunWhale Community Edition is free and open source. No RunWhale account or subscription is required. Check the App Store for availability in your region." },
+        { title: "Model usage is separate", body: "Bring your own provider API key. Any model usage charges are billed by that provider." },
         { title: "Check your device", body: "Use the App Store listing to check iPhone and iPad compatibility. Agent requests need an internet connection." },
       ],
       guide: "Set up your first model",
@@ -106,8 +106,8 @@ export const discoverCopy = {
       downloadNote: "需要自备模型 API 密钥，服务商用量单独计费。",
       summary: "准备一个想法，以及模型 API 密钥。",
       items: [
-        { title: "应用一次性购买", body: "购买后即可使用哪里跑开发工作区。当地价格和可购买状态请以 App Store 为准。" },
-        { title: "模型用量单独计费", body: "需要使用你自己的服务商 API 密钥。模型用量由该服务商计费，不包含在应用购买费用中。" },
+        { title: "免费社区版", body: "哪里跑社区版免费开源，无需哪里跑账号或订阅。所在地区的可用状态请以 App Store 为准。" },
+        { title: "模型用量单独计费", body: "需要使用你自己的服务商 API 密钥，模型用量费用由该服务商收取。" },
         { title: "确认设备是否适用", body: "请在 App Store 查看 iPhone 和 iPad 的兼容性要求。向智能体发送需求时需要联网。" },
       ],
       guide: "配置第一个模型",

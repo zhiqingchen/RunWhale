@@ -28,7 +28,7 @@ export const homeCopy = {
     beginnerPitch:
       "Beginner-friendly vibe coding — start with an idea and learn by building.",
     downloadOnAppStore: "Download on the App Store",
-    appStorePrice: "US$10 one-time purchase",
+    appStorePrice: "Free, open-source community edition",
     watchWorkflow: "Watch a real workflow",
     localNote:
       "Workspace files and tools run on your device; model inference uses your configured provider",
@@ -62,7 +62,7 @@ export const homeCopy = {
       galleryBody:
         "Create the project, send one prompt, approve the file write, follow the checks, open Native Preview, and try the game.",
       disclosure:
-        "All six screenshots are frames from the demo above, with the original English interface. RunWhale is available on the App Store as a US$10 one-time purchase.",
+        "All six screenshots are frames from the demo above, with the original English interface. RunWhale Community Edition is free and open source. AI provider usage charges may apply.",
     },
     screenshots: [
       {
@@ -202,7 +202,7 @@ export const homeCopy = {
       "创建 Web 或 Expo 项目，也可以导入兼容的代码仓库。让哪里跑的 AI 编程智能体检查和编辑代码、运行受支持的检查、审查 Git 变更，并打开 Web 或 React Native 预览。工作区在手机本地运行；模型推理由你配置的服务商提供。",
     beginnerPitch: "对新手更友好的 Vibe Coding——从一个想法开始，在创造中学习。",
     downloadOnAppStore: "前往 App Store 下载",
-    appStorePrice: "一次性购买 · 10 美元",
+    appStorePrice: "免费开源社区版",
     watchWorkflow: "观看真实工作流程",
     localNote: "工作区文件和工具在设备本地运行；模型推理由你配置的服务商提供",
     whaleAlt: "哪里跑鲸鱼标志",
@@ -232,7 +232,7 @@ export const homeCopy = {
       galleryBody:
         "创建项目、发送需求、批准文件写入、跟进检查、打开原生预览，再亲手试玩游戏。",
       disclosure:
-        "六张截图均取自上方演示视频，保留原始英文界面。哪里跑现已在 App Store 上架，一次性购买价 10 美元。",
+        "六张截图均取自上方演示视频，保留原始英文界面。哪里跑社区版免费开源，AI 服务商可能收取模型用量费用。",
     },
     screenshots: [
       {
