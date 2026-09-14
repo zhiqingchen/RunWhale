@@ -4,11 +4,11 @@ RunWhale includes and distributes third-party software and assets under their ow
 
 Exact JavaScript dependency versions are recorded in `pnpm-lock.yaml`. Installed package license texts remain authoritative for those packages.
 
-## Icons and Provider Marks
+## Icons and Provider Names
 
 ### Lucide and Feather
 
-RunWhale uses icons from `lucide-react-native` 1.34.0, licensed under the ISC License. Some Lucide icons are derived from Feather and are licensed under the MIT License.
+RunWhale uses icons from `lucide-react-native` 1.38.0, licensed under the ISC License. Some Lucide icons are derived from Feather and are licensed under the MIT License.
 
 Copyright (c) 2026 Lucide Icons and Contributors.
 
@@ -16,21 +16,9 @@ Copyright (c) 2013-present Cole Bemis.
 
 Source: <https://github.com/lucide-icons/lucide>
 
-### Lobe Icons
+### Provider Names
 
-RunWhale uses provider marks from `@lobehub/icons-rn` 2.12.0, licensed under the MIT License.
-
-Copyright (c) 2023 LobeHub.
-
-Source: <https://github.com/lobehub/lobe-icons>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-OpenAI, DeepSeek, Anthropic, Google, and other names and logos are trademarks of their respective owners. Their inclusion identifies supported providers and does not imply endorsement, sponsorship, or affiliation.
+OpenAI, DeepSeek, Anthropic, Google, and other provider names are trademarks of their respective owners. Their inclusion in model configuration identifies supported providers and does not imply endorsement, sponsorship, or affiliation.
 
 ## Native Node Runtime
 

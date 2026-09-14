@@ -54,7 +54,7 @@ export default function SettingsScreen() {
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.pageHeader}><Text accessibilityRole="header" style={styles.pageTitle}>{t('settings')}</Text>{renderSlot('settings.header')}</View>
       {renderSlot('settings.promotion', { language })}
-      <SectionTitle>{t('deepSeekHarness')}</SectionTitle>
+      <SectionTitle>{t('agentSettings')}</SectionTitle>
       <View style={styles.settingsGroup}>
         <SettingsLink icon={SlidersHorizontal} label={t('general')} description={t('generalSettingsSummary')} onPress={() => router.push(settingsDetailRoutes.general)} />
         <SettingsLink icon={Database} label={t('models')} description={t('modelsSettingsSummary')} value={providerName(modelProvider)} onPress={() => router.push(settingsDetailRoutes.models)} />

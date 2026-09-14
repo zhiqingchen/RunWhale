@@ -6,7 +6,7 @@ import type { MobileAgentPreset, MobileModelProvider } from '@runwhale/mobile-pr
 import { AppIcon } from './AppIcon'
 import { ArrowDownToLine, Bot, Check, ChevronRight, Copy, FileText, Share2, ShieldCheck } from './icons'
 import { PendingButton } from './PendingButton'
-import { ProviderLogo } from './ProviderLogo'
+import { ProviderIcon } from './ProviderIcon'
 import { TranscriptDetailsSheet } from './TranscriptDetailsSheet'
 import { useClipboardCopyFeedback } from './TranscriptCodeBlock'
 import { providerLabel } from '@/hooks/agent-panel-types'
@@ -82,7 +82,7 @@ export function SessionDetailsSheet({ open, onOpenChange, title, projectId, sess
     </ScrollView> : <ScrollView key="overview" style={styles.scroll} contentContainerStyle={styles.overview} bounces={false}>
       <View style={styles.configuration}>
         <View style={styles.row}>
-          <View style={styles.rowIcon}><ProviderLogo provider={provider} size={20} color={colors.text} /></View>
+          <View style={styles.rowIcon}><ProviderIcon provider={provider} size={20} color={colors.text} /></View>
           <View style={styles.rowText}><Text style={styles.label}>{t('model')} · {providerLabel(provider)}</Text><Text selectable style={styles.value}>{model}</Text></View>
         </View>
         <View style={styles.divider} />

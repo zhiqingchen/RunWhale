@@ -397,6 +397,7 @@ function ContextCard({ context, onSelectDetails }: { context: TranscriptContextR
 
 function contextTitle(detail: TranscriptContextDetail | undefined, t: ReturnType<typeof useI18n>['t']): string {
   if (detail?.sourceKind === 'system') return t('systemPrompt')
+  if (detail?.sourceKind === 'plugin' && detail.sourceName === '@deepseek-ai/dsh-system-prompt') return t('runtimeContext')
   if (detail?.notice) return t(({ 'goal-complete': 'goalCompletedNotice', 'goal-blocked': 'goalBlockedNotice', 'background-resumed': 'backgroundResumedNotice' } as const)[detail.notice.kind])
   return detail?.sourceName === 'tool-goal' ? t('goal') : detail?.sourceName ?? detail?.sourceKind ?? t('context')
 }

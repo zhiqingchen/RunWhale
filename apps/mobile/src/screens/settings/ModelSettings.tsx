@@ -3,7 +3,7 @@ import { MOBILE_PROVIDERS, type MobileModelProvider } from '@runwhale/mobile-pro
 import { AppDialog } from '@/components/AppDialog'
 import { AppIcon } from '@/components/AppIcon'
 import { PendingButton } from '@/components/PendingButton'
-import { ProviderLogo } from '@/components/ProviderLogo'
+import { ProviderIcon } from '@/components/ProviderIcon'
 import { ChevronDown, CircleCheck, Globe, Image, Plus, Trash2 } from '@/components/icons'
 import { useI18n } from '@/i18n'
 import { usePreferences } from '@/state/preferences'
@@ -278,7 +278,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus, variant = 'settings', on
           onPress={() => requestModelProviderChange(provider)}
           style={[styles.providerButton, providerColumns === 1 && styles.providerButtonSingleColumn, selected && styles.providerButtonActive]}
         >
-          <ProviderLogo provider={provider} color={selected ? controlColors.primaryForeground : controlColors.choiceForeground} size={17} />
+          <ProviderIcon provider={provider} color={selected ? controlColors.primaryForeground : controlColors.choiceForeground} size={17} />
           <Button.Label numberOfLines={providerColumns === 1 ? undefined : 1} style={[styles.providerText, selected && styles.providerTextActive]}>{providerName(provider)}</Button.Label>
         </Button>
       })}

@@ -20,7 +20,7 @@ type TestProps = { children?: ReactNode; [key: string]: unknown }
 vi.mock('#extensions', () => ({ renderSlot: () => undefined }))
 vi.mock('@/components/AppDialog', () => ({ AppDialog: () => null }))
 vi.mock('@/components/AppIcon', () => ({ AppIcon: 'AppIcon' }))
-vi.mock('@/components/ProviderLogo', () => ({ ProviderLogo: 'ProviderLogo' }))
+vi.mock('@/components/ProviderIcon', () => ({ ProviderIcon: 'ProviderIcon' }))
 vi.mock('@/components/icons', () => ({ ChevronDown: 'ChevronDown', CircleCheck: 'CircleCheck', Globe: 'Globe', Image: 'Image', Plus: 'Plus', Trash2: 'Trash2' }))
 vi.mock('@/components/PendingButton', () => ({
   PendingButton: ({ children, ...props }: { children: (state: { isPending: boolean }) => ReactNode; isPending: boolean }) => createElement('Button', props, children({ isPending: props.isPending })),

@@ -33,6 +33,45 @@ class HangingAdapter extends LlmAdapter {
 }
 
 describe('DSH mobile profile', () => {
+  it('uses the RunWhale identity in model requests, including restored sessions', async () => {
+    const requests: GenerateOptions[] = []
+    class CapturingAdapter extends LlmAdapter {
+      async *stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
+        const { signal: _signal, ...request } = options
+        requests.push(structuredClone(request))
+        yield { type: 'finish', reason: { kind: 'stop' } }
+      }
+    }
+    const options = { mode: 'deterministic' as const, secrets: new MemorySecrets() }
+    const first = await createMobileHarness(options)
+    let seed: unknown[]
+    try {
+      first.context.llm.registerAdapter(['identity-test'], new CapturingAdapter())
+      const agent = new MobileHarness(first.context, 'identity-test', 'test', new Map(), () => 'review')
+      const initial = await agent.run({ sessionId: 'identity', prompt: 'Inspect the project' })
+      expect(initial.failure).toBeUndefined()
+      seed = initial.events.map(event => event.type === 'system/message'
+        ? { ...event, data: { ...event.data, content: [{ type: 'text', text: 'You are an AI agent powered by DeepSeek Harness.' }] } }
+        : event)
+      expect((await agent.run({ sessionId: 'identity', prompt: 'Continue' })).failure).toBeUndefined()
+    } finally { await first.dispose() }
+    const restarted = await createMobileHarness(options)
+    try {
+      restarted.context.llm.registerAdapter(['identity-test'], new CapturingAdapter())
+      const agent = new MobileHarness(restarted.context, 'identity-test', 'test', new Map(), () => 'review')
+      const restored = await agent.run({ sessionId: 'identity', prompt: 'Continue after restart', seed })
+      expect(restored.failure).toBeUndefined()
+      expect(requests).toHaveLength(3)
+      for (const request of requests) {
+        const system = JSON.stringify(request.messages.filter(message => message.role === 'system').map(message => message.content))
+        expect(system).toContain('You are RunWhale, an on-device coding agent.')
+        expect(system).not.toMatch(/DeepSeek|powered by/i)
+        expect(system).toContain('never invoke Xcode, Gradle, EAS, IPA, or APK builds')
+        expect(request.tools?.map(tool => tool.name)).toContain('preview_run')
+      }
+    } finally { await restarted.dispose() }
+  })
+
   it('retries an OpenAI HTTP 503 within the same turn, but stops on an authentication error', async () => {
     const secrets = new MemorySecrets()
     secrets.values.set('ref:OPENAI_API_KEY', 'fixture')

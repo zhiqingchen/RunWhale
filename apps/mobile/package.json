@@ -1,6 +1,6 @@
 {
   "name": "@runwhale/mobile",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "license": "Apache-2.0",
   "private": true,
   "main": "expo-router/entry",
@@ -30,7 +30,6 @@
     "@expo/ui": "57.0.15",
     "@expo/vector-icons": "15.0.2",
     "@lezer/highlight": "1.2.3",
-    "@lobehub/icons-rn": "2.12.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native/metro-config": "0.86.3",
     "@runwhale/mobile-protocol": "workspace:*",

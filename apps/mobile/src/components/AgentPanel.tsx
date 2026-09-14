@@ -7,7 +7,7 @@ import { AgentTranscript, TranscriptRichText } from '@/components/AgentTranscrip
 import { AppDialog } from '@/components/AppDialog'
 import { AppIcon } from '@/components/AppIcon'
 import { PendingButton } from '@/components/PendingButton'
-import { ProviderLogo } from '@/components/ProviderLogo'
+import { ProviderIcon } from '@/components/ProviderIcon'
 import { SessionQuickActionDialog } from '@/components/SessionQuickActionDialog'
 import { SessionRecoveryCard } from '@/components/SessionRecoveryCard'
 import { SessionDetailsSheet } from '@/components/SessionDetailsSheet'
@@ -306,7 +306,7 @@ export function AgentPanel(props: AgentPanelProps) {
           style={[styles.composerModelPicker, { width: agentModelSelectorWidth(windowWidth) }]}
         >
           <View style={styles.composerModelPickerSurface}>
-            <ProviderLogo provider={sessionProvider} size={13} />
+            <ProviderIcon provider={sessionProvider} size={13} />
             <Button.Label numberOfLines={1} style={styles.composerModelPickerText}>{providerLabel(sessionProvider)} · {sessionModel}</Button.Label>
             <AppIcon icon={ChevronDown} color={colors.muted} size={10} />
           </View>
