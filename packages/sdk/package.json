@@ -13,5 +13,5 @@
   "peerDependencies": { "react": ">=18", "react-native": ">=0.76" },
   "peerDependenciesMeta": { "react-native": { "optional": true } },
   "scripts": { "typecheck": "tsc --noEmit", "test": "vitest run" },
-  "devDependencies": { "@types/react": "19.2.18", "react": "19.2.3", "react-test-renderer": "19.2.3", "typescript": "6.0.3", "vitest": "4.1.11" }
+  "devDependencies": { "@types/react": "19.2.18", "react": "19.2.3", "react-test-renderer": "19.2.3", "typescript": "6.0.3", "vitest": "5.0.1" }
 }

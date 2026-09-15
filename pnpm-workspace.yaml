@@ -6,6 +6,8 @@ packages:
 strictDepBuilds: true
 
 overrides:
+  '@codemirror/state': '6.7.5'
+  '@codemirror/view': '6.43.12'
   '@earendil-works/pi-ai': '0.85.1'
 
 allowBuilds:
@@ -17,11 +19,11 @@ allowBuilds:
   ssh2: false
 
 patchedDependencies:
-  react-native-screens@4.26.0: patches/react-native-screens@4.26.0.patch
+  react-native-screens@4.26.2: patches/react-native-screens@4.26.2.patch
   '@deepseek-ai/dsh-code-runtime-worker-thread@0.1.5-rc.2': patches/@deepseek-ai__dsh-code-runtime-worker-thread@0.1.5-rc.2.patch
   '@expo/dom-webview@57.0.1': patches/@expo__dom-webview@57.0.1.patch
-  expo-file-system@57.0.6: patches/expo-file-system@57.0.6.patch
-  expo-modules-core@57.0.15: patches/expo-modules-core@57.0.15.patch
+  expo-file-system@57.0.7: patches/expo-file-system@57.0.7.patch
+  expo-modules-core@57.0.18: patches/expo-modules-core@57.0.18.patch
   heroui-native@1.0.9: patches/heroui-native@1.0.9.patch
   '@deepseek-ai/dsh-llm-pi-ai@0.1.5-rc.2': patches/@deepseek-ai__dsh-llm-pi-ai@0.1.5-rc.2.patch
   '@expo/image-utils@0.11.5': patches/@expo__image-utils@0.11.5.patch
@@ -68,24 +70,33 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-user-questions@0.1.5-rc.2'
   - '@deepseek-ai/dsh-util-crypto@0.1.5-rc.2'
   - '@deepseek-ai/dsh-util-values@0.1.5-rc.2'
-  - '@expo/cli@57.0.21'
-  - '@expo/fingerprint@0.20.12'
+  - '@expo/cli@57.0.25'
+  - '@expo/fingerprint@0.20.13'
   - '@expo/metro-runtime@57.0.15'
-  - '@expo/router-server@57.0.9'
-  - '@expo/ui@57.0.15'
-  - babel-preset-expo@57.0.10
-  - expo-asset@57.0.16
-  - expo-constants@57.0.17
-  - expo-font@57.0.3
-  - expo-image-manipulator@57.0.15
-  - expo-image@57.0.4
-  - expo-linking@57.0.9
-  - expo-modules-core@57.0.15
-  - expo-modules-jsi@57.0.7
-  - expo-router@57.0.18
-  - expo-secure-store@57.0.3
-  - expo-sharing@57.0.17
-  - expo@57.0.19
+  - '@expo/router-server@57.0.10'
+  - '@expo/ui@57.0.18'
+  - babel-preset-expo@57.0.12
+  - expo-asset@57.0.17
+  - expo-constants@57.0.18
+  - expo-font@57.0.4
+  - expo-image-manipulator@57.0.18
+  - expo-image@57.0.5
+  - expo-linking@57.0.10
+  - expo-modules-core@57.0.18
+  - expo-modules-jsi@57.1.0
+  - expo-router@57.0.21
+  - expo-secure-store@57.0.4
+  - expo-sharing@57.0.20
+  - expo@57.0.23
   - '@deepseek-ai/dsh-tool-web@0.1.5-rc.2'
   - '@deepseek-ai/dsh-web-search-deepseek@0.1.5-rc.2'
   - '@deepseek-ai/dsh-web@0.1.5-rc.2'
+  - '@codemirror/commands@6.11.1'
+  - '@codemirror/state@6.7.5'
+  - '@codemirror/view@6.43.12'
+  - 'expo-image-picker@57.0.18'
+  - 'expo-location@57.0.18'
+  - '@types/node@24.13.5'
+  - 'vitest@5.0.1'
+  - '@vitest/mocker@5.0.1'
+  - '@vitest/spy@5.0.1'

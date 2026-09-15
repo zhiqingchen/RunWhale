@@ -51,7 +51,7 @@ export { default as SlidersHorizontal } from 'lucide-react-native/icons/sliders-
 export { default as Smartphone } from 'lucide-react-native/icons/smartphone'
 export { default as Square } from 'lucide-react-native/icons/square'
 export { default as Target } from 'lucide-react-native/icons/target'
-export { default as Trash2 } from 'lucide-react-native/icons/trash-2'
+export { default as Trash2 } from 'lucide-react-native/icons/trash'
 export { default as X } from 'lucide-react-native/icons/x'
 export { default as Zap } from 'lucide-react-native/icons/zap'
 

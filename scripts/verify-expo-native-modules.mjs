@@ -18,7 +18,7 @@ const expected = {
   'react-native-webview': '13.16.1',
   '@react-native-async-storage/async-storage': '2.2.0',
   '@shopify/react-native-skia': '2.6.2',
-  'expo-file-system': '~57.0.6',
+  'expo-file-system': '~57.0.7',
 }
 for (const [name, version] of Object.entries(expected)) {
   if (bundled[name] !== version) throw new Error(`${name}: Expo 57 bundles ${bundled[name]}, expected ${version}`)

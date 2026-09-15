@@ -28,7 +28,7 @@ describe('project templates', () => {
       entry: { android: 'index.tsx', ios: 'index.tsx' },
       preview: { target: 'native' },
     })
-    expect(packageJson).toMatchObject({ main: 'index.tsx', scripts: { start: 'expo start', android: 'expo start --android', ios: 'expo start --ios' }, dependencies: { '@shopify/react-native-skia': '2.6.2', expo: '57.0.19', 'expo-haptics': '57.0.2', 'react-native': '0.86.3' } })
+    expect(packageJson).toMatchObject({ main: 'index.tsx', scripts: { start: 'expo start', android: 'expo start --android', ios: 'expo start --ios' }, dependencies: { '@shopify/react-native-skia': '2.6.2', expo: '57.0.23', 'expo-haptics': '57.0.3', 'react-native': '0.86.3' } })
     expect(appJson).toEqual({ expo: { name: 'Expo Project', slug: 'expo-project', platforms: ['ios', 'android'], plugins: [['expo-sensors', { motionPermission: 'Allow this RunWhale preview to use motion sensors.' }]], android: { blockedPermissions: ['android.permission.ACTIVITY_RECOGNITION'] } } })
     const entry = files.find((file) => file.path === 'index.tsx')?.content
     expect(entry).toContain('Hello RunWhale')

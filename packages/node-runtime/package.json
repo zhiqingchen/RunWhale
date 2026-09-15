@@ -22,18 +22,18 @@
     "@runwhale/mobile-runtime": "workspace:*",
     "@expo/metro": "56.0.2",
     "@expo/metro-config": "57.0.12",
-    "fflate": "0.8.2",
+    "fflate": "0.8.3",
     "node-fetch": "3.3.2",
     "tar": "7.5.22",
     "typescript": "6.0.3",
     "ws": "8.21.3",
-    "parse5": "8.0.0"
+    "parse5": "8.0.1"
   },
   "devDependencies": {
-    "@types/node": "24.13.3",
+    "@types/node": "24.13.5",
     "@types/ws": "8.18.1",
-    "esbuild": "0.27.7",
-    "vitest": "4.1.11"
+    "esbuild": "0.28.2",
+    "vitest": "5.0.1"
   },
   "imports": {
     "#extensions": "./src/extensions.ts"

@@ -278,7 +278,7 @@ describe('MobileMetroRuntime', () => {
     await Promise.all([
       writeFile(join(project, 'index.ts'), "import registerRootComponent from 'expo/src/launch/registerRootComponent'\nimport App from './src/App'\nregisterRootComponent(App)\n"),
       writeFile(join(project, 'src/App.tsx'), "import { Text, View } from 'react-native'\nexport default function App() { return <View><Text>Expo source preview</Text></View> }\n"),
-      writeFile(join(project, 'package.json'), `${JSON.stringify({ name: 'expo-source-preview', private: true, dependencies: { expo: '57.0.19', react: '19.2.3', 'react-native': '0.86.3' } })}\n`),
+      writeFile(join(project, 'package.json'), `${JSON.stringify({ name: 'expo-source-preview', private: true, dependencies: { expo: '57.0.23', react: '19.2.3', 'react-native': '0.86.3' } })}\n`),
       writeFile(join(project, 'runwhale.json'), `${JSON.stringify({ schemaVersion: 1, id: 'expo-source-preview', name: 'Expo source preview', runtimeAbi: {}, entry: { web: 'index.ts', ios: 'index.ts', android: 'index.ts' }, capabilities: [], tasks: {}, source: { kind: 'local' } })}\n`),
     ])
     const metro = new MobileMetroRuntime(resolve(repository, 'packages/runtime-module-store/node_modules'), [resolve(repository, 'node_modules/.pnpm')], false)
@@ -306,7 +306,7 @@ describe('MobileMetroRuntime', () => {
     const project = await mkdtemp(join(tmpdir(), 'runwhale-native-module-policy-'))
     await Promise.all([
       writeFile(join(project, 'runwhale.json'), `${JSON.stringify({ schemaVersion: 1, id: 'native-module-policy', name: 'Native module policy', runtimeAbi: { android: 'runwhale-expo57-android-v1', ios: 'runwhale-expo57-ios-v1' }, entry: { android: 'index.ts', ios: 'index.ts' }, preview: { target: 'native' }, capabilities: [], tasks: {}, source: { kind: 'local' } })}\n`),
-      writeFile(join(project, 'package.json'), `${JSON.stringify({ name: 'native-module-policy', private: true, dependencies: { '@react-native-async-storage/async-storage': '2.2.0', 'expo-file-system': '57.0.6' } })}\n`),
+      writeFile(join(project, 'package.json'), `${JSON.stringify({ name: 'native-module-policy', private: true, dependencies: { '@react-native-async-storage/async-storage': '2.2.0', 'expo-file-system': '57.0.7' } })}\n`),
       writeFile(join(project, 'index.ts'), "import AsyncStorage from '@react-native-async-storage/async-storage'\nimport * as FileSystem from 'expo-file-system'\nglobalThis.preview = { AsyncStorage, FileSystem }\n"),
     ])
     const metro = new MobileMetroRuntime(resolve(repository, 'packages/runtime-module-store/node_modules'), [resolve(repository, 'node_modules/.pnpm')], false)
@@ -468,7 +468,7 @@ async function createExpoTestProject(): Promise<string> {
     writeFile(join(project, 'app/_layout.tsx'), "import { Stack } from 'expo-router'\nexport default function Layout() { return <Stack screenOptions={{ headerShown: false }} /> }\n"),
     writeFile(join(project, 'app/index.tsx'), "import { Text, View } from 'react-native'\nexport default function App() { return <View><Text>Runtime test project</Text></View> }\n"),
     writeFile(join(project, 'app.json'), `${JSON.stringify({ expo: { name: 'Runtime test project', slug: 'runtime-test-project', platforms: ['ios', 'android', 'web'], plugins: ['expo-router'] } })}\n`),
-    writeFile(join(project, 'package.json'), `${JSON.stringify({ name: 'runtime-test-project', private: true, main: 'expo-router/entry', dependencies: { '@babel/runtime': '7.29.7', expo: '57.0.19', 'expo-router': '57.0.18', react: '19.2.3', 'react-native': '0.86.3' } })}\n`),
+    writeFile(join(project, 'package.json'), `${JSON.stringify({ name: 'runtime-test-project', private: true, main: 'expo-router/entry', dependencies: { '@babel/runtime': '7.29.7', expo: '57.0.23', 'expo-router': '57.0.21', react: '19.2.3', 'react-native': '0.86.3' } })}\n`),
     writeFile(join(project, 'runwhale.json'), `${JSON.stringify({ schemaVersion: 1, id: 'runtime-test-project', name: 'Runtime test project', runtimeAbi: { android: 'runwhale-expo57-android-v1', ios: 'runwhale-expo57-ios-v1' }, entry: { web: 'expo-router/entry', ios: 'expo-router/entry', android: 'expo-router/entry' }, capabilities: [], tasks: {}, source: { kind: 'local' } })}\n`),
   ])
   return project

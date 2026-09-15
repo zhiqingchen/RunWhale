@@ -16,9 +16,9 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@types/node": "24.13.3",
+    "@types/node": "24.13.5",
     "typescript": "6.0.3",
-    "vitest": "4.1.11"
+    "vitest": "5.0.1"
   },
   "imports": {
     "#extensions": "./src/extensions.ts"

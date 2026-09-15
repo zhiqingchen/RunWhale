@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -6,6 +7,15 @@ const metroConfig = createRequire(import.meta.url)('../metro.config.cjs')
 const originModulePath = fileURLToPath(new URL('../src/components/PendingButton.tsx', import.meta.url))
 
 describe('Studio Metro resolution', () => {
+  it('resolves the published JavaScript entry for every Studio icon', () => {
+    const icons = readFileSync(new URL('../src/components/icons.ts', import.meta.url), 'utf8')
+    const imports = [...icons.matchAll(/from '(lucide-react-native\/icons\/[^']+)'/g)]
+    expect(imports.length).toBeGreaterThan(0)
+    for (const [, specifier] of imports) {
+      expect(existsSync(fileURLToPath(import.meta.resolve(specifier!))), specifier).toBe(true)
+    }
+  })
+
   it.each(['ios', 'android'])('preserves Uniwind component resolution on %s', (platform) => {
     const resolveRequest = vi.fn((_context: unknown, moduleName: string) => ({
       type: 'sourceFile',

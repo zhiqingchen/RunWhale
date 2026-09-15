@@ -8,7 +8,7 @@ Exact JavaScript dependency versions are recorded in `pnpm-lock.yaml`. Installed
 
 ### Lucide and Feather
 
-RunWhale uses icons from `lucide-react-native` 1.38.0, licensed under the ISC License. Some Lucide icons are derived from Feather and are licensed under the MIT License.
+RunWhale uses icons from `lucide-react-native` 1.46.0, licensed under the ISC License. Some Lucide icons are derived from Feather and are licensed under the MIT License.
 
 Copyright (c) 2026 Lucide Icons and Contributors.
 

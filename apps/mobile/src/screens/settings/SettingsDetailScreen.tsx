@@ -138,7 +138,7 @@ function RuntimeSettings() {
   return <Card style={styles.detailCard}><Card.Body style={styles.detailCardBody}>
     <Row label="Node.js" value={runtime.info?.nodeVersion ?? t('starting')} />
     <Row label="npm" value={presentation.npmVersion ?? t(presentation.npmStatus === 'failed' ? 'stateFailed' : 'starting')} />
-    <Row label="Expo SDK" value="57.0.19" />
+    <Row label="Expo SDK" value="57.0.23" />
     <Row label="React Native" value="0.86.3" last />
     {displayedFailure ? <>
       <Alert {...actionErrorPresentation} style={styles.feedbackAlert}>

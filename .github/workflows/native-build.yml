@@ -28,7 +28,7 @@ permissions:
 env:
   BUNDLE_ID: ${{ vars.BUNDLE_ID || 'app.runwhale.community' }}
   NODE_VERSION: 24.19.0
-  PNPM_VERSION: 11.25.0
+  PNPM_VERSION: 11.26.0
   JAVA_VERSION: '17'
   ANDROID_NDK_VERSION: 27.2.12479018
   COCOAPODS_VERSION: 1.17.0
