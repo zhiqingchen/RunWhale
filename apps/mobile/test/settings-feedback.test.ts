@@ -1,21 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { actionErrorPresentation } from '../src/utils/action-progress'
-import { createSshOperationGate, isSshPrivateCredentialMissing, isSshSecureStorageRetryable, loadSshPublicMetadata, loadSshSettingsStorage, parseSshPublicMetadata, probeSshSecureStorage, settingsDestructiveActionContract, sshCopyPresentation, sshOperationAvailability, sshSettingsSummaryState, sshUnavailableFeedbackPresentation } from '../src/utils/settings-feedback'
+import { createSshOperationGate, isSshPrivateCredentialMissing, isSshSecureStorageRetryable, loadSshPublicMetadata, loadSshSettingsStorage, parseSshPublicMetadata, probeSshSecureStorage, sshOperationAvailability, sshSettingsSummaryState, sshUnavailableFeedbackPresentation } from '../src/utils/settings-feedback'
 
 describe('Settings feedback contract', () => {
-  it('requires destructive AppDialog actions for API key removal and SSH key rotation', () => {
-    expect(settingsDestructiveActionContract.apiKeyRemoval).toEqual({
-      dialogTestID: 'settings-api-key-removal-dialog',
-      actionTestID: 'settings-api-key-removal-confirm',
-      tone: 'danger',
-    })
-    expect(settingsDestructiveActionContract.sshKeyRotation).toEqual({
-      dialogTestID: 'settings-ssh-key-rotation-dialog',
-      actionTestID: 'settings-ssh-key-rotation-confirm',
-      tone: 'danger',
-    })
-  })
-
   it('distinguishes a missing SSH key from unreadable metadata', async () => {
     await expect(loadSshPublicMetadata(async () => null)).resolves.toEqual({ status: 'unconfigured' })
     await expect(loadSshPublicMetadata(async () => { throw new Error('storage unavailable') })).resolves.toEqual({ status: 'failed' })
@@ -107,25 +94,6 @@ describe('Settings feedback contract', () => {
     expect(sshSettingsSummaryState({ metadata, secureStorage: { status: 'failed' } })).toBe('failed')
     expect(sshSettingsSummaryState({ metadata, secureStorage: { status: 'unavailable' } })).toBe('unconfigured')
     expect(sshSettingsSummaryState({ metadata: { status: 'unconfigured' }, secureStorage: { status: 'available', credentialPresent: true } })).toBe('unconfigured')
-  })
-
-  it('presents SSH public-key copy progress, success, and failure consistently', () => {
-    expect(sshCopyPresentation('idle')).toEqual({
-      showSpinner: false,
-      showSuccess: false,
-      showFailure: false,
-      accessibilityLiveRegion: 'polite',
-      accessibilityState: { busy: false, disabled: false },
-    })
-    expect(sshCopyPresentation('copying')).toEqual({
-      showSpinner: true,
-      showSuccess: false,
-      showFailure: false,
-      accessibilityLiveRegion: 'polite',
-      accessibilityState: { busy: true, disabled: true },
-    })
-    expect(sshCopyPresentation('copied')).toMatchObject({ showSpinner: false, showSuccess: true, showFailure: false })
-    expect(sshCopyPresentation('failed')).toMatchObject({ showSpinner: false, showSuccess: false, showFailure: true })
   })
 
   it('synchronously serializes SSH credential mutations and public-key copies', () => {

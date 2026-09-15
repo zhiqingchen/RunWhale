@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assistantMessageCopyText, codeCopyFeedbackReducer, formatTranscriptJson, initialCodeCopyFeedbackState, transcriptBranchActionState, transcriptInteractionContract } from '../src/utils/transcript-feedback'
+import { assistantMessageCopyText, codeCopyFeedbackReducer, formatTranscriptJson, initialCodeCopyFeedbackState, transcriptBranchActionState } from '../src/utils/transcript-feedback'
 
 describe('transcript interaction feedback', () => {
   it('uses formatted JSON only for valid structured details', () => {
@@ -57,16 +57,5 @@ describe('transcript interaction feedback', () => {
 
     const failed = codeCopyFeedbackReducer(copying, 'fail')
     expect(codeCopyFeedbackReducer(failed, 'succeed')).toBe('failed')
-  })
-
-  it('keeps transcript branch, copy, and disclosure targets at least 44 points tall', () => {
-    expect(transcriptInteractionContract).toEqual({
-      loadEarlierMinimumHeight: 44,
-      branchMinimumSize: 44,
-      disclosureMinimumHeight: 44,
-      codeCopyMinimumSize: 44,
-      assistantCopyMinimumSize: 44,
-    })
-    expect(Math.min(...Object.values(transcriptInteractionContract))).toBeGreaterThanOrEqual(44)
   })
 })

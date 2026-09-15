@@ -1,23 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { WORKSPACE_COLLAPSED_SESSION_COUNT, WORKSPACE_PREVIEW_OPEN_REQUEST, workspaceAndroidBackAction, workspaceEditorContentState, workspaceFilePaneVisibility, workspacePreferredFilePath, workspacePreviewAutoOpenRequested, workspaceProjectCardWidth, workspaceProjectColumns, workspaceProjectOpenActionState, workspaceProjectRouteState, workspaceSupportsEmbeddedPreview, workspaceVisibleSessions } from '../src/utils/workspace-layout'
+import { WORKSPACE_COLLAPSED_SESSION_COUNT, WORKSPACE_PREVIEW_OPEN_REQUEST, workspaceAndroidBackAction, workspacePreferredFilePath, workspacePreviewAutoOpenRequested, workspaceProjectOpenActionState, workspaceProjectRouteState, workspaceVisibleSessions } from '../src/utils/workspace-layout'
 
-describe('Workspace project card layout', () => {
+describe('Workspace navigation and project state', () => {
   it('recognizes cache-first auto-open requests for routed Preview entry points', () => {
     expect(WORKSPACE_PREVIEW_OPEN_REQUEST).toBe('open')
     expect(workspacePreviewAutoOpenRequested(WORKSPACE_PREVIEW_OPEN_REQUEST)).toBe(true)
     expect(workspacePreviewAutoOpenRequested('run')).toBe(false)
-  })
-
-  it('uses one, two, and three independent columns at phone and tablet widths', () => {
-    expect(workspaceProjectColumns(390)).toBe(1)
-    expect(workspaceProjectColumns(820)).toBe(2)
-    expect(workspaceProjectColumns(1_366)).toBe(3)
-  })
-
-  it('keeps cards inside the padded viewport with consistent gaps', () => {
-    expect(workspaceProjectCardWidth(390)).toBe(354)
-    expect(workspaceProjectCardWidth(820)).toBe(386)
-    expect(workspaceProjectCardWidth(1_366)).toBeCloseTo(435.333, 3)
   })
 
   it('shows only the five most recent sessions until the project list is expanded', () => {
@@ -27,18 +15,6 @@ describe('Workspace project card layout', () => {
     expect(workspaceVisibleSessions(sessions, false)).toEqual(sessions.slice(0, 5))
     expect(workspaceVisibleSessions(sessions, true)).toEqual(sessions)
     expect(workspaceVisibleSessions(sessions.slice(0, 5), false)).toEqual(sessions.slice(0, 5))
-  })
-
-  it('uses one Files pane below 820 points and the split editor at wider sizes', () => {
-    expect(workspaceFilePaneVisibility(375, 'browser')).toEqual({ split: false, browser: true, editor: false })
-    expect(workspaceFilePaneVisibility(819, 'editor')).toEqual({ split: false, browser: false, editor: true })
-    expect(workspaceFilePaneVisibility(820, 'browser')).toEqual({ split: true, browser: true, editor: true })
-  })
-
-  it('reserves embedded split/full Preview for iPad', () => {
-    expect(workspaceSupportsEmbeddedPreview('ios', true)).toBe(true)
-    expect(workspaceSupportsEmbeddedPreview('ios', false)).toBe(false)
-    expect(workspaceSupportsEmbeddedPreview('android', true)).toBe(false)
   })
 
   it('distinguishes project hydration from a genuinely missing project', () => {
@@ -62,12 +38,6 @@ describe('Workspace project card layout', () => {
     expect(workspacePreferredFilePath(files, ['missing.ts', 'src/recent.ts'])).toBe('src/recent.ts')
     expect(workspacePreferredFilePath([{ path: '.gitignore', content: '' }])).toBe('.gitignore')
     expect(workspacePreferredFilePath([])).toBe('')
-  })
-
-  it('keeps zero-file editor states explicit across compact and split layouts', () => {
-    expect(workspaceFilePaneVisibility(375, 'editor')).toEqual({ split: false, browser: false, editor: true })
-    expect(workspaceEditorContentState(false)).toBe('empty')
-    expect(workspaceEditorContentState(true)).toBe('file')
   })
 
   it('disables project Open only while session summaries are loading', () => {

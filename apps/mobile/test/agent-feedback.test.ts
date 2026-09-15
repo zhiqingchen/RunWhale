@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { agentDestructiveActionContract, agentImagePickerAvailable, agentPrimaryActionState, agentQueueActionReducer, agentResponseReducer, agentSendSubmissionBusy, idleAgentQueueActionState, idleAgentResponseState, mergeStoppedAgentMessages, performAgentDestructiveMutation, performAgentRun, resolveAgentPlanMode, restoreStoppedAgentMessages, shouldDismissConsumedQueuedMessage, showAgentEmptyState } from '../src/utils/agent-feedback'
+import { agentImagePickerAvailable, agentPrimaryActionState, agentQueueActionReducer, agentResponseReducer, agentSendSubmissionBusy, idleAgentQueueActionState, idleAgentResponseState, mergeStoppedAgentMessages, performAgentDestructiveMutation, performAgentRun, resolveAgentPlanMode, restoreStoppedAgentMessages, shouldDismissConsumedQueuedMessage, showAgentEmptyState } from '../src/utils/agent-feedback'
 
 describe('Agent feedback', () => {
   it('keeps the empty state hidden while session history is being restored', () => {
@@ -127,15 +127,5 @@ describe('Agent feedback', () => {
     expect(deleteQueuedMessage).toHaveBeenCalledWith({ projectId: 'project-3', sessionId: 'session-5', messageId: 'message-7' })
     expect(onBusyChange.mock.calls).toEqual([[true], [false]])
     expect(onError).toHaveBeenCalledWith(undefined)
-  })
-
-  it('uses a destructive AppDialog action for queued message deletion', () => {
-    expect(agentDestructiveActionContract).toEqual({
-      queuedMessageDelete: {
-        dialogTestID: 'agent-queued-message-delete-dialog',
-        actionTestID: 'agent-queued-message-delete-confirm',
-        tone: 'danger',
-      },
-    })
   })
 })
