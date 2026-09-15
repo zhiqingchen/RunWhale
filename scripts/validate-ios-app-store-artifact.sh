@@ -105,6 +105,22 @@ grep -Eq '^\./package\.json$|^package\.json$' "$npm_listing" || fail 'embedded n
 
 node_mobile_executable="$app_path/Frameworks/NodeMobile.framework/NodeMobile"
 [[ -f "$node_mobile_executable" ]] || fail 'NodeMobile.framework executable is missing'
+node_mobile_privacy="$app_path/Frameworks/NodeMobile.framework/PrivacyInfo.xcprivacy"
+expected_node_mobile_privacy="$(dirname "$node_mobile_runtime_package_json")/apple/NodeMobile.xcframework/ios-arm64/NodeMobile.framework/PrivacyInfo.xcprivacy"
+[[ -s "$node_mobile_privacy" && -s "$expected_node_mobile_privacy" ]] || fail 'NodeMobile.framework privacy manifest is missing; install a runtime release with SDK privacy declarations'
+plutil -lint "$node_mobile_privacy" >/dev/null || fail 'NodeMobile.framework privacy manifest is invalid'
+plutil -convert json -o "$validation_temp/node-mobile-privacy.json" "$node_mobile_privacy"
+plutil -convert json -o "$validation_temp/expected-node-mobile-privacy.json" "$expected_node_mobile_privacy"
+node - "$validation_temp/node-mobile-privacy.json" "$validation_temp/expected-node-mobile-privacy.json" <<'NODE' || fail 'NodeMobile.framework privacy declarations are incomplete or differ from the installed SDK'
+const fs = require('node:fs')
+const assert = require('node:assert/strict')
+const actual = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+assert.deepEqual(actual, JSON.parse(fs.readFileSync(process.argv[3], 'utf8')))
+assert.equal(actual.NSPrivacyTracking, false)
+for (const [category, reason] of [['FileTimestamp', 'C617.1'], ['SystemBootTime', '35F9.1'], ['DiskSpace', 'E174.1']]) {
+  assert.ok(actual.NSPrivacyAccessedAPITypes?.some((entry) => entry.NSPrivacyAccessedAPIType === `NSPrivacyAccessedAPICategory${category}` && entry.NSPrivacyAccessedAPITypeReasons?.includes(reason)), `Missing ${category}: ${reason}`)
+}
+NODE
 node_mobile_architectures=$(lipo -archs "$node_mobile_executable")
 assert_equal "NodeMobile.framework architectures" "$node_mobile_architectures" arm64
 node_mobile_vtool_metadata="$validation_temp/node-mobile-vtool.txt"

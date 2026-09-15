@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
-import { copyFile, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, readdir, rename, rm, stat, statfs, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { pipeline } from 'node:stream/promises'
-import { x as extractTar } from 'tar'
+import { t as listTar, x as extractTar } from 'tar'
 
 export const EMBEDDED_NPM_VERSION = '11.17.0'
 
@@ -31,6 +31,7 @@ export async function prepareModuleStore(root: string, destination: string): Pro
       return
     }
   } catch { /* first launch, an upgrade, or an incomplete prior extraction */ }
+  await requireExtractionSpace(archive, root)
   const staging = join(root, `.module-store-stage-${process.pid}`)
   await mkdir(staging, { recursive: true })
   try {
@@ -54,6 +55,7 @@ export async function prepareEmbeddedNpm(root: string, destination: string): Pro
   } catch { /* first launch or an incomplete prior extraction */ }
   const archive = join(root, 'runwhale-npm.tgz')
   if (!(await exists(archive))) throw new Error('embedded npm archive is missing')
+  await requireExtractionSpace(archive, root)
   const staging = join(root, `.npm-stage-${process.pid}`)
   await mkdir(staging, { recursive: true })
   try {
@@ -67,6 +69,25 @@ export async function prepareEmbeddedNpm(root: string, destination: string): Pro
   } catch (error) {
     await rm(staging, { recursive: true, force: true })
     throw error
+  }
+}
+
+async function requireExtractionSpace(archive: string, root: string): Promise<void> {
+  const space = await statfs(root)
+  const blockSize = space.bsize
+  let requiredBytes = 16 * 1024 * 1024
+  // Use expanded tar entries, rounded to filesystem blocks, plus a metadata
+  // block per entry and 16 MiB for staging bookkeeping. Existing installs stay
+  // in place while the new archive is expanded, so they cannot fund this budget.
+  await pipeline(createReadStream(archive, { highWaterMark: 64 * 1024 }), listTar({
+    strict: true,
+    onReadEntry(entry) {
+      requiredBytes += Math.ceil(entry.size / blockSize) * blockSize + blockSize
+    },
+  }))
+  if (space.bavail * blockSize < requiredBytes) {
+    // Keep device capacity values out of logs, sessions, and model requests.
+    throw new Error('Not enough available storage to prepare the RunWhale runtime. Free up device storage and try again.')
   }
 }
 

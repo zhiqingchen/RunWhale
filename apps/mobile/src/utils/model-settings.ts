@@ -1,13 +1,10 @@
-import type { MobileModelDefinition, MobileModelProviderProfile } from '@runwhale/mobile-protocol'
+import { parseMobileModelEndpoint, type MobileModelDefinition, type MobileModelProviderProfile } from '@runwhale/mobile-protocol'
 
 export function normalizedModelProfile(value: unknown): MobileModelProviderProfile {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Model profile must be an object.')
   const candidate = value as { baseURL?: unknown; models?: unknown }
   const baseURL = typeof candidate.baseURL === 'string' ? candidate.baseURL.trim() : ''
-  if (baseURL) {
-    const parsed = new URL(baseURL)
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('Base URL must use HTTP or HTTPS.')
-  }
+  if (baseURL) parseMobileModelEndpoint(baseURL)
   if (!Array.isArray(candidate.models) || candidate.models.length === 0 || candidate.models.length > 100) throw new Error('Add between 1 and 100 models.')
   const seen = new Set<string>()
   const models = candidate.models.map((entry): MobileModelDefinition => {

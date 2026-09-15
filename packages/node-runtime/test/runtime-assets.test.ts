@@ -1,11 +1,46 @@
-import { access, mkdir, mkdtemp, readFile, readlink, readdir, rm, symlink, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, readFile, readlink, readdir, rm, stat, statfs, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { c as createTar } from 'tar'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { prepareEmbeddedNpm, prepareModuleStore } from '../src/runtime-assets.js'
 
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const filesystem = await importOriginal<typeof import('node:fs/promises')>()
+  return { ...filesystem, statfs: vi.fn(filesystem.statfs) }
+})
+afterEach(() => { vi.mocked(statfs).mockReset() })
+
 describe('embedded runtime assets', () => {
+  it.each(['module-store', 'npm'] as const)('checks expanded %s bytes before staging and preserves an existing installation on low space', async (kind) => {
+    const cache = join(import.meta.dirname, '../../../.cache')
+    await mkdir(cache, { recursive: true })
+    const root = await mkdtemp(join(cache, 'runtime-low-storage-'))
+    const source = join(root, 'source')
+    const destination = join(root, 'installed')
+    const manifestPath = kind === 'module-store' ? 'expo/package.json' : 'package.json'
+    const archive = join(root, `runwhale-${kind}.tgz`)
+    const prepare = kind === 'module-store' ? prepareModuleStore : prepareEmbeddedNpm
+    try {
+      await mkdir(join(source, 'expo'), { recursive: true })
+      await mkdir(join(destination, 'expo'), { recursive: true })
+      await writeFile(join(source, manifestPath), '{"version":"11.17.0"}')
+      await writeFile(join(source, 'payload'), Buffer.alloc(512 * 1024))
+      await writeFile(join(destination, manifestPath), '{"version":"older"}')
+      await createTar({ cwd: source, file: archive, gzip: true }, ['.'])
+      const availableBytes = 16 * 1024 * 1024 + 128 * 1024
+      expect((await stat(archive)).size).toBeLessThan(128 * 1024)
+      const space = await statfs(root)
+      vi.mocked(statfs).mockResolvedValueOnce({ ...space, bavail: Math.floor(availableBytes / space.bsize) })
+
+      await expect(prepare(root, destination)).rejects.toThrow('Not enough available storage')
+
+      expect(await readFile(join(destination, manifestPath), 'utf8')).toBe('{"version":"older"}')
+      expect((await readdir(root)).some((name) => name.includes('-stage-'))).toBe(false)
+      await expect(access(join(destination, 'payload'))).rejects.toMatchObject({ code: 'ENOENT' })
+    } finally { await rm(root, { recursive: true, force: true }) }
+  })
+
   it('preserves module bytes and relative package links across streamed extraction', async () => {
     const root = await mkdtemp(join(tmpdir(), 'runwhale-streamed-assets-'))
     const source = join(root, 'source')
@@ -64,6 +99,7 @@ describe('embedded runtime assets', () => {
       await prepareModuleStore(root, destination)
       await mkdir(stale)
       await writeFile(join(stale, 'partial'), 'incomplete\n')
+      vi.mocked(statfs).mockRejectedValue(new Error('Reusable assets must not query disk space'))
       await prepareModuleStore(root, destination)
 
       await expect(access(join(destination, 'expo/package.json'))).resolves.toBeUndefined()
@@ -86,6 +122,7 @@ describe('embedded runtime assets', () => {
       await prepareEmbeddedNpm(root, destination)
       await mkdir(stale)
       await writeFile(join(stale, 'partial'), 'incomplete\n')
+      vi.mocked(statfs).mockRejectedValue(new Error('Reusable assets must not query disk space'))
       await expect(prepareEmbeddedNpm(root, destination)).resolves.toBe('11.17.0')
 
       await expect(access(stale)).rejects.toMatchObject({ code: 'ENOENT' })

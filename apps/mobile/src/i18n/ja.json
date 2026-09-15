@@ -72,7 +72,7 @@
   "workspace": "ワークスペース",
   "settings": "設定",
   "about": "情報",
-  "aboutSettingsSummary": "バージョン、ビルド番号、ソースコード。",
+  "aboutSettingsSummary": "プライバシーポリシー、サポート、アプリ情報。",
   "appVersion": "バージョン",
   "appBuildNumber": "ビルド番号",
   "githubSourceCode": "GitHubのソースコード",
@@ -512,5 +512,12 @@
   "runtimeStartupFailedBody": "ローカルランタイムを再起動してください。",
   "maxTokensReached": "トークン数の上限に達しました",
   "previewAgentOperating": "モデルが操作中",
-  "nativePreviewClose": "Previewを閉じる"
+  "privacyPolicyTitle": "プライバシーポリシー",
+  "privacyPolicyLinkFailed": "プライバシーポリシーを開けませんでした。もう一度お試しいただくか、ブラウザで https://runwhale.dev/privacy にアクセスしてください。",
+  "supportContactTitle": "お問い合わせ・サポート",
+  "supportContactEmail": "サポートにメールする",
+  "supportContactLinkFailed": "サポートを開けませんでした。{email}までご連絡ください。",
+  "nativePreviewClose": "Previewを閉じる",
+  "aiDataSharingConsent": "保存すると、AI機能のためにメッセージ、写真、関連するプロジェクトファイル、ツールの結果、プレビューのスクリーンショットを {provider} または設定したAPIサービスに送信することに同意します。データには送信先の利用規約とプライバシーポリシーが適用されます。",
+  "agreeAndSaveKey": "同意してキーを保存"
 }

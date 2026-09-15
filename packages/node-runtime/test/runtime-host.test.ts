@@ -363,11 +363,13 @@ describe('RunWhaleRuntimeHost', () => {
       baseURL: modelProfile.baseURL,
       models: [{ id: 'private-coder', name: 'Private Coder', webSearch: false, imageGeneration: true, contextWindow: 65_536, maxTokens: 8_192 }],
     })
-    expect(await rpc('agent.run', {
-      projectId: 'model-profile-project',
-      prompt: 'Inspect',
-      modelProfile: { baseURL: 'file:///tmp/models', models: [{ id: 'unsafe' }] },
-    })).toMatchObject({ error: { message: 'model base URL must use HTTP or HTTPS' } })
+    for (const baseURL of ['file:///tmp/models', 'http://provider.example/v1']) {
+      expect(await rpc('agent.run', {
+        projectId: 'model-profile-project',
+        prompt: 'Inspect',
+        modelProfile: { baseURL, models: [{ id: 'unsafe' }] },
+      })).toMatchObject({ error: { message: expect.stringContaining('HTTPS') } })
+    }
   })
 
   it('renames project metadata without changing its id, directory, or Git history', async () => {

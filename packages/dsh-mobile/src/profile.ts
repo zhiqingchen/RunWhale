@@ -1,5 +1,5 @@
 import { providerAdapter } from '#extensions'
-import { MOBILE_PROVIDERS } from '@runwhale/mobile-protocol'
+import { MOBILE_PROVIDERS, parseMobileModelEndpoint } from '@runwhale/mobile-protocol'
 import { Context } from '@deepseek-ai/cordis'
 import type { ImageMediaType } from '@deepseek-ai/dsh-attachment'
 import AgentRegistry, { type Agent } from '@deepseek-ai/dsh-agent'
@@ -513,10 +513,13 @@ function completedTurnMessageIds(events: readonly SessionEvent[]): string[] {
 }
 
 export async function createMobileHarness(options: MobileHarnessOptions): Promise<MobileHarness> {
-  const ctx = new Context()
-  const workspaces = new Map<string, string>()
   const currentProvider = options.provider ?? 'deepseek'
   const adapter = providerAdapter(currentProvider)
+  if (options.mode !== 'deterministic') {
+    parseMobileModelEndpoint(options.modelProfile?.baseURL ?? adapter?.profile?.baseURL ?? MOBILE_PROVIDERS[currentProvider].baseURL)
+  }
+  const ctx = new Context()
+  const workspaces = new Map<string, string>()
   const agentModel = options.model?.trim() || MOBILE_PROVIDER_DEFAULT_MODELS[currentProvider]
   const imageGeneration = options.mode !== 'deterministic' && supportsModelImageGeneration(currentProvider, agentModel, options.modelProfile)
   if (options.attachmentRoot) await ctx.plugin(MobileImageAttachmentStore, { root: options.attachmentRoot })

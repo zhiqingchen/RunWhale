@@ -15,6 +15,7 @@ import { permissionModeChangeRequiresConfirmation, permissionModeDescriptionKeys
 import { settingsAccessibilityContract, settingsChoiceAccessibility, settingsRadioAccessibilityState } from '@/utils/settings-accessibility'
 import { settingsUseStackedRows } from '@/utils/settings-layout'
 import { settingsHomeRoute, type SettingsDetail } from '@/utils/settings-routes'
+import { openPrivacyPolicy, SUPPORT_EMAIL, SUPPORT_URL } from '@/utils/privacy-policy'
 import { returnFromSecondaryPage } from '@/utils/secondary-page-navigation'
 import { loadRuntimeEnvironment, runtimeSettingsPresentation, shouldLoadRuntimeEnvironment, type RuntimeEnvironmentLoadState } from '@/utils/settings-runtime'
 import type { MobilePermissionMode } from '@runwhale/mobile-protocol'
@@ -27,7 +28,7 @@ import { Button } from 'heroui-native/button'
 import { Card } from 'heroui-native/card'
 import { Spinner } from 'heroui-native/spinner'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BackHandler, Linking, KeyboardAvoidingView, Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native'
+import { BackHandler, Linking, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ModelSettings } from './ModelSettings'
 import { SshSettings } from './SshSettings'
@@ -163,6 +164,7 @@ function AboutSettings() {
   const colors = useAppColors()
   const styles = useSettingsStyles()
   const [linkFailed, setLinkFailed] = useState(false)
+  const [supportLinkFailed, setSupportLinkFailed] = useState(false)
   const sourceUrl = 'https://github.com/zhiqingchen/RunWhale'
   const openSource = async () => {
     setLinkFailed(false)
@@ -171,6 +173,11 @@ function AboutSettings() {
     } catch {
       setLinkFailed(true)
     }
+  }
+  const openSupport = async () => {
+    setSupportLinkFailed(false)
+    try { await Linking.openURL(SUPPORT_URL) }
+    catch { setSupportLinkFailed(true) }
   }
   return <View style={styles.aboutContent}>
     <View style={styles.aboutHero}>
@@ -182,9 +189,12 @@ function AboutSettings() {
     </View>
     <View style={styles.aboutVersionCard}>
       <Row label={t('appVersion')} value={Application.nativeApplicationVersion ?? t('appMetadataUnavailable')} />
-      <Row label={t('appBuildNumber')} value={Application.nativeBuildVersion ?? t('appMetadataUnavailable')} last />
+      <Row label={t('appBuildNumber')} value={Application.nativeBuildVersion ?? t('appMetadataUnavailable')} />
+      <Row label={t('supportContactTitle')} value={SUPPORT_EMAIL} onPress={() => { void openSupport() }} last />
     </View>
+    {supportLinkFailed ? <Text accessibilityRole="alert" style={styles.feedbackText}>{t('supportContactLinkFailed', { email: SUPPORT_EMAIL })}</Text> : null}
     {onboardingEnabled ? <Button variant="secondary" onPress={() => router.push({ pathname: '/onboarding', params: { replay: '1' } })} testID="settings-onboarding-replay"><Button.Label>{t('onboardingReplay')}</Button.Label></Button> : null}
+    <Button variant="secondary" accessibilityRole="link" onPress={() => { void openPrivacyPolicy(t('privacyPolicyLinkFailed')) }} testID="settings-privacy-policy"><Button.Label>{t('privacyPolicyTitle')}</Button.Label></Button>
     <Button variant="ghost" accessibilityRole="link" accessibilityLabel={`${t('githubSourceCode')}, ${sourceUrl}`} onPress={() => { void openSource() }} style={styles.sourceLink}>
       <View style={styles.sourceIcon}><FontAwesome name="github" size={28} color={colors.text} /></View>
       <View style={styles.sourceCopy}>
@@ -280,14 +290,15 @@ function ChoiceRow({ label, value, options, onChange, last = false }: { label: s
   </View>
 }
 
-function Row({ label, value, last = false }: { label: string; value: string; last?: boolean }) {
+function Row({ label, value, last = false, onPress }: { label: string; value: string; last?: boolean; onPress?: () => void }) {
   const styles = useSettingsStyles()
   const { fontScale } = useWindowDimensions()
   const stacked = settingsUseStackedRows(fontScale)
-  return <View accessible accessibilityLabel={`${label}, ${value}`} style={[styles.row, stacked && styles.rowStacked, !last && styles.settingsDivider]}>
+  const Container = onPress ? Pressable : View
+  return <Container accessible accessibilityRole={onPress ? 'link' : undefined} onPress={onPress} accessibilityLabel={`${label}, ${value}`} style={[styles.row, stacked && styles.rowStacked, !last && styles.settingsDivider]}>
     <Text style={[styles.rowLabel, stacked && styles.rowLabelStacked]}>{label}</Text>
     <Text style={[styles.rowValue, stacked && styles.rowValueStacked]}>{value}</Text>
-  </View>
+  </Container>
 }
 
 function detailTitle(detail: SettingsDetail, t: ReturnType<typeof useI18n>['t']): string {

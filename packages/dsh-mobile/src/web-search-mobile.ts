@@ -1,5 +1,5 @@
 import { providerAdapter } from '#extensions'
-import { MOBILE_PROVIDERS } from '@runwhale/mobile-protocol'
+import { MOBILE_PROVIDERS, parseMobileModelEndpoint } from '@runwhale/mobile-protocol'
 import type { MobileModelProvider } from '@runwhale/mobile-protocol'
 import { DeepSeekSearchProvider } from '@deepseek-ai/dsh-web-search-deepseek'
 import { WebError, type WebSearchProvider, type WebSearchResult, type WebSearchSource } from '@deepseek-ai/dsh-web'
@@ -23,11 +23,8 @@ export function mobileWebSearchProvider(options: MobileWebSearchOptions): WebSea
       signal.throwIfAborted()
       if (!request.query.trim() || request.query.length > 4_000) throw new WebError('Search query must contain 1–4000 characters.', 'WEB_INVALID_QUERY')
       let endpoint: URL
-      try { endpoint = new URL(options.baseURL ?? MOBILE_PROVIDERS[options.provider].baseURL) }
+      try { endpoint = parseMobileModelEndpoint(options.baseURL ?? MOBILE_PROVIDERS[options.provider].baseURL) }
       catch { throw new WebError('Invalid configured search endpoint.', 'WEB_INVALID_ENDPOINT') }
-      if (!['https:', 'http:'].includes(endpoint.protocol) || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) {
-        throw new WebError('Invalid configured search endpoint.', 'WEB_INVALID_ENDPOINT')
-      }
       const configuredPath = endpoint.pathname.replace(/\/+$/, '')
       const apiKey = await options.resolveApiKey()
       if (!apiKey) throw new WebError(`Configure the current ${options.provider} API key before searching.`, 'WEB_PROVIDER_CREDENTIAL_MISSING')

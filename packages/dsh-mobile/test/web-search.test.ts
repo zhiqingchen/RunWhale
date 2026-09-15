@@ -49,6 +49,15 @@ describe('mobile web search', () => {
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
+  it.each(['openai', 'deepseek', 'anthropic', 'google'] as const)('rejects remote HTTP for %s before resolving credentials or dispatching', async (provider) => {
+    const fetch = vi.spyOn(globalThis, 'fetch')
+    const resolveApiKey = vi.fn(async () => 'fixture-secret')
+    const search = mobileWebSearchProvider({ provider, model: 'test-model', baseURL: 'http://provider.invalid/v1', resolveApiKey })
+    await expect(search.search({ query: 'Private query' })).rejects.toMatchObject({ code: 'WEB_INVALID_ENDPOINT' })
+    expect(resolveApiKey).not.toHaveBeenCalled()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('does not treat model-only replies, incomplete searches or unsourced prose as search success', async () => {
     const fetch = vi.spyOn(globalThis, 'fetch')
     fetch.mockResolvedValueOnce(new Response(JSON.stringify({ ...response(), output: response().output.slice(1) })))

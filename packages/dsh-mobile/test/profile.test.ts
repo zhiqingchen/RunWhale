@@ -710,4 +710,18 @@ describe('DSH mobile profile', () => {
     ])
     await harness.dispose()
   })
+
+  it.each(['openai', 'deepseek', 'anthropic', 'google'] as const)('rejects an insecure %s inference endpoint before reading credentials or creating a session', async (provider) => {
+    const fetch = vi.spyOn(globalThis, 'fetch')
+    const get = vi.fn(async () => 'fixture-secret')
+    try {
+      await expect(createMobileHarness({
+        mode: 'deepseek', provider, model: 'private-coder',
+        modelProfile: { baseURL: 'http://provider.invalid/v1', models: [{ id: 'private-coder' }] },
+        secrets: { get, async set() {}, async delete() {} },
+      })).rejects.toThrow(/HTTPS/)
+      expect(get).not.toHaveBeenCalled()
+      expect(fetch).not.toHaveBeenCalled()
+    } finally { fetch.mockRestore() }
+  })
 })

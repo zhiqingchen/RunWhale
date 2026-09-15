@@ -72,7 +72,7 @@
   "workspace": "Workspace",
   "settings": "Settings",
   "about": "About",
-  "aboutSettingsSummary": "App version, build number, and source code.",
+  "aboutSettingsSummary": "Privacy policy, support, and app information.",
   "appVersion": "Version",
   "appBuildNumber": "Build number",
   "githubSourceCode": "GitHub source code",
@@ -512,5 +512,12 @@
   "runtimeStartupFailedBody": "Try starting the local runtime again.",
   "maxTokensReached": "Max tokens reached",
   "previewAgentOperating": "Model operating",
-  "nativePreviewClose": "Close Preview"
+  "privacyPolicyTitle": "Privacy Policy",
+  "privacyPolicyLinkFailed": "Could not open the privacy policy. Please try again or visit https://runwhale.dev/privacy in your browser.",
+  "supportContactTitle": "Contact and support",
+  "supportContactEmail": "Email support",
+  "supportContactLinkFailed": "Could not open support. Contact {email}.",
+  "nativePreviewClose": "Close Preview",
+  "aiDataSharingConsent": "By saving, you agree to send your messages, photos, relevant project files, tool results, and Preview screenshots to {provider} or your configured API service for AI features, under its terms and privacy policy.",
+  "agreeAndSaveKey": "Agree and save key"
 }

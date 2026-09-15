@@ -154,7 +154,7 @@
   "runtimeEnvironmentLoadFailed": "RunWhale 无法从本地运行环境加载软件包详情，请重试。",
   "runtimeReportedFailure": "本地运行环境报告了问题，请重新启动后再试。",
   "about": "关于",
-  "aboutSettingsSummary": "应用版本、构建号与源码。",
+  "aboutSettingsSummary": "隐私政策、支持与应用信息。",
   "appVersion": "版本号",
   "appBuildNumber": "构建号",
   "githubSourceCode": "GitHub 源码",
@@ -512,5 +512,12 @@
   "showMoreSessions": "展开其余 {count} 条会话",
   "collapseSessions": "收起至最近会话",
   "previewAgentOperating": "模型正在操作",
-  "nativePreviewClose": "关闭 Preview"
+  "privacyPolicyTitle": "隐私政策",
+  "privacyPolicyLinkFailed": "无法打开隐私政策。请重试，或在浏览器中访问 https://runwhale.dev/privacy。",
+  "supportContactTitle": "联系与支持",
+  "supportContactEmail": "发送支持邮件",
+  "supportContactLinkFailed": "无法打开支持页面，请联系 {email}。",
+  "nativePreviewClose": "关闭 Preview",
+  "aiDataSharingConsent": "保存即表示同意将消息、照片、相关项目文件、工具结果和预览截图发送至 {provider} 或你配置的 API 服务，用于 AI 功能。数据按接收方的条款和隐私政策处理。",
+  "agreeAndSaveKey": "同意并保存 Key"
 }

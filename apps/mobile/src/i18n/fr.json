@@ -72,7 +72,7 @@
   "workspace": "Projets",
   "settings": "Réglages",
   "about": "À propos",
-  "aboutSettingsSummary": "Version, numéro de build et code source.",
+  "aboutSettingsSummary": "Politique de confidentialité, assistance et informations sur l’application.",
   "appVersion": "Version",
   "appBuildNumber": "Numéro de build",
   "githubSourceCode": "Code source sur GitHub",
@@ -512,5 +512,12 @@
   "runtimeStartupFailedBody": "Essayez de redémarrer l’environnement local.",
   "maxTokensReached": "Limite de tokens atteinte",
   "previewAgentOperating": "Modèle en action",
-  "nativePreviewClose": "Fermer Preview"
+  "privacyPolicyTitle": "Politique de confidentialité",
+  "privacyPolicyLinkFailed": "Impossible d’ouvrir la politique de confidentialité. Réessayez ou consultez https://runwhale.dev/privacy dans votre navigateur.",
+  "supportContactTitle": "Contact et assistance",
+  "supportContactEmail": "Écrire à l’assistance",
+  "supportContactLinkFailed": "Impossible d’ouvrir l’assistance. Contactez {email}.",
+  "nativePreviewClose": "Fermer Preview",
+  "aiDataSharingConsent": "En enregistrant, vous acceptez d’envoyer vos messages, photos, fichiers pertinents du projet, résultats d’outils et captures de Preview à {provider} ou au service API configuré pour les fonctions IA, selon ses conditions et sa politique de confidentialité.",
+  "agreeAndSaveKey": "Accepter et enregistrer la clé"
 }

@@ -34,5 +34,6 @@
 - Prefer the simplest current solution. Add abstractions or defensive branches only for a requirement, failing test, or observed case.
 - Credentials must not enter project files, environment variables, sessions, logs, bundles, or Preview.
 - Prioritize polished core MVP workflows, responsive and simple state, and few dependencies. Defer non-core accessibility, assistive-technology, and multi-device work unless requested.
+- Do not turn development instructions, background context, or implementation rationale into UI copy unless explicitly requested for display or necessary for users to complete a task or make an informed decision.
 - Validate routine mobile changes on one representative Android phone and an iOS Simulator. Prefer the iOS Simulator; use a physical iPhone only when explicitly requested or when the behavior requires device hardware.
 - Keep tests proportional to core happy paths and confirmed regressions; avoid duplicate or speculative coverage.

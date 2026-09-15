@@ -2,11 +2,11 @@
 
 English | [简体中文](README.zh-CN.md)
 
-RunWhale is a coding Agent that brings the development loop to your phone. Project files, tools, sessions, Git, Metro, and Preview stay on the device; only model inference uses the remote provider you configure.
+RunWhale is a coding Agent that brings the development loop to your phone. Project files, tools, sessions, Git, Metro, and Preview run on the device. AI requests use the provider you configure; remote Git operations, dependency downloads, and online services used by project code also require network access.
 
-## Download
+## Community Edition
 
-[Download RunWhale on the App Store](https://apps.apple.com/app/id6807644595) for a US$10 one-time purchase.
+This repository contains the free, open-source RunWhale Community Edition. It does not require a RunWhale account or subscription. AI features require your own supported provider credentials and an internet connection; provider usage charges may apply.
 
 ## Demo
 
@@ -31,10 +31,11 @@ For apps you use often, choose **Workspace → project more actions → Add to H
 | --- | --- |
 | Projects, Agent sessions, Node.js, TypeScript, tasks, Git, Metro, and Preview | Model inference through the selected provider |
 | Credentials in Android Keystore or iOS Keychain | Git hosting during an explicit network Git operation |
+| Bundled development tools and cached dependencies | Package registries for uncached dependencies and online services requested by project code |
 
 Credentials pass only through the trusted in-memory seam. They are never written to projects, environment variables, Git configuration, sessions, logs, or Preview bundles. Local runtime RPC is token-protected and bound to localhost.
 
-Private Git remotes use a device-generated Ed25519 key whose private half never leaves secure storage.
+Private Git remotes use an Ed25519 key stored in device secure storage. Generating a key exposes its private half once for backup; imported keys are also supported. The key is not supplied to project code or Preview.
 
 On iOS, Agent work receives a limited background grace period, then saves its session and pauses. Returning to the app automatically continues work paused by the current process. After restarting the app, use Continue on the paused session. Explicitly stopped tasks remain stopped.
 

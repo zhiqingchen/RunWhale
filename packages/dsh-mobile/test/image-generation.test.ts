@@ -34,6 +34,14 @@ async function fixture(permissionMode: 'read-only' | 'review' | 'danger-full-acc
 }
 
 describe('provider Images API generation', () => {
+  it('rejects a remote HTTP endpoint before sending the key, prompt, or reference image', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch')
+    await expect(generateModelImage({ baseURL: 'http://provider.invalid/v1', apiKey: 'fixture-value' }, {
+      prompt: 'Private request', projectIcon: false, references: [{ data: png, mediaType: 'image/png' }], signal: new AbortController().signal,
+    })).rejects.toThrow(/HTTPS/)
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('registers the production bridge and resolves the existing native credential reference', async () => {
     const f = await fixture()
     const get = vi.fn(async (key: string) => key === 'ref:OPENAI_API_KEY' ? 'fixture-value' : undefined)

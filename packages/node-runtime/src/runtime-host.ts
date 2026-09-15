@@ -1,5 +1,5 @@
 import { additionalHandlers } from '#extensions'
-import { isMobileModelProvider } from '@runwhale/mobile-protocol'
+import { isMobileModelProvider, parseMobileModelEndpoint } from '@runwhale/mobile-protocol'
 import type { AgentDriver, AgentCancellationResult, AgentImageInput } from './agent-driver.js'
 export type { AgentDriver, AgentRunOptions, AgentCancellationResult, AgentImageInput } from './agent-driver.js'
 import { AgentSessionExecution } from './session-execution.js'
@@ -2342,9 +2342,7 @@ function mobileModelProviderProfile(value: unknown): MobileModelProviderProfile 
   let baseURL: string | undefined
   if (value.baseURL !== undefined) {
     baseURL = boundedText(String(value.baseURL).trim(), 2_048)
-    let parsed: URL
-    try { parsed = new URL(baseURL) } catch { throw new Error('model base URL is invalid') }
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('model base URL must use HTTP or HTTPS')
+    parseMobileModelEndpoint(baseURL)
   }
   if (!Array.isArray(value.models) || value.models.length === 0 || value.models.length > 100) throw new Error('model profile must contain between 1 and 100 models')
   const ids = new Set<string>()

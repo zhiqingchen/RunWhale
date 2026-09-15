@@ -13,7 +13,8 @@ describe('mobile model settings', () => {
   })
 
   it('rejects unusable endpoints, duplicate models, and invalid capacities', () => {
-    expect(() => normalizedModelProfile({ baseURL: 'file:///tmp/model', models: [{ id: 'one' }] })).toThrow(/HTTP or HTTPS/)
+    expect(() => normalizedModelProfile({ baseURL: 'file:///tmp/model', models: [{ id: 'one' }] })).toThrow(/HTTPS/)
+    expect(() => normalizedModelProfile({ baseURL: 'http://provider.example/v1', models: [{ id: 'one' }] })).toThrow(/HTTPS/)
     expect(() => normalizedModelProfile({ models: [{ id: 'one' }, { id: ' one ' }] })).toThrow(/unique/)
     expect(() => normalizedModelProfile({ models: [{ id: 'one', contextWindow: 0 }] })).toThrow(/positive integer/)
   })

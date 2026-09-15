@@ -110,3 +110,17 @@ it('preserves the existing settings lookup without activating the stored key aga
   })
   expect(fixtures.request).not.toHaveBeenCalled()
 })
+
+it('saves from the consent button, while keyboard Done leaves the key unsaved', async () => {
+  await act(async () => {
+    tree = create(<ModelSettings onInputBlur={() => undefined} onInputFocus={() => undefined} />)
+  })
+  await act(async () => { input().props.onChangeText('test-provider-credential') })
+  await act(async () => { input().props.onSubmitEditing() })
+  expect(fixtures.persist).not.toHaveBeenCalled()
+  expect(fixtures.request).not.toHaveBeenCalled()
+  expect(button('model-api-key-save').findByType('Label' as never).children).toEqual(['agreeAndSaveKey'])
+  await act(async () => { button('model-api-key-save').props.onPress() })
+  expect(fixtures.persist).toHaveBeenCalledOnce()
+  expect(fixtures.request).toHaveBeenCalledWith('credential.set', { provider: 'openai', value: 'test-provider-credential' })
+})

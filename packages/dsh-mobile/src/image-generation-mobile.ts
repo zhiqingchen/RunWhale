@@ -1,3 +1,5 @@
+import { parseMobileModelEndpoint } from '@runwhale/mobile-protocol'
+
 export const MOBILE_IMAGE_MODEL = 'gpt-image-2'
 export const MOBILE_IMAGE_SIZES = ['816x816', '1024x768', '768x1024', '1024x1024', '1536x1024', '1024x1536'] as const
 export type MobileImageSize = typeof MOBILE_IMAGE_SIZES[number]
@@ -16,8 +18,7 @@ export async function generateModelImage(
   request: ModelImageRequest,
 ): Promise<Uint8Array> {
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(configuration.timeoutMs ?? 5 * 60_000)])
-  const base = new URL(configuration.baseURL ?? 'https://api.openai.com/v1')
-  if (!['https:', 'http:'].includes(base.protocol) || base.username || base.password || base.search || base.hash) throw new Error('Invalid image generation endpoint')
+  const base = parseMobileModelEndpoint(configuration.baseURL ?? 'https://api.openai.com/v1')
   const prefix = base.pathname.replace(/\/$/, '') || '/v1'
   base.pathname = `${prefix}/images/${request.references.length ? 'edits' : 'generations'}`
   signal.throwIfAborted()

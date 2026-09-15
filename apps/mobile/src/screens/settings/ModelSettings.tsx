@@ -301,7 +301,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus, variant = 'settings', on
         setCredentialError(undefined)
         updateDraftPersistence('draft-edited')
       }}
-      onSubmitEditing={() => { void save() }}
+      onSubmitEditing={() => Keyboard.dismiss()}
       onFocus={() => onInputFocus(keyInputRef.current)}
       onBlur={() => onInputBlur(keyInputRef.current)}
       editable={credentialMutationReady && !credentialAction}
@@ -350,6 +350,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus, variant = 'settings', on
       onPress={retryCredentialLookup}
       style={[styles.credentialRetryButton, styles.secondaryButton]}
     ><Button.Label style={styles.secondaryButtonText}>{t('retry')}</Button.Label></Button> : null}
+    <Text style={styles.modelSettingsDescription}>{t('aiDataSharingConsent', { provider: providerName(modelProvider) })}</Text>
     <PendingButton
       testID="model-api-key-save"
       variant="primary"
@@ -361,7 +362,7 @@ function ByokModelSettings({ onInputBlur, onInputFocus, variant = 'settings', on
       style={[styles.primaryButton, (!credentialMutationReady || !keyIsValid) && styles.primaryButtonDisabled]}
     >{({ isPending }) => <>
       {isPending ? <Spinner color={controlColors.primaryForeground} size="sm" /> : null}
-      <Button.Label style={styles.primaryButtonText}>{t(isPending ? 'saving' : 'saveSecurely')}</Button.Label>
+      <Button.Label style={styles.primaryButtonText}>{t(isPending ? 'saving' : 'agreeAndSaveKey')}</Button.Label>
     </>}</PendingButton>
     {variant === 'settings' && saved ? <Button
       variant="danger-soft"
