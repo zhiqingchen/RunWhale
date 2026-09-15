@@ -589,7 +589,7 @@ class NativePreviewActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler
       contentDescription = NativePreviewLanguage.closePreviewLabel
       setImageResource(R.drawable.runwhale_close)
       imageTintList = ColorStateList.valueOf(Color.rgb(38, 38, 38))
-      setPadding(dp(13), dp(7), dp(13), dp(7))
+      setPadding(dp(14), dp(8), dp(14), dp(8))
       background = RippleDrawable(
         ColorStateList.valueOf(Color.argb(20, 0, 0, 0)),
         GradientDrawable().apply { cornerRadius = dp(15).toFloat(); setColor(Color.TRANSPARENT) },

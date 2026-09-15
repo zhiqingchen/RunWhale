@@ -146,7 +146,7 @@ function DraggablePreviewClose({
         onPress={onPress}
         style={styles.closeControl}
       >
-        <AppIcon icon={X} color="#262626" size={16} />
+        <AppIcon icon={X} color="#262626" size={14} />
       </Button>
     </Animated.View>
   )

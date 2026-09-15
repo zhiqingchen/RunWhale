@@ -741,7 +741,7 @@ static __weak RunWhaleNativePreviewController *RunWhaleActiveNativePreviewContro
                                  label:(NSString *)label
                             identifier:(NSString *)identifier
                                 action:(SEL)action {
-  UIImageSymbolConfiguration *symbolConfiguration = [UIImageSymbolConfiguration configurationWithPointSize:16.0
+  UIImageSymbolConfiguration *symbolConfiguration = [UIImageSymbolConfiguration configurationWithPointSize:14.0
                                                                                                       weight:UIImageSymbolWeightMedium];
   UIImage *controlImage = [UIImage systemImageNamed:image withConfiguration:symbolConfiguration];
   UIButton *control = [UIButton buttonWithConfiguration:RunWhalePreviewControlConfiguration(controlImage, NO)
