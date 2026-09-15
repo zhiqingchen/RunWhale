@@ -8,6 +8,7 @@ if (lock.schemaVersion !== 2) throw new Error(`Unsupported upstream lock schema:
 const runtime = lock.packages.nodeMobileRuntime
 for (const [label, commit] of [
   ['runtime source', runtime.source.commit],
+  ['runtime binary source', runtime.source.binaryCommit],
   ['Node base', runtime.source.baseCommit],
   ['mobile upstream', runtime.source.mobileUpstreamCommit],
 ]) {
@@ -48,6 +49,7 @@ for (const [label, actual, expected] of [
   ['npm version', installedManifest.runtime?.npm, runtime.runtime.npm],
   ['source repository', installedManifest.source?.repository, runtime.source.repository],
   ['source commit', installedManifest.source?.commit, runtime.source.commit],
+  ['binary source commit', installedManifest.source?.binaryCommit, runtime.source.binaryCommit],
   ['Node base repository', installedManifest.source?.baseRepository, runtime.source.baseRepository],
   ['Node base commit', installedManifest.source?.baseCommit, runtime.source.baseCommit],
   [

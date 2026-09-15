@@ -18,7 +18,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@runwhale/node-mobile-runtime": "24.19.0-runwhale.1"
+    "@runwhale/node-mobile-runtime": "24.19.0-runwhale.2"
   },
   "peerDependencies": {
     "expo": "57.0.19",

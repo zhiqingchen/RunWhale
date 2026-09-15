@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.dependency 'React-Core'
   s.dependency 'React-RCTAppDelegate'
   s.dependency 'React-RCTFabric'
-  s.dependency 'RunWhaleNodeMobileRuntime', '24.19.0-runwhale.1'
+  s.dependency 'RunWhaleNodeMobileRuntime', '24.19.0-runwhale.2'
   s.source_files   = 'ios/**/*.{h,m,mm,swift}'
   s.resources      = ['runtime/runwhale-runtime.mjs', 'runtime/runwhale-agent-runtime.mjs', 'runtime/runwhale-task-worker.mjs', 'runtime/runwhale-package-worker.mjs', 'runtime/worker.cjs', 'runtime/runwhale-module-store.tgz']
   s.pod_target_xcconfig = {

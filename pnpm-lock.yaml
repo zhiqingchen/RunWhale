@@ -293,8 +293,8 @@ importers:
   native/node-host:
     dependencies:
       '@runwhale/node-mobile-runtime':
-        specifier: 24.19.0-runwhale.1
-        version: 24.19.0-runwhale.1
+        specifier: 24.19.0-runwhale.2
+        version: 24.19.0-runwhale.2
     devDependencies:
       '@react-native/metro-config':
         specifier: 0.86.3
@@ -2600,8 +2600,8 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@runwhale/node-mobile-runtime@24.19.0-runwhale.1':
-    resolution: {integrity: sha512-L6qVF8QbhlTxdyMiPxzwi2WzE8PGYbmxo9vQwUCNRiqQhfk6kclrbdHDvy/0U6XGIgIePr9UgouJKwnfz+qxBw==}
+  '@runwhale/node-mobile-runtime@24.19.0-runwhale.2':
+    resolution: {integrity: sha512-8QwRNSO69bHXMjeHdFf8R+Lc8ZoJeWXzgS5KNqYBNMtdTTrvrjmaZAaw5l9EKJ4pfwn8jsXP0Hik/bbACSRHcA==}
 
   '@shopify/react-native-skia@2.6.2':
     resolution: {integrity: sha512-NzZ3+MRedZAUhguWw9DTCpWFd09Bq+tdGWhimGfJLGckuyoWGyimTiNTmaO2DeeivHTnGdv+eXbw7j/AV3LkRQ==}
@@ -7892,7 +7892,7 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@runwhale/node-mobile-runtime@24.19.0-runwhale.1': {}
+  '@runwhale/node-mobile-runtime@24.19.0-runwhale.2': {}
 
   '@shopify/react-native-skia@2.6.2(react-native-reanimated@4.5.1(react-native-worklets@0.10.1(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)':
     dependencies:

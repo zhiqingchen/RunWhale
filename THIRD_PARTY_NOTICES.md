@@ -22,7 +22,7 @@ OpenAI, DeepSeek, Anthropic, Google, and other provider names are trademarks of 
 
 ## Native Node Runtime
 
-The native host consumes `@runwhale/node-mobile-runtime` 24.19.0-runwhale.1, a modified Node.js Mobile build licensed under the terms included in that package's `LICENSE` and `NOTICE.md`. The exact source repository, source commit, Node.js base commit, nodejs-mobile upstream commit, platform contract, and artifact version are recorded in `upstreams.lock.json` and the package's `runtime-manifest.json`.
+The native host consumes `@runwhale/node-mobile-runtime` 24.19.0-runwhale.2, a modified Node.js Mobile build licensed under the terms included in that package's `LICENSE` and `NOTICE.md`. The exact source repository, packaging and binary source commits, Node.js base commit, nodejs-mobile upstream commit, platform contract, and artifact version are recorded in `upstreams.lock.json` and the package's `runtime-manifest.json`.
 
 Source: <https://github.com/zhiqingchen/nodejs-mobile>
 

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 2,
-  "verifiedAt": "2026-08-31",
+  "verifiedAt": "2026-09-16",
   "packages": {
     "nodeMobileRuntime": {
       "package": {
         "name": "@runwhale/node-mobile-runtime",
-        "version": "24.19.0-runwhale.1"
+        "version": "24.19.0-runwhale.2"
       },
       "runtime": {
         "node": "24.19.0",
@@ -13,7 +13,8 @@
       },
       "source": {
         "repository": "https://github.com/zhiqingchen/nodejs-mobile.git",
-        "commit": "413f4424500cbd2a484b967a5722514b22f4f90b",
+        "commit": "f9068a1933ed7404373f57df03e48da64d7fee34",
+        "binaryCommit": "413f4424500cbd2a484b967a5722514b22f4f90b",
         "baseRepository": "https://github.com/nodejs/node.git",
         "baseCommit": "cdc1b38d40cb567b7ad0b39c86addf830a0af0ae",
         "mobileUpstreamRepository": "https://github.com/nodejs-mobile/nodejs-mobile.git",

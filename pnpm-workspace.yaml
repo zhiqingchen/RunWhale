@@ -27,7 +27,7 @@ patchedDependencies:
   '@expo/image-utils@0.11.5': patches/@expo__image-utils@0.11.5.patch
 
 minimumReleaseAgeExclude:
-  - '@runwhale/node-mobile-runtime@24.19.0-runwhale.1'
+  - '@runwhale/node-mobile-runtime@24.19.0-runwhale.2'
   - '@deepseek-ai/dsh-agent-loop@0.1.5-rc.2'
   - '@deepseek-ai/dsh-agent@0.1.5-rc.2'
   - '@deepseek-ai/dsh-attachment@0.1.5-rc.2'
