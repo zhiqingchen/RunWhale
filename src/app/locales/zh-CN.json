@@ -1,0 +1,1997 @@
+{
+  "home": {
+    "htmlLang": "zh-CN",
+    "brand": "哪里跑",
+    "homeAria": "哪里跑首页",
+    "navAria": "主导航",
+    "nav": {
+      "demo": "演示",
+      "features": "功能",
+      "workflow": "工作方式",
+      "security": "安全",
+      "guide": "教程",
+      "faq": "常见问题",
+      "help": "帮助"
+    },
+    "guideHref": "/zh-CN/guide",
+    "faqHref": "/zh-CN/faq",
+    "eyebrow": "深入探索，高效完成。",
+    "heroTitle": "AI 编程智能体与开发工作区，",
+    "heroAccent": "就在你的手机上。",
+    "heroLead": "创建 Web 或 Expo 项目，也可以导入兼容的代码仓库。让哪里跑的 AI 编程智能体检查和编辑代码、运行受支持的检查、审查 Git 变更，并打开 Web 或 React Native 预览。工作区在手机本地运行；模型推理由你配置的服务商提供。",
+    "beginnerPitch": "对新手更友好的 Vibe Coding——从一个想法开始，在创造中学习。",
+    "downloadOnAppStore": "前往 App Store 下载",
+    "appStorePrice": "免费开源社区版",
+    "watchWorkflow": "观看真实工作流程",
+    "localNote": "工作区文件和工具在设备本地运行；模型推理由你配置的服务商提供",
+    "whaleAlt": "RunWhale 蓝发编程角色标志",
+    "trustAria": "设备端能力",
+    "trustLabel": "就在你的手机上",
+    "capabilities": [
+      "项目",
+      "智能体会话",
+      "Git",
+      "Node.js",
+      "Metro",
+      "预览"
+    ],
+    "demo": {
+      "chip": "真实工作流程",
+      "title": "一句需求，做出可以试玩的游戏。",
+      "description": "创建名为 Baby game 的 Expo 项目，输入“Make a game for baby”。跟随智能体完成 Animal Parade，再到原生预览中点击动物卡片，体验游戏。",
+      "videoAria": "哪里跑无声演示：从 Baby game 项目到原生预览中的 Animal Parade 游戏",
+      "videoFallback": "你的浏览器不支持视频播放。",
+      "videoCaption": "Animal Parade · 完整演示 · 约 2 分 12 秒 · 无声",
+      "kicker": "一个项目，一个持久化会话。",
+      "spotlightTitle": "给宝宝做一个游戏。",
+      "spotlightBody": "一句简单需求，变成六张彩色动物卡片。批准文件修改，跟进智能体的检查，再到原生预览中打开 Animal Parade。点击卡片，就能看到鼓励反馈和下一个寻找动物的提示。",
+      "outline": [
+        {
+          "title": "创建",
+          "body": "将项目命名为 Baby game，选择 Expo，打开智能体。"
+        },
+        {
+          "title": "构建",
+          "body": "发送需求，批准文件修改，再跟进检查结果。"
+        },
+        {
+          "title": "试玩",
+          "body": "根据提示寻找小狗，点击动物卡片，查看游戏反馈。"
+        }
+      ],
+      "galleryLabel": "从提示到试玩",
+      "galleryTitle": "同一段演示中的六个时刻。",
+      "galleryBody": "创建项目、发送需求、批准文件写入、跟进检查、打开原生预览，再亲手试玩游戏。",
+      "disclosure": "六张截图均取自上方演示视频，保留原始英文界面。哪里跑社区版免费开源，AI 服务商可能收取模型用量费用。"
+    },
+    "screenshots": [
+      {
+        "slug": "01-create-baby-game",
+        "title": "用 Expo 创建 Baby game。",
+        "alt": "哪里跑的新建项目界面：已填写 Baby game，选择 Expo 模板，可选 Git 仓库地址为空。"
+      },
+      {
+        "slug": "02-prompt-and-agent-plan",
+        "title": "输入需求：给宝宝做个游戏。",
+        "alt": "智能体会话显示 Make a game for baby，以及使用大触控区域、温和反馈且没有失败状态的游戏计划。"
+      },
+      {
+        "slug": "03-approve-file-write",
+        "title": "批准文件修改。",
+        "alt": "哪里跑请求写入 index.tsx，弹窗提供 Reject 和 Allow once 按钮。"
+      },
+      {
+        "slug": "04-checks-before-preview",
+        "title": "打开预览前，跟进检查结果。",
+        "alt": "TypeScript 诊断和 Git diff 活动，以及智能体在启动原生预览前对依赖尚未解析的说明。"
+      },
+      {
+        "slug": "05-animal-parade-preview",
+        "title": "在原生预览中玩 Animal Parade。",
+        "alt": "Animal Parade 原生预览：寻找小狗的提示下方显示狗、猫、牛、小鸡、青蛙和狮子六张彩色卡片。"
+      },
+      {
+        "slug": "06-interaction-feedback",
+        "title": "点击动物，查看游戏反馈。",
+        "alt": "Animal Parade 在一次交互后，于狮子图标旁显示 Great job! 鼓励反馈。"
+      }
+    ],
+    "featuresSection": {
+      "chip": "为什么选择哪里跑",
+      "title": "专注的开发循环，",
+      "titleSecondLine": "就在你的手机上。",
+      "description": "不是远程桌面，也不是云端 IDE。哪里跑把专注、可控的开发环境直接放到设备本地。"
+    },
+    "features": [
+      {
+        "title": "真正进入项目工作的 AI 编程智能体",
+        "body": "让它检查、编辑、测试和修复代码。哪里跑在项目内部工作，而不是只在旁边提供建议。",
+        "meta": "检查 · 编辑 · 测试"
+      },
+      {
+        "title": "Web 与原生预览",
+        "body": "在 Web 预览中运行兼容项目，或直接在 iOS 和 Android 上原生预览 Expo 项目，无需为用户项目触发云端或原生构建。",
+        "meta": "Web · iOS · Android"
+      },
+      {
+        "title": "设备本地工作区",
+        "body": "核心开发过程在手机上运行。模型推理、明确发起的网络 Git 操作和未缓存的依赖下载会使用网络。",
+        "meta": "本地工具 · 联网模型"
+      }
+    ],
+    "workflow": {
+      "chip": "从代码仓库到运行结果",
+      "title": "打开项目，交给智能体，预览结果。",
+      "description": "少一些上下文切换，多一些持续推进。每一步都连接在同一个持久化项目会话中。",
+      "steps": [
+        {
+          "title": "开始一个项目",
+          "body": "创建 Web 或 Expo 项目，也可以导入兼容的 Git 代码仓库。"
+        },
+        {
+          "title": "交给智能体",
+          "body": "让它检查、修改并验证代码；需要控制时，你可以审查写入操作。"
+        },
+        {
+          "title": "在设备上预览",
+          "body": "通过内嵌 Metro 启动 Web 或原生预览，立即查看结果。"
+        }
+      ]
+    },
+    "security": {
+      "chip": "本地优先架构",
+      "title": "开发工作区始终留在你的设备上。",
+      "body": "项目、开发工具和预览都在本地运行。模型推理会把你的提示，以及回答所需的项目或会话上下文，发送给你配置的服务商。明确发起的 Git 操作和未缓存的依赖下载也会使用网络。",
+      "credentialBody": "API 密钥保存在系统安全存储中，绝不会进入项目、环境变量、会话、日志或预览包。",
+      "contextLink": "了解哪里跑如何处理项目上下文",
+      "privacyHref": "/zh-CN/privacy",
+      "checks": [
+        "设备端 Node.js 和 TypeScript 任务",
+        "令牌保护的 localhost 运行时",
+        "设备生成的 Git SSH 密钥"
+      ]
+    },
+    "finalCta": {
+      "chip": "开源 · Apache 2.0",
+      "title": "下一个想法出现时，",
+      "titleSecondLine": "你已经在开发了。",
+      "tagline": "哪里跑——深入探索，高效完成。",
+      "github": "在 GitHub 上探索哪里跑"
+    },
+    "footer": {
+      "copyright": "© 2026 哪里跑。为深度工作而生。",
+      "navAria": "教程、常见问题、法律、支持、语言和项目链接",
+      "guide": "教程",
+      "guideHref": "/zh-CN/guide",
+      "faq": "常见问题",
+      "faqHref": "/zh-CN/faq",
+      "privacy": "隐私",
+      "privacyHref": "/zh-CN/privacy",
+      "terms": "服务条款",
+      "termsHref": "/zh-CN/terms",
+      "support": "支持",
+      "supportHref": "/zh-CN/support"
+    },
+    "metadataTitle": "哪里跑——手机上的 AI 编程智能体与开发工作区",
+    "metadataDescription": "哪里跑把 AI 编程智能体与设备本地工作区带到手机上，支持兼容的 Web 和 Expo 项目、代码检查、Git 审查以及 React Native 预览。"
+  },
+  "help": {
+    "updatedLabel": "2026 年 9 月 4 日",
+    "updatedIso": "2026-09-04",
+    "guide": {
+      "metadataTitle": "哪里跑使用教程——从设置到预览",
+      "metadataDescription": "了解如何配置模型、创建或导入项目、使用哪里跑 Agent，并在 Web 或原生 Preview 中测试结果。",
+      "eyebrow": "教程",
+      "title": "开始使用哪里跑",
+      "summary": "配置模型，打开一个真实项目，让 Agent 完成修改，再直接在手机上测试结果。",
+      "startTitle": "发送第一条需求前",
+      "startBody": "哪里跑把开发工作区放在手机本地，模型推理由你配置的服务商提供。先完成下面三项检查，首次运行会更顺利。",
+      "prerequisites": [
+        {
+          "title": "准备模型 API 密钥",
+          "body": "使用你所选模型服务商提供的密钥，只通过哪里跑设置保存，切勿放进项目或提示中。"
+        },
+        {
+          "title": "使用 Agent 时保持联网",
+          "body": "模型推理需要网络；Git 网络操作和未缓存的依赖下载也可能需要联网。"
+        },
+        {
+          "title": "从兼容项目开始",
+          "body": "选择内置 Web 或 Expo 起始项目，或导入具有有效哪里跑 Preview 入口的兼容仓库。"
+        }
+      ],
+      "workflowLabel": "核心流程",
+      "workflowTitle": "从设置到完成一次真实测试",
+      "workflowBody": "完成模型设置后，跟随 Baby game 示例创建 Expo 项目、提出游戏需求、批准修改，再到原生 Preview 中试玩 Animal Parade。",
+      "steps": [
+        {
+          "action": "设置 → 模型 · 安全保存",
+          "title": "配置服务商和模型",
+          "body": [
+            "打开“设置 → 模型”，选择要使用的服务商和模型，粘贴该服务商提供的 API 密钥，再点击“安全保存”。",
+            "密钥会留在设备的安全存储中。Agent 推理使用你选择的服务商，因此发送需求时设备需要联网。"
+          ]
+        },
+        {
+          "action": "新建项目 · Web / Expo",
+          "title": "创建项目或导入仓库",
+          "body": [
+            "点击“新建项目”，填写名称；要制作 React 网站就选择 Web，要制作使用原生 Preview 的应用就选择 Expo。",
+            "本次演示输入 Baby game，选择 Expo，将可选仓库地址留空，然后点击 Create and open Agent。",
+            "如果要继续现有代码，可以改为输入兼容的 Git 仓库。导入项目会由 runwhale.json 决定 Preview 目标。"
+          ]
+        },
+        {
+          "action": "Agent",
+          "title": "描述一个明确结果",
+          "body": [
+            "告诉 Agent 你想构建或修改什么，说明预期行为，并让它运行与当前任务有关的受支持检查。",
+            "演示中的完整需求只有“Make a game for baby”。Agent 据此规划了一个使用大触控区域、温和反馈和六张动物卡片的游戏。"
+          ]
+        },
+        {
+          "action": "审阅 · 仅允许一次 · 活动",
+          "title": "跟进过程并审查结果",
+          "body": [
+            "在 Review（审阅）模式下，Agent 写入 index.tsx 前，哪里跑会请求批准。点击 Allow once（仅允许一次）后，就能在同一会话中继续跟进文件写入和检查活动。",
+            "Agent 运行了 TypeScript 诊断和 Git diff。它在结果说明中指出新工作区的依赖尚未解析，随后转到原生 Preview，通过实际运行检查应用。"
+          ]
+        },
+        {
+          "action": "运行 / 重新加载 · Preview",
+          "title": "在 Preview 中运行同一个项目",
+          "body": [
+            "录屏中，Agent 直接启动了原生 Preview。你也可以在一轮任务完成后点击刷新图标（运行 / 重新加载）。Web 项目使用 Web Preview；兼容的 Expo 项目使用原生 Preview。",
+            "不要只看第一个画面，要实际操作结果。如果 Preview 显示诊断信息，返回项目并把这条准确、非敏感的信息用于下一次修复。"
+          ]
+        },
+        {
+          "action": "原生 Preview · Animal Parade",
+          "title": "点击动物，检查游戏反馈",
+          "body": [
+            "Animal Parade 打开后，在狗、猫、牛、小鸡、青蛙和狮子六张卡片上方显示“Can you find the Dog?”。点击卡片，观察提示和反馈的变化。",
+            "演示中可以看到“Yay!”、“Great job!”和“You found it!”等反馈，随后出现下一个寻找动物的提示。需要继续修改时，回到同一个已保存的 Agent 会话即可。"
+          ]
+        }
+      ],
+      "galleryLabel": "从提示到试玩",
+      "galleryTitle": "同一段演示中的六个时刻。",
+      "galleryBody": "创建项目、发送需求、批准文件写入、跟进检查、打开原生预览，再亲手试玩游戏。",
+      "screenshots": [
+        {
+          "id": "01-create-baby-game",
+          "title": "用 Expo 创建 Baby game。",
+          "alt": "哪里跑的新建项目界面：已填写 Baby game，选择 Expo 模板，可选 Git 仓库地址为空。",
+          "avifSrcSet": "/media/optimized/v1/01-create-baby-game-360.avif 360w, /media/optimized/v1/01-create-baby-game-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/01-create-baby-game-360.webp 360w, /media/optimized/v1/01-create-baby-game-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/01-create-baby-game-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "02-prompt-and-agent-plan",
+          "title": "输入需求：给宝宝做个游戏。",
+          "alt": "智能体会话显示 Make a game for baby，以及使用大触控区域、温和反馈且没有失败状态的游戏计划。",
+          "avifSrcSet": "/media/optimized/v1/02-prompt-and-agent-plan-360.avif 360w, /media/optimized/v1/02-prompt-and-agent-plan-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/02-prompt-and-agent-plan-360.webp 360w, /media/optimized/v1/02-prompt-and-agent-plan-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/02-prompt-and-agent-plan-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "03-approve-file-write",
+          "title": "批准文件修改。",
+          "alt": "哪里跑请求写入 index.tsx，弹窗提供 Reject 和 Allow once 按钮。",
+          "avifSrcSet": "/media/optimized/v1/03-approve-file-write-360.avif 360w, /media/optimized/v1/03-approve-file-write-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/03-approve-file-write-360.webp 360w, /media/optimized/v1/03-approve-file-write-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/03-approve-file-write-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "04-checks-before-preview",
+          "title": "打开预览前，跟进检查结果。",
+          "alt": "TypeScript 诊断和 Git diff 活动，以及智能体在启动原生预览前对依赖尚未解析的说明。",
+          "avifSrcSet": "/media/optimized/v1/04-checks-before-preview-360.avif 360w, /media/optimized/v1/04-checks-before-preview-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/04-checks-before-preview-360.webp 360w, /media/optimized/v1/04-checks-before-preview-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/04-checks-before-preview-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "05-animal-parade-preview",
+          "title": "在原生预览中玩 Animal Parade。",
+          "alt": "Animal Parade 原生预览：寻找小狗的提示下方显示狗、猫、牛、小鸡、青蛙和狮子六张彩色卡片。",
+          "avifSrcSet": "/media/optimized/v1/05-animal-parade-preview-360.avif 360w, /media/optimized/v1/05-animal-parade-preview-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/05-animal-parade-preview-360.webp 360w, /media/optimized/v1/05-animal-parade-preview-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/05-animal-parade-preview-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "06-interaction-feedback",
+          "title": "点击动物，查看游戏反馈。",
+          "alt": "Animal Parade 在一次交互后，于狮子图标旁显示 Great job! 鼓励反馈。",
+          "avifSrcSet": "/media/optimized/v1/06-interaction-feedback-360.avif 360w, /media/optimized/v1/06-interaction-feedback-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/06-interaction-feedback-360.webp 360w, /media/optimized/v1/06-interaction-feedback-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/06-interaction-feedback-720.webp",
+          "width": 720,
+          "height": 1566
+        }
+      ],
+      "videoLabel": "完整演示",
+      "videoTitle": "观看从需求到 Preview 的完整流程",
+      "videoBody": "这段约 2 分 12 秒的无声录屏，从创建 Baby game 项目和发送一句需求开始，依次展示文件写入批准、检查，以及在原生 Preview 中试玩 Animal Parade。",
+      "videoAria": "哪里跑无声演示：从 Baby game 项目到原生预览中的 Animal Parade 游戏",
+      "videoFallback": "你的浏览器不支持视频播放。",
+      "videoCaption": "Animal Parade · 完整演示 · 约 2 分 12 秒 · 无声",
+      "videoSrc": "/media/demo/RunWhale-demo-readme.mp4",
+      "videoPoster": "/media/optimized/v1/runwhale-animal-parade-poster-720.webp",
+      "disclosure": "六张截图均取自上方演示视频，保留原始英文界面。哪里跑社区版免费开源，AI 服务商可能收取模型用量费用。",
+      "nextTitle": "继续了解",
+      "nextLinks": {
+        "faq": {
+          "title": "查看常见问题",
+          "body": "了解联网、数据处理、项目限制、Git 和常见故障。"
+        },
+        "support": {
+          "title": "联系支持",
+          "body": "发送私密请求，或在 GitHub 报告可复现且不含敏感信息的问题。"
+        },
+        "privacy": {
+          "title": "了解数据处理",
+          "body": "查看哪些内容留在设备上，哪些内容会发送给你选择的服务。"
+        },
+        "github": {
+          "title": "浏览源代码",
+          "body": "查看哪里跑公开仓库、项目范围和贡献指南。"
+        }
+      }
+    },
+    "faq": {
+      "metadataTitle": "哪里跑常见问题——设置、项目、Agent 与 Preview",
+      "metadataDescription": "解答哪里跑的设置、本地与远程处理、兼容项目、Git、依赖、Preview 和故障排查问题。",
+      "eyebrow": "常见问题",
+      "title": "哪里跑问题解答",
+      "summary": "快速了解如何开始、哪些内容在手机上运行、项目边界，以及遇到故障时先检查什么。",
+      "intro": "选择下面的问题查看答案。内容只描述当前产品边界，不预设特定服务商、设备发行状态或下载渠道。",
+      "groups": [
+        {
+          "title": "开始使用",
+          "items": [
+            {
+              "id": "first-agent-run",
+              "question": "首次运行 Agent 前需要准备什么？",
+              "answer": [
+                "在“设置 → 模型”中选择服务商和模型，保存该服务商提供的有效 API 密钥，并保持设备联网。随后创建 Web 或 Expo 项目，或导入兼容的代码仓库。"
+              ]
+            },
+            {
+              "id": "web-or-expo",
+              "question": "应该选择 Web 还是 Expo 项目？",
+              "answer": [
+                "要制作在 Web Preview 中运行的 React 网站，请选择 Web；要制作在哪里跑固定原生容器中运行的 React Native 项目，请选择 Expo。两种模板都使用同一套项目与 Agent 工作流程。"
+              ]
+            },
+            {
+              "id": "import-repository",
+              "question": "可以导入现有代码仓库吗？",
+              "answer": [
+                "可以，但仓库需要兼容哪里跑的 Web 或 Expo 运行环境。导入项目通过 runwhale.json 声明入口和 Preview 目标；依赖不受支持的原生代码、二进制文件或构建步骤的仓库不适合当前运行环境。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "本地运行与数据",
+          "items": [
+            {
+              "id": "local-or-offline",
+              "question": "所有内容都在本地运行吗？哪里跑可以离线使用吗？",
+              "answer": [
+                "项目文件、Agent 编排、会话、Node.js 和 TypeScript 工具、受支持的任务、Git、Metro 与 Preview 都在手机上运行。模型推理使用你配置的远程服务商；明确发起的 Git 网络操作和未缓存的依赖下载也会使用网络，因此哪里跑并不是离线产品。"
+              ]
+            },
+            {
+              "id": "model-context",
+              "question": "哪些项目数据可能发送给模型服务商？",
+              "answer": [
+                "运行 Agent 时，哪里跑会把你的提示，以及回答所需的项目或会话上下文发送给你选择的服务商。根据具体需求，这些上下文可能包括源代码、文件内容、图片、工具结果和对话历史。"
+              ]
+            },
+            {
+              "id": "credential-storage",
+              "question": "API 与 Git 凭据保存在哪里？",
+              "answer": [
+                "模型 API 密钥与设备 Git 私钥会保存在 iOS Keychain 或 Android Keystore 中，不会写入项目文件、环境变量、Git 配置、Agent 会话、日志或 Preview 包。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "兼容性与限制",
+          "items": [
+            {
+              "id": "private-git",
+              "question": "哪里跑可以使用私有 Git 仓库吗？",
+              "answer": [
+                "可以，但当前指通过 SSH 访问 GitHub 私有仓库。在“设置 → Git SSH 密钥”中生成或复制设备公钥，把公钥添加到 GitHub，再使用仓库的 GitHub SSH 地址。私钥会继续留在设备安全存储中；访问是否成功仍取决于网络和 GitHub 上授予的仓库权限。"
+              ]
+            },
+            {
+              "id": "npm-packages",
+              "question": "项目可以安装任意 npm 软件包吗？",
+              "answer": [
+                "不可以。哪里跑支持 npm 注册表中兼容的纯 JavaScript 软件包。生命周期脚本和二进制链接会被禁用；Git 或路径依赖、原生扩展或二进制文件、动态 Expo 配置插件，以及项目专用原生 SDK 均不受支持。根据权限模式，哪里跑可能会要求你批准安装。"
+              ]
+            },
+            {
+              "id": "standalone-builds",
+              "question": "哪里跑会构建独立的 iOS 或 Android 应用吗？",
+              "answer": [
+                "不会。用户项目会作为 Web 或 React Native Preview 目标在当前应用中运行，不会触发 Xcode、Gradle、EAS、IPA 或 APK 构建。"
+              ]
+            },
+            {
+              "id": "background-work",
+              "question": "Agent 或 Metro 会在后台继续工作吗？",
+              "answer": [
+                "不要依赖持续后台执行。特别是在当前产品中，iOS 进入后台后不会持续运行 Agent 或 Metro。正在执行开发轮次或构建 Preview 时，请让哪里跑保持在前台。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "故障排查",
+          "items": [
+            {
+              "id": "agent-wont-start",
+              "question": "Agent 为什么无法启动？",
+              "answer": [
+                "请确认所选服务商已经保存有效的 API 密钥，并且设备已联网。如果哪里跑报告本地运行环境故障，请先重启运行环境并再次尝试，不要急于修改项目。"
+              ]
+            },
+            {
+              "id": "preview-wont-open",
+              "question": "Web 或原生 Preview 为什么无法打开？",
+              "answer": [
+                "点击刷新图标（标注为“运行 / 重新加载”），再确认 runwhale.json 声明了预期的 Preview 目标和与之匹配的 Web 或原生入口。阅读界面显示的 Metro 或原生 Preview 诊断，并在请 Agent 修复时使用这条准确且不含敏感信息的内容。"
+              ]
+            },
+            {
+              "id": "git-operation-fails",
+              "question": "Git clone、fetch、pull 或 push 为什么失败？",
+              "answer": [
+                "请确认仓库使用受支持的 HTTPS 地址或 GitHub SSH 地址，并检查所选分支、网络连接和远程权限。使用 GitHub SSH 时，请确认设备当前公钥已添加到 GitHub。pull 还要求工作树保持干净；包含内嵌凭据的地址会被拒绝。"
+              ]
+            },
+            {
+              "id": "support-report",
+              "question": "提交支持请求时应该提供什么？",
+              "answer": [
+                "请提供哪里跑版本、设备型号、操作系统版本、尝试执行的操作、完整错误信息、最少复现步骤，以及应用显示的非敏感诊断。切勿提供 API 密钥、私钥、凭据、私有项目数据、个人数据，或未经脱敏的日志和截图。"
+              ]
+            }
+          ]
+        }
+      ],
+      "moreTitle": "仍然需要帮助？",
+      "moreBody": "通过分步教程完成第一次完整流程；如果你有私密问题或可以复现的故障，请联系支持。",
+      "guideLabel": "打开教程",
+      "supportLabel": "联系支持"
+    }
+  },
+  "discover": {
+    "examplesLabel": "作品案例",
+    "updatesLabel": "更新日志",
+    "examplesHref": "/zh-CN/examples",
+    "updatesHref": "/zh-CN/changelog",
+    "updated": "2026 年 9 月 5 日",
+    "purchase": {
+      "title": "下载前，先了解这些",
+      "downloadNote": "需要自备模型 API 密钥，服务商用量单独计费。",
+      "summary": "准备一个想法，以及模型 API 密钥。",
+      "items": [
+        {
+          "title": "免费社区版",
+          "body": "哪里跑社区版免费开源，无需哪里跑账号或订阅。所在地区的可用状态请以 App Store 为准。"
+        },
+        {
+          "title": "模型用量单独计费",
+          "body": "需要使用你自己的服务商 API 密钥，模型用量费用由该服务商收取。"
+        },
+        {
+          "title": "确认设备是否适用",
+          "body": "请在 App Store 查看 iPhone 和 iPad 的兼容性要求。向智能体发送需求时需要联网。"
+        }
+      ],
+      "guide": "配置第一个模型",
+      "limits": "查看项目兼容范围"
+    },
+    "examples": {
+      "title": "从一个想做的作品开始。",
+      "summary": "看看两段真实工作流程中的作品，再复制提示词，开始自己的项目。",
+      "all": "浏览作品案例",
+      "watch": "观看演示录像",
+      "copy": "复制提示词",
+      "copied": "提示词已复制",
+      "copyError": "暂时无法自动复制，请选中上方提示词手动复制。",
+      "promptLabel": "起步提示词",
+      "originalPrompt": "演示中的原始提示词",
+      "suggestedPrompt": "建议起步提示词",
+      "steps": "创建 Expo 项目，在设置中配置模型，然后把提示词发送给智能体。完成后打开原生预览，亲手试一试。",
+      "note": "截图和录像展示已有演示。重新运行智能体时，结果可能不同；下方贪吃蛇提示词是精简后的建议，并非录像中的完整原始需求。",
+      "ideasTitle": "下一个，你想做什么？",
+      "ideasBody": "这些是供你动手实现的起步想法。选择对应项目类型，再按自己的需要修改提示词。",
+      "guide": "查看上手教程",
+      "cases": [
+        {
+          "id": "animal-parade",
+          "title": "Animal Parade · 动物乐园",
+          "category": "Expo · 启蒙小游戏",
+          "description": "六张动物卡片、一个寻找动物的问题，以及点击后的鼓励反馈。看看一句想法如何变成原生预览中的游戏。",
+          "image": "/media/optimized/v1/05-animal-parade-preview-720.webp",
+          "imageAlt": "Animal Parade 原生预览：寻找小狗的提示下方显示六张动物卡片。",
+          "width": 720,
+          "height": 1566,
+          "video": "/media/demo/RunWhale-demo-readme.mp4",
+          "prompt": "Make a game for baby",
+          "original": true
+        },
+        {
+          "id": "snake-sprint",
+          "title": "Snake Sprint · 贪吃蛇",
+          "category": "Expo · 街机小游戏",
+          "description": "通过触控按钮转向，随时暂停一局，再体验通过后续需求加入的障碍模式。",
+          "image": "/media/optimized/v1/05-see-features-come-to-life-framed-720.webp",
+          "imageAlt": "Snake Sprint 真实原生预览画面：已启用障碍模式，棋盘上显示橙色障碍。",
+          "width": 720,
+          "height": 1564,
+          "video": "/media/demo/runwhale-snake-agent-workflow.mp4",
+          "prompt": "使用 React Native 内置组件做一个竖屏贪吃蛇游戏，加入食物、实时分数、大尺寸触控方向键，以及开始、暂停、继续、重新开始和游戏结束状态。增加障碍模式开关，切换时重新开始，撞到障碍时结束游戏。确保所有操作按钮在手机上可见。在我打开原生预览前，运行受支持的检查。",
+          "original": false
+        }
+      ],
+      "ideas": [
+        {
+          "title": "你的个人网站",
+          "category": "Web",
+          "prompt": "做一个适配手机的个人网站，包含自我介绍、三个作品卡片和联系方式。使用方便替换的示例内容，通过 CSS 完成布局。确保手机上的导航可用，并在打开 Web 预览前运行受支持的检查。"
+        },
+        {
+          "title": "一个专注计时器",
+          "category": "Expo",
+          "prompt": "使用 React Native 内置组件做一个专注计时器，可以调整专注和休息时长，支持开始、暂停、继续和重置。清楚显示当前阶段，按钮方便点击。计时期间保持应用在前台。在打开原生预览前运行受支持的检查。"
+        }
+      ]
+    },
+    "updates": {
+      "title": "哪里跑，又有了新变化。",
+      "summary": "了解官网、作品案例和上手资源的最新变化。",
+      "latest": "最近的官网更新",
+      "all": "查看更新日志",
+      "website": "官网",
+      "entries": [
+        {
+          "id": "2026-09-05",
+          "date": "2026 年 9 月 5 日",
+          "title": "找到你的第一个项目",
+          "summary": "新增真实案例、可复制的提示词，以及更清晰的下载前说明。",
+          "changes": [
+            "浏览 Animal Parade 和 Snake Sprint，通过录像和提示词开始动手。",
+            "在下载区域旁集中了解应用购买、模型计费和设备要求。",
+            "通过更新日志查看按日期记录的官网变化。"
+          ]
+        },
+        {
+          "id": "2026-09-04",
+          "date": "2026 年 9 月 4 日",
+          "title": "第一次完整开发流程，有了教程",
+          "summary": "中英文帮助页面覆盖模型配置、智能体工作和预览。",
+          "changes": [
+            "跟随教程，从模型配置走到项目在预览中运行。",
+            "通过常见问题了解项目兼容范围、Git、联网需求和故障处理。"
+          ]
+        }
+      ]
+    }
+  },
+  "navigation": {
+    "brand": "哪里跑",
+    "homeAria": "哪里跑首页",
+    "back": "返回首页",
+    "resourcesAria": "哪里跑教程与支持",
+    "footerAria": "教程、法律、支持、语言和项目链接",
+    "updatedPrefix": "最后更新：",
+    "copyright": "© 2026 哪里跑。",
+    "links": {
+      "examples": {
+        "label": "作品案例",
+        "href": "/zh-CN/examples"
+      },
+      "changelog": {
+        "label": "更新日志",
+        "href": "/zh-CN/changelog"
+      },
+      "guide": {
+        "label": "教程",
+        "href": "/zh-CN/guide"
+      },
+      "faq": {
+        "label": "常见问题",
+        "href": "/zh-CN/faq"
+      },
+      "support": {
+        "label": "支持",
+        "href": "/zh-CN/support"
+      },
+      "privacy": {
+        "label": "隐私",
+        "href": "/zh-CN/privacy"
+      },
+      "terms": {
+        "label": "服务条款",
+        "href": "/zh-CN/terms"
+      }
+    }
+  },
+  "documents": {
+    "privacy": {
+      "eyebrow": "隐私",
+      "title": "隐私政策",
+      "summary": "本政策适用于哪里跑应用及本网站，说明哪些数据留在设备上、哪些数据会共享给你选择的服务，以及你的隐私选择。",
+      "updated": "2026 年 9 月 15 日",
+      "updatedIso": "2026-09-15",
+      "metadataTitle": "哪里跑隐私政策",
+      "metadataDescription": "哪里跑隐私政策：了解本地数据、第三方 AI 共享、数据删除以及网站托管。",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "适用范围"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本政策适用于哪里跑移动应用和本网站，说明我们自身的数据处理与共享行为。所链接的模型服务商、Git 托管服务、软件包注册表及其他联网服务政策，补充说明各自的处理方式，不替代我们在本政策中承担的责任。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "应用无需哪里跑账号，也不向哪里跑发送使用统计或广告标识。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "应用处理的信息"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "哪里跑会将项目、Git 历史、智能体会话、附件、偏好设置、项目缓存和生成的项目数据保存在设备上的应用本地容器中。模型服务商的 API 密钥和设备的 Git SSH 私钥使用操作系统的安全存储保存。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "哪里跑不会将你的项目或智能体会话副本上传至哪里跑服务器。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "发送给你所选服务的信息"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "AI 功能会将请求内容及回答所需的上下文发送给所选模型服务。数据接收方、数据类别、授权选择和服务商条款详见下一节。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "当你 clone、fetch、pull 或 push 代码仓库时，应用会连接你指定的 Git 托管服务。安装依赖可能会访问软件包注册表。这些服务会依据各自的条款和隐私政策处理信息，其保留规则由服务商及你的账号设置决定。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "GitHub 分享链接会公开仓库所有者、仓库名和 commit SHA。推送会按照仓库的访问设置将 commit 发布到 GitHub；私有仓库的访问权限仍由 GitHub 管理。打开外部网站会向其托管方发送包括 IP 地址在内的连接信息。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "第三方 AI 服务"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "发送 AI 请求内容前，RunWhale 会显示所选服务商和 API 地址，并征求你的明确同意。授权针对该接收方；更换服务商或地址需要重新同意。拒绝后不会发送该 AI 请求。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "经你同意，Agent 会按照你的选择，将提示词、对话历史、相关源码和文件内容、工具结果，以及作为上下文使用的图片或 Preview 截图发送给 Anthropic（Claude API）、DeepSeek、Google（Gemini API）或 OpenAI。图像生成和网页搜索也可能通过该服务商发送请求内容。接收服务会收到用于认证的 API 密钥，以及 IP 地址等连接信息。请求用于生成你要求的回复、代码、图片或操作，可能包含文件或图片中的个人信息。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "使用自定义 API 地址时，请求会发送给该地址的运营方，后者可能继续转发给其他服务。仅凭模型或服务商名称无法确定该运营方。授权前请了解其身份、隐私政策及后续转发方式。"
+            },
+            {
+              "tag": "h3",
+              "attrs": {},
+              "children": "AI 服务商、数据用途与保留"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "以下链接是对本政策的补充。RunWhale 仍对自身处理和共享数据的行为负责。我们要求第三方接收方对共享个人信息提供至少与本政策及适用隐私要求同等的保护。服务商可能在你所在国家以外处理请求。具体 API 功能、协议、地区和账号设置会影响保留期限及训练用途；面向消费者的聊天服务规则可能与 API 规则不同。以下摘要依据更新日期时公布的条款，不代表零保留承诺。如需访问或删除数据，可联系服务商；涉及 RunWhale 的处理行为，也可发送邮件至 runwhale@runwhale.dev 寻求协助。"
+            },
+            {
+              "tag": "ul",
+              "attrs": {},
+              "children": [
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Anthropic."
+                    },
+                    " API 输入和输出默认不用于训练，通常在 30 天内删除；特定功能、协议、安全执法或法律义务可能构成例外。主动选择共享数据或提交反馈可能允许训练用途。 ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://www.anthropic.com/legal/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "隐私政策"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 数据使用说明"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 数据保留说明"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "DeepSeek."
+                    },
+                    " API 使用适用开放平台条款。RunWhale 尚未确认该 API 的固定保留期限或不用于训练的承诺。发送个人信息前，请向 DeepSeek 确认你的账号所适用的条款。 ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "隐私政策"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 服务条款"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Google (Gemini API)."
+                    },
+                    " Gemini API 的数据用途取决于 Google 定义的服务类型和地区。免费服务可能将内容用于模型改进及人工审核，请勿向此类服务提交敏感、机密或个人信息。付费服务规则不允许将内容用于产品改进，并同样适用于欧洲经济区、瑞士和英国。安全日志及特定功能仍可能保留数据。 ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://policies.google.com/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "隐私政策"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://ai.google.dev/gemini-api/terms",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 服务条款"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "OpenAI."
+                    },
+                    " API 数据默认不用于训练，除非你主动选择加入。滥用监测日志通常最多保留 30 天；安全、法律、特定功能存储和获批的账号控制措施可能影响期限。 ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://openai.com/policies/privacy-policy/",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "隐私政策"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://developers.openai.com/api/docs/guides/your-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 数据使用说明"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Preview 中运行的项目"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "在 Preview 中运行的代码可能连接自己的服务，并处理你输入或允许其访问的信息，包括照片、相机、麦克风或位置。运行前请检查项目源码及其连接的服务。在系统设置中管理设备权限。被加入智能体请求的 Preview 内容，会按照上述数据共享选择发送给所选 AI 服务。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "网站托管"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本网站不包含网站分析脚本、广告追踪器或应用 Cookie。页面与媒体均为静态文件。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "部署在 GitHub Pages 时，GitHub 可能会处理包括 IP 地址在内的请求信息，以运营和保护服务。有关数据处理与保留政策，请阅读 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "GitHub 隐私声明"
+                },
+                "。"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "信息的使用与共享方式"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "信息用于提供你请求的功能、运营和保护网站、诊断问题。哪里跑不会出售你的个人信息，也不会将应用项目内容用于广告。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "信息会与你指示应用使用的服务及上述网站托管服务商共享；或在遵守法律、保护权利与安全、调查滥用行为时按要求共享。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "保留、删除与个人选择"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "你可以控制设备上存储的应用数据。本地工作区数据会保留到你在应用中删除它，或在设备上移除应用数据；临时缓存可能提前清理。可在工作区删除单个会话或项目，在“设置 → 模型”移除 API 密钥，并在设置中删除或轮换 Git SSH 密钥。安全存储内容可能在卸载后保留，因此请先移除，并同时在模型服务商或 Git 托管服务处撤销凭证。删除本地数据不会删除已经发送给模型服务商、Git 托管服务、软件包注册表或其他第三方的副本；如需对这些服务控制的数据行使权利，请直接联系对应服务。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "你可在“设置 → 关于 → 隐私政策 → AI 数据共享”撤回 AI 同意。撤回会停止正在运行的智能体，并阻止进一步的模型请求，直到你再次同意。撤回不会移除第三方已接收的信息。应用内包含本隐私政策的离线副本。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "如需咨询哪里跑控制的信息、申请删除数据，或在适用情况下撤回同意，请发送邮件至 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "。"
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "联系支持时，我们会接收你的邮箱和消息以便回复，并在处理请求或履行法律义务所需期间保留邮件。你也可以通过同一邮箱提出访问、更正或其他隐私请求。请勿发送 API 密钥或私钥。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "安全与儿童"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "哪里跑采用与本地优先设计相适应的技术保护措施，但任何存储或传输方式都无法保证绝对安全。请勿在项目文件、提示、附件、日志或预览输出中放置秘密信息。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "哪里跑是一款开发者工具，不面向 13 岁以下儿童。我们不会有意通过应用收集儿童的个人信息。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "政策变更与联系方式"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "我们可能会随着哪里跑的变化更新本政策，页面上方的日期表示最新版本。如需产品帮助，请访问",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/zh-CN/support"
+                  },
+                  "children": "哪里跑支持"
+                },
+                "。隐私问题和请求可以发送至 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "。"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "commercial/privacy": {
+      "privacyHref": "/zh-CN/commercial/privacy",
+      "eyebrow": "隐私",
+      "title": "隐私政策",
+      "summary": "本政策适用于哪里跑应用及本网站，说明本地工作区数据、联网 AI 服务、账号、订阅、使用统计与网站托管的数据处理方式。",
+      "updated": "2026 年 9 月 15 日",
+      "updatedIso": "2026-09-15",
+      "metadataTitle": "哪里跑隐私政策",
+      "metadataDescription": "哪里跑隐私政策：了解本地工作区数据、联网 AI 服务、账号、订阅、使用统计与网站托管的数据处理方式。",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "适用范围"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本政策适用于哪里跑移动应用和本网站，说明我们自身的数据处理与共享行为。所链接的模型服务商、Git 托管服务、软件包注册表及其他联网服务政策，补充说明各自的处理方式，不替代我们在本政策中承担的责任。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "应用处理的信息"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "哪里跑会将项目、Git 历史、智能体会话、附件、偏好设置、项目缓存和生成的项目数据保存在设备上的应用本地容器中。模型服务商的 API 密钥和设备的 Git SSH 私钥使用操作系统的安全存储保存。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "账号和订阅功能为可选功能；账号服务不会保存你的项目或智能体会话副本。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "账号与订阅"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "使用已开放的 Google 或 Apple 登录方式时，哪里跑会验证服务商提供的身份凭证，并保存账号标识、关联的登录服务商标识、服务商提供的已验证邮箱，以及账号和会话的时间信息。登录令牌保存在应用的安全存储中，服务端仅保存令牌哈希；令牌不会提供给用户项目、智能体会话或 Preview。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Cloudflare 托管账号 API 和数据库，并处理提供这些服务所需的网络请求。RevenueCat 接收你的哪里跑账号标识和商店购买信息，以验证订阅、试用、续订和退款。哪里跑记录订阅状态和用量账目。商店付款由 Apple 或 Google 处理，哪里跑不会接收你的银行卡资料。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "发送给你所选服务的信息"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "AI 功能会将请求内容及回答所需的上下文发送给所选模型服务。AI 数据类别和服务商条款详见下一节。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "如果你使用可选的哪里跑模型 API，请求会经由哪里跑后端发送给其配置的模型服务商。后端保留用量账目，不保存提示、项目文件或对话内容。模型服务商的数据保留规则由其自身政策规定。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "当你 clone、fetch、pull 或 push 代码仓库时，应用会连接你指定的 Git 托管服务。安装依赖可能会访问软件包注册表。这些服务会依据各自的条款和隐私政策处理信息，其保留规则由服务商及你的账号设置决定。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "GitHub 分享链接会公开仓库所有者、仓库名和 commit SHA。推送会按照仓库的访问设置将 commit 发布到 GitHub；私有仓库的访问权限仍由 GitHub 管理。打开外部网站会向其托管方发送包括 IP 地址在内的连接信息。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "第三方 AI 服务"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "使用你自己配置的服务商运行 Agent 时，应用会按照你的选择，将提示词、对话历史、相关源码和文件内容、工具结果，以及作为上下文使用的图片或 Preview 截图发送给 Anthropic（Claude API）、DeepSeek、Google（Gemini API）或 OpenAI。图像生成和网页搜索也可能通过该服务商发送请求内容。接收服务会收到用于认证的 API 密钥，以及 IP 地址等连接信息。请求用于生成你要求的回复、代码、图片或操作，可能包含文件或图片中的个人信息。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "使用自定义 API 地址时，请求会发送给该地址的运营方，后者可能继续转发给其他服务。仅凭模型或服务商名称无法确定该运营方。配置或使用该地址前，请了解其身份、隐私政策及后续转发方式。"
+            },
+            {
+              "tag": "h3",
+              "attrs": {},
+              "children": "AI 服务商、数据用途与保留"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "以下链接是对本政策的补充。RunWhale 仍对自身处理和共享数据的行为负责。我们要求第三方接收方对共享个人信息提供至少与本政策及适用隐私要求同等的保护。服务商可能在你所在国家以外处理请求。具体 API 功能、协议、地区和账号设置会影响保留期限及训练用途；面向消费者的聊天服务规则可能与 API 规则不同。以下摘要依据更新日期时公布的条款，不代表零保留承诺。如需访问或删除数据，可联系服务商；涉及 RunWhale 的处理行为，也可发送邮件至 runwhale@runwhale.dev 寻求协助。"
+            },
+            {
+              "tag": "ul",
+              "attrs": {},
+              "children": [
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Anthropic."
+                    },
+                    " API 输入和输出默认不用于训练，通常在 30 天内删除；特定功能、协议、安全执法或法律义务可能构成例外。主动选择共享数据或提交反馈可能允许训练用途。 ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://www.anthropic.com/legal/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "隐私政策"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 数据使用说明"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 数据保留说明"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "DeepSeek."
+                    },
+                    " API 使用适用开放平台条款。RunWhale 尚未确认该 API 的固定保留期限或不用于训练的承诺。发送个人信息前，请向 DeepSeek 确认你的账号所适用的条款。 ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "隐私政策"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 服务条款"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Google (Gemini API)."
+                    },
+                    " Gemini API 的数据用途取决于 Google 定义的服务类型和地区。免费服务可能将内容用于模型改进及人工审核，请勿向此类服务提交敏感、机密或个人信息。付费服务规则不允许将内容用于产品改进，并同样适用于欧洲经济区、瑞士和英国。安全日志及特定功能仍可能保留数据。 ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://policies.google.com/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "隐私政策"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://ai.google.dev/gemini-api/terms",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 服务条款"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "OpenAI."
+                    },
+                    " API 数据默认不用于训练，除非你主动选择加入。滥用监测日志通常最多保留 30 天；安全、法律、特定功能存储和获批的账号控制措施可能影响期限。 ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://openai.com/policies/privacy-policy/",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "隐私政策"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://developers.openai.com/api/docs/guides/your-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 数据使用说明"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Preview 中运行的项目"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "在 Preview 中运行的代码可能连接自己的服务，并处理你输入或允许其访问的信息，包括照片、相机、麦克风或位置。运行前请检查项目源码及其连接的服务。在系统设置中管理设备权限。被加入智能体请求的 Preview 内容，会发送给处理该请求的模型服务。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "应用使用统计"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "应用使用 Google Analytics for Firebase，在应用启动时自动启用，以了解功能使用情况并改善可靠性。Debug 构建不发送这些统计。应用不会单独弹出统计授权提示，也不提供统计开关。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Google 会接收应用打开与互动信息、项目创建和 Preview 的事件类别、结果与耗时、应用版本、设备型号、操作系统、语言，以及随机生成的应用实例标识。Google 可能根据连接的 IP 地址推算大致位置；Analytics 不记录或存储单独的 IP 地址。我们不会将你的哪里跑账号标识、邮箱、代码、提示词、项目名称、文件内容、路径、URL 或日志作为统计事件数据发送。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "广告标识收集、广告个性化和自动屏幕上报均已关闭。统计限于哪里跑应用本身，Firebase SDK 不向 Native Preview 中运行的用户项目开放。Google 会在其基础设施上处理统计数据，处理地点可能在你所在国家或地区以外，具体遵循 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://policies.google.com/privacy",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "Google 隐私政策"
+                },
+                "及其 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.google.com/analytics/answer/6004245",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "Analytics 数据保护说明"
+                },
+                "。"
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "统计记录按我们 Google Analytics 媒体资源的数据保留设置保存。删除哪里跑账号或本地项目，不会自动删除此前收集的统计数据；我们不通过账号标识关联这些统计。如需提出统计数据的隐私或删除请求，请通过下方邮箱联系我们。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "网站托管"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本网站不包含网站分析脚本、广告追踪器或应用 Cookie。页面与媒体均为静态文件。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "部署在 GitHub Pages 时，GitHub 可能会处理包括 IP 地址在内的请求信息，以运营和保护服务。有关数据处理与保留政策，请阅读 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "GitHub 隐私声明"
+                },
+                "。"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "信息的使用与共享方式"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "信息用于提供你请求的功能、运营和保护网站、诊断问题。哪里跑不会出售你的个人信息，也不会将应用项目内容用于广告。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "信息会与你指示应用使用的服务、上述账号、订阅、统计和托管服务商共享；或在遵守法律、保护权利与安全、调查滥用行为时按要求共享。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "保留、删除与个人选择"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "你可以控制设备上存储的应用数据。本地工作区数据会保留到你在应用中删除它，或在设备上移除应用数据；临时缓存可能提前清理。可在工作区删除单个会话或项目，在“设置 → 模型”移除 API 密钥，并在设置中删除或轮换 Git SSH 密钥。安全存储内容可能在卸载后保留，因此请先移除，并同时在模型服务商或 Git 托管服务处撤销凭证。删除本地数据不会删除已经发送给模型服务商、Git 托管服务、软件包注册表或其他第三方的副本；如需对这些服务控制的数据行使权利，请直接联系对应服务。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "重新登录后可在“我的”页面删除账号。删除操作会移除账号身份和会话，并保留本地项目。使用化名标识的用量记录会保留至定时清理，通常为三至四个月；用于防止重建账号重置额度的临时哈希标识会保留至下一个 UTC 日历月。删除账号不会取消 App Store 或 Google Play 订阅，请在商店管理取消操作。商店的账单记录和 RevenueCat 记录遵循各自的数据保留政策。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "如需咨询哪里跑控制的信息、申请删除数据，或在适用情况下撤回同意，请发送邮件至 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "。"
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "联系支持时，我们会接收你的邮箱和消息以便回复，并在处理请求或履行法律义务所需期间保留邮件。你也可以通过同一邮箱提出访问、更正或其他隐私请求。请勿发送 API 密钥或私钥。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "安全与儿童"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "哪里跑采用与本地优先设计相适应的技术保护措施，但任何存储或传输方式都无法保证绝对安全。请勿在项目文件、提示、附件、日志或预览输出中放置秘密信息。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "哪里跑是一款开发者工具，不面向 13 岁以下儿童。我们不会有意通过应用收集儿童的个人信息。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "政策变更与联系方式"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "我们可能会随着哪里跑的变化更新本政策，页面上方的日期表示最新版本。如需产品帮助，请访问",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/zh-CN/support"
+                  },
+                  "children": "哪里跑支持"
+                },
+                "。隐私问题和请求可以发送至 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "。"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "eyebrow": "法律",
+      "title": "服务条款",
+      "summary": "了解哪里跑的使用条款，包括账号、商店订阅、取消续订以及你的项目。",
+      "updated": "2026 年 9 月 8 日",
+      "updatedIso": "2026-09-08",
+      "metadataTitle": "哪里跑服务条款——账号与订阅",
+      "metadataDescription": "了解哪里跑的使用条款，包括账号、商店订阅、取消续订以及你的项目。",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "使用哪里跑"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本条款适用于哪里跑应用、官网以及可选的账号和订阅服务。使用这些服务即表示你同意本条款；如果不同意，请停止使用相关服务。开源组件仍受各自的许可证约束。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "请仅在你依据适用法律能够订立本协议时使用哪里跑，或在父母或监护人依法提供必要许可和监督的情况下使用。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "账号与访问"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "社区版无需哪里跑账号。在商业版中，你可以使用可用的 Apple 或 Google 登录方式管理账号和订阅。请妥善保护登录服务的账号；如怀疑存在未经授权的使用，请联系我们。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本地开发和使用你自己的模型服务商 API 密钥不要求付费订阅哪里跑。第三方服务商可能依据其条款另外收费。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "订阅与付款"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "订阅可用时，在应用中打开「我的」，登录后选择订阅套餐。确认商店购买前，请核对包含的权益、价格、币种、计费周期以及任何试用或首次订阅优惠。可用套餐可能因平台、地区和应用版本而异。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "付款由 Apple App Store 或 Google Play 处理。自动续费订阅会持续续订，直到你按照商店条款取消。试用资格、试用期限和试用结束后的价格，以商店在确认购买前显示的信息为准；请勿默认存在试用优惠。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "购买和恢复购买均需验证后才能开通订阅权益。若显示正在验证，请稍后刷新或联系支持，无需重复购买。恢复购买时，请登录原来的哪里跑账号，并使用购买时的商店账号。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "取消续订与退款"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "你可以通过应用中的「管理订阅」或商店账号管理、取消续订。请遵循商店显示的取消时限和权益结束日期。如不希望 Apple 试用到期后续费，请至少提前 24 小时取消。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "卸载应用、退出登录或删除哪里跑账号不会取消商店订阅。取消续订与申请退款是两项不同操作。退款资格与处理遵循商店政策及适用法律，本条款不影响你的法定消费者权利。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.apple.com/118428"
+                  },
+                  "children": "Apple 取消订阅说明"
+                },
+                " · ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.apple.com/118223"
+                  },
+                  "children": "Apple 退款帮助"
+                },
+                " · ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.google.com/googleplay/answer/7018481"
+                  },
+                  "children": "Google Play 订阅管理"
+                },
+                " · ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.google.com/googleplay/answer/2479637"
+                  },
+                  "children": "Google Play 退款政策"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "用量与服务可用性"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "订阅仅包含所选套餐明确展示的功能和额度。如提供 AI 用量额度，该额度属于服务使用限额，并非现金或订阅价格。账号页面显示当前额度和用量；每月额度在每个 UTC 自然月开始时重置。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "部分功能依赖网络、设备和第三方服务。我们不承诺服务始终不中断，也不承诺提供当前应用版本和所选套餐中未包含的功能。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "你的项目与合理使用"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "你保留对带入哪里跑的内容所享有的权利。你有责任确保有权使用项目文件、提示词、依赖和所连接的服务，并遵守其许可证及条款。请备份重要工作。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "AI 输出可能存在错误或不安全的代码。在依赖、分享或部署生成结果前，请进行审查与测试。不得利用哪里跑从事违法、侵权、未经授权的访问、恶意软件活动，或绕过服务安全措施和用量限制。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "账号删除与服务变更"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "你可以在商业版应用的「我的」中申请删除账号，本地项目仍保留在设备上。账号删除及数据处理方式见",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/zh-CN/commercial/privacy"
+                  },
+                  "children": "商业版隐私政策"
+                },
+                "；删除账号前，请另外取消任何商店订阅。"
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "为处理滥用、安全风险或法律要求，我们可能限制账号服务。我们可能随着服务变化更新条款，页面日期标识最新版本；依法需要时，我们会在重大变更生效前通知你。本条款不排除适用法律不允许排除的权利或救济。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "隐私与联系"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "有关数据处理，请按使用的版本阅读",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/zh-CN/privacy"
+                  },
+                  "children": "社区版隐私政策"
+                },
+                "或",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/zh-CN/commercial/privacy"
+                  },
+                  "children": "商业版隐私政策"
+                },
+                "。如需帮助，请访问",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/zh-CN/support"
+                  },
+                  "children": "支持页面"
+                },
+                "或发送邮件至 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "。"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "support": {
+      "eyebrow": "帮助",
+      "title": "哪里跑支持",
+      "summary": "获取设置、项目、智能体会话和预览方面的帮助，也欢迎告诉我们哪里出了问题。",
+      "updated": "2026 年 9 月 4 日",
+      "updatedIso": "2026-09-04",
+      "activeResource": "support",
+      "metadataTitle": "哪里跑支持——设置、智能体与预览帮助",
+      "metadataDescription": "获取哪里跑的设置、项目、AI 智能体会话、Git、Web 预览和原生预览帮助，或通过邮件与 GitHub Issues 报告问题。",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "从合适的内容开始"
+            },
+            {
+              "tag": "div",
+              "attrs": {
+                "className": "support-links"
+              },
+              "children": [
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/zh-CN/guide"
+                  },
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "查看分步教程"
+                    },
+                    {
+                      "tag": "span",
+                      "attrs": {},
+                      "children": "配置模型，创建或导入项目，使用 Agent，并打开 Preview。"
+                    }
+                  ]
+                },
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/zh-CN/faq"
+                  },
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "查看常见问题"
+                    },
+                    {
+                      "tag": "span",
+                      "attrs": {},
+                      "children": "了解联网、数据、兼容性、Git 和常见故障。"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "联系支持"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "需要私密支持时，请发送邮件至 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "。对于不包含敏感信息、可以稳定复现的问题和功能建议，请使用 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://github.com/zhiqingchen/RunWhale/issues",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "GitHub Issues"
+                },
+                "。"
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "请附上哪里跑版本、设备型号、操作系统版本、你尝试执行的操作、完整错误信息、能够复现问题的最少步骤，以及应用显示的非敏感诊断信息。切勿提供 API 密钥、私钥、凭据、私有项目数据、个人数据，或未经脱敏的日志和截图。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "隐私与安全报告"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "有关本地应用数据、所连接的服务、网站托管、数据删除和隐私请求的详细说明，请按使用的版本阅读",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/zh-CN/privacy"
+                  },
+                  "children": "社区版隐私政策"
+                },
+                "或",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/zh-CN/commercial/privacy"
+                  },
+                  "children": "商业版隐私政策"
+                },
+                "。"
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "如果你认为发现了安全漏洞，或需要在隐私请求中提供敏感细节，请发送邮件至 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "，不要创建公开 Issue。"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "开源项目"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "哪里跑的源代码和公开项目信息可在 ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://github.com/zhiqingchen/RunWhale",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "GitHub"
+                },
+                " 上查看。公开 Issue 的回复对所有人可见；如果请求中包含应当保密的信息，请使用电子邮件。"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

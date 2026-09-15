@@ -1,3 +1,4 @@
+import { localeInfo, localizedPath } from "./i18n";
 import Link from "next/link";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { ContentPage } from "./content-page";
@@ -7,14 +8,12 @@ import type { WebsiteLocale } from "./home-copy";
 export function FaqPage({ locale }: { locale: WebsiteLocale }) {
   const copy = helpCopy[locale];
   const faq = copy.faq;
-  const isChinese = locale === "zh-CN";
-  const guideHref = isChinese ? "/zh-CN/guide" : "/guide";
-  const supportHref = isChinese ? "/zh-CN/support" : "/support";
-  const languageHref = isChinese ? "/faq" : "/zh-CN/faq";
+  const guideHref = localizedPath(locale, "guide");
+  const supportHref = localizedPath(locale, "support");
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    inLanguage: isChinese ? "zh-CN" : "en-US",
+    inLanguage: localeInfo[locale].lang,
     mainEntity: faq.groups.flatMap((group) => group.items.map((item) => ({
       "@type": "Question",
       name: item.question,
@@ -35,7 +34,7 @@ export function FaqPage({ locale }: { locale: WebsiteLocale }) {
       />
       <ContentPage
         locale={locale}
-        languageHref={languageHref}
+        page="faq"
         eyebrow={faq.eyebrow}
         title={faq.title}
         summary={faq.summary}

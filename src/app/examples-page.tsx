@@ -1,3 +1,4 @@
+import { localizedPath } from "./i18n";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
@@ -9,9 +10,9 @@ import type { WebsiteLocale } from "./home-copy";
 export function ExamplesPage({ locale }: { locale: WebsiteLocale }) {
   const copy = discoverCopy[locale];
   const examples = copy.examples;
-  const guideHref = locale === "en" ? "/guide" : "/zh-CN/guide";
+  const guideHref = localizedPath(locale, "guide");
   return (
-    <ContentPage locale={locale} languageHref={locale === "en" ? "/zh-CN/examples" : "/examples"} eyebrow={copy.examplesLabel} title={examples.title} summary={examples.summary} updated={copy.updated} updatedIso="2026-09-05" activeResource="examples" wide>
+    <ContentPage locale={locale} page="examples" eyebrow={copy.examplesLabel} title={examples.title} summary={examples.summary} updated={copy.updated} updatedIso="2026-09-05" activeResource="examples" wide>
       <p className="examples-intro">{examples.steps} <Link href={guideHref}>{examples.guide}</Link></p>
       {examples.cases.map((example) => (
         <section className="example-detail" id={example.id} key={example.id} aria-labelledby={`${example.id}-title`}>

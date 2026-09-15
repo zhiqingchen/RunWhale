@@ -1,0 +1,1997 @@
+{
+  "home": {
+    "htmlLang": "ja",
+    "brand": "RunWhale",
+    "homeAria": "RunWhale ホーム",
+    "navAria": "メインナビゲーション",
+    "nav": {
+      "demo": "デモ",
+      "features": "機能",
+      "workflow": "使い方",
+      "security": "セキュリティ",
+      "guide": "ガイド",
+      "faq": "よくある質問",
+      "help": "ヘルプ"
+    },
+    "guideHref": "/ja/guide",
+    "faqHref": "/ja/faq",
+    "eyebrow": "深く探究し、やり遂げる。",
+    "heroTitle": "AI コーディングエージェントと開発環境を、",
+    "heroAccent": "あなたのスマートフォンに。",
+    "heroLead": "Web または Expo プロジェクトを作成するか、対応するリポジトリを読み込みます。RunWhale の AI エージェントにコードの確認・編集、対応するチェックの実行、Git の変更確認、Web または React Native プレビューの起動を依頼できます。開発環境はスマートフォン上で動作し、モデルの推論には設定したプロバイダーを使用します。",
+    "beginnerPitch": "初心者にも使いやすい Vibe Coding。アイデアから始め、作りながら学べます。",
+    "downloadOnAppStore": "App Store でダウンロード",
+    "appStorePrice": "無料・オープンソースのコミュニティ版",
+    "watchWorkflow": "実際の作業の流れを見る",
+    "localNote": "ファイルとツールは端末上で動作し、モデルの推論には設定したプロバイダーを使用します",
+    "whaleAlt": "RunWhale の青い髪のコーディングキャラクター",
+    "trustAria": "端末上で使える機能",
+    "trustLabel": "スマートフォン上で",
+    "capabilities": [
+      "プロジェクト",
+      "エージェントセッション",
+      "Git",
+      "Node.js",
+      "Metro",
+      "プレビュー"
+    ],
+    "demo": {
+      "chip": "実際の作業例",
+      "title": "ひとつの依頼から、遊べるゲームへ。",
+      "description": "Baby game という Expo プロジェクトを作り、「Make a game for baby」と依頼します。エージェントが Animal Parade を作る様子を確認し、ネイティブプレビューで動物のカードを試しましょう。",
+      "videoAria": "Baby game からネイティブプレビューの Animal Parade までを紹介する RunWhale の無音デモ",
+      "videoFallback": "このブラウザーは動画の再生に対応していません。",
+      "videoCaption": "Animal Parade・全編デモ・約 2 分 12 秒・音声なし",
+      "kicker": "ひとつのプロジェクト、継続して使えるセッション。",
+      "spotlightTitle": "赤ちゃん向けのゲームを作って。",
+      "spotlightBody": "短い依頼から 6 枚のカラフルな動物カードができます。ファイル編集を承認し、エージェントのチェックを確認して、ネイティブプレビューで Animal Parade を開きます。カードをタップすると、励ましのメッセージと次の動物の問題が表示されます。",
+      "outline": [
+        {
+          "title": "作成",
+          "body": "プロジェクト名を Baby game にして、Expo を選び、エージェントを開きます。"
+        },
+        {
+          "title": "開発",
+          "body": "依頼を送信し、編集を承認して、チェック結果を確認します。"
+        },
+        {
+          "title": "プレイ",
+          "body": "犬を見つけて動物のカードをタップし、ゲームの反応を確認します。"
+        }
+      ],
+      "galleryLabel": "依頼からプレイまで",
+      "galleryTitle": "同じデモで見る 6 つの場面。",
+      "galleryBody": "プロジェクトを作成し、依頼を送信してファイルへの書き込みを承認します。チェック結果を確認し、ネイティブプレビューを開いてゲームを試します。",
+      "disclosure": "6 枚の画像は上のデモ動画から取得したもので、元の英語 UI をそのまま掲載しています。RunWhale コミュニティ版は無料・オープンソースです。AI プロバイダーの利用料がかかる場合があります。"
+    },
+    "screenshots": [
+      {
+        "slug": "01-create-baby-game",
+        "title": "Expo で Baby game を作成。",
+        "alt": "RunWhale の新規プロジェクト画面。Baby game が入力され、Expo が選択されており、任意の Git リポジトリ欄は空です。"
+      },
+      {
+        "slug": "02-prompt-and-agent-plan",
+        "title": "「赤ちゃん向けのゲームを作って」と依頼。",
+        "alt": "「Make a game for baby」という依頼と、大きなタップ領域、やさしい反応、失敗状態を設けない方針が表示されたセッション。"
+      },
+      {
+        "slug": "03-approve-file-write",
+        "title": "ファイルの変更を承認。",
+        "alt": "index.tsx への書き込みを確認する RunWhale の画面。Reject と Allow once ボタンが表示されています。"
+      },
+      {
+        "slug": "04-checks-before-preview",
+        "title": "プレビュー前のチェックを確認。",
+        "alt": "TypeScript 診断と Git 差分の確認後、ネイティブプレビューの前に未解決の依存関係を説明するエージェントの概要。"
+      },
+      {
+        "slug": "05-animal-parade-preview",
+        "title": "ネイティブプレビューで Animal Parade をプレイ。",
+        "alt": "ネイティブプレビューの Animal Parade。犬、猫、牛、ひよこ、カエル、ライオンのカードの上に「Can you find the Dog?」と表示されています。"
+      },
+      {
+        "slug": "06-interaction-feedback",
+        "title": "動物をタップして反応を確認。",
+        "alt": "ネイティブプレビューでの操作後、ライオンの横に「Great job!」と表示された Animal Parade。"
+      }
+    ],
+    "featuresSection": {
+      "chip": "RunWhale を選ぶ理由",
+      "title": "集中して開発を進める環境を、",
+      "titleSecondLine": "スマートフォン上で。",
+      "description": "リモートデスクトップやクラウド IDE ではありません。RunWhale は、集中して操作できる開発環境を端末そのものに用意します。"
+    },
+    "features": [
+      {
+        "title": "プロジェクト内で作業する AI エージェント",
+        "body": "コードの確認、編集、テスト、修正を依頼できます。RunWhale はプロジェクトの内部で作業します。",
+        "meta": "確認・編集・テスト"
+      },
+      {
+        "title": "Web とネイティブのプレビュー",
+        "body": "対応するプロジェクトを Web プレビューで実行したり、Expo プロジェクトを iOS・Android 上でネイティブプレビューしたりできます。ユーザープロジェクトのためのクラウドビルドやネイティブビルドは行いません。",
+        "meta": "Web・iOS・Android"
+      },
+      {
+        "title": "端末上の開発環境",
+        "body": "主な開発処理はスマートフォン上で動作します。モデル推論、明示的な Git のネットワーク操作、未キャッシュの依存関係の取得にはネットワークを使用します。",
+        "meta": "ローカルツール・接続先のモデル"
+      }
+    ],
+    "workflow": {
+      "chip": "リポジトリから実行結果へ",
+      "title": "プロジェクトを開き、エージェントに依頼し、結果をプレビュー。",
+      "description": "作業の切り替えを減らし、継続して進められます。各工程は同じプロジェクトのセッションにつながっています。",
+      "steps": [
+        {
+          "title": "プロジェクトを開始",
+          "body": "Web または Expo プロジェクトを作成するか、対応する Git リポジトリを読み込みます。"
+        },
+        {
+          "title": "エージェントに依頼",
+          "body": "コードの確認、変更、検証を任せられます。操作を管理したい場合は、書き込み内容を確認できます。"
+        },
+        {
+          "title": "端末でプレビュー",
+          "body": "内蔵 Metro で Web またはネイティブプレビューを起動し、すぐに結果を確認します。"
+        }
+      ]
+    },
+    "security": {
+      "chip": "ローカル中心の設計",
+      "title": "開発環境はあなたの端末上に。",
+      "body": "プロジェクト、開発ツール、プレビューはローカルで動作します。モデル推論では、依頼と回答に必要なプロジェクトやセッションの内容を設定したプロバイダーに送信します。明示的な Git のネットワーク操作や未キャッシュの依存関係の取得もネットワークを使用します。",
+      "credentialBody": "API キーはシステムの安全なストレージに保管され、プロジェクト、環境変数、セッション、ログ、プレビューバンドルには含まれません。",
+      "contextLink": "RunWhale によるプロジェクト情報の取り扱い",
+      "privacyHref": "/ja/privacy",
+      "checks": [
+        "端末上の Node.js・TypeScript タスク",
+        "トークンで保護された localhost ランタイム",
+        "端末で生成する Git SSH キー"
+      ]
+    },
+    "finalCta": {
+      "chip": "オープンソース・Apache 2.0",
+      "title": "次のアイデアが生まれたら、",
+      "titleSecondLine": "すぐに開発を始められます。",
+      "tagline": "RunWhale — 深く探究し、やり遂げる。",
+      "github": "GitHub で RunWhale を見る"
+    },
+    "footer": {
+      "copyright": "© 2026 RunWhale. 深く取り組むために。",
+      "navAria": "ガイド、FAQ、法的情報、サポート、言語、プロジェクトのリンク",
+      "guide": "ガイド",
+      "guideHref": "/ja/guide",
+      "faq": "よくある質問",
+      "faqHref": "/ja/faq",
+      "privacy": "プライバシー",
+      "privacyHref": "/ja/privacy",
+      "terms": "利用規約",
+      "termsHref": "/ja/terms",
+      "support": "サポート",
+      "supportHref": "/ja/support"
+    },
+    "metadataTitle": "RunWhale — スマートフォンの AI コーディングエージェントとプレビュー",
+    "metadataDescription": "RunWhale は AI コーディングエージェントと端末上の開発環境を組み合わせ、対応する Web・Expo プロジェクト、チェック、Git の変更確認、React Native プレビューを提供します。"
+  },
+  "help": {
+    "updatedLabel": "2026 年 9 月 4 日",
+    "updatedIso": "2026-09-04",
+    "guide": {
+      "metadataTitle": "RunWhale ガイド — 設定からプレビューまで",
+      "metadataDescription": "モデルの設定、プロジェクトの作成・読み込み、エージェントとの作業、Web・ネイティブプレビューでの確認方法を紹介します。",
+      "eyebrow": "ガイド",
+      "title": "RunWhale を使い始める",
+      "summary": "モデルを設定してプロジェクトを開き、エージェントに変更を依頼して、スマートフォンで結果を試します。",
+      "startTitle": "最初の依頼を送る前に",
+      "startBody": "RunWhale の開発環境は端末上にあり、推論には設定したプロバイダーを使用します。初回の利用をスムーズにするため、次の 3 点を確認しましょう。",
+      "prerequisites": [
+        {
+          "title": "モデルの API キーを用意",
+          "body": "利用するプロバイダーのキーを用意します。RunWhale の設定からのみ保存し、プロジェクトや依頼文には入力しないでください。"
+        },
+        {
+          "title": "エージェントの利用時はオンラインに",
+          "body": "推論にはネットワークが必要です。Git のネットワーク操作や未キャッシュの依存関係の取得にも必要になる場合があります。"
+        },
+        {
+          "title": "対応するプロジェクトから開始",
+          "body": "内蔵の Web・Expo テンプレートを選ぶか、有効な RunWhale Preview のエントリーを持つ対応リポジトリを読み込みます。"
+        }
+      ],
+      "workflowLabel": "基本の作業手順",
+      "workflowTitle": "設定から動作確認まで",
+      "workflowBody": "モデル設定後は Baby game の例に沿って進めます。Expo プロジェクトを作り、ゲームの作成を依頼して編集を承認し、ネイティブプレビューで Animal Parade を試します。",
+      "steps": [
+        {
+          "action": "設定 → モデル・安全に保存",
+          "title": "プロバイダーとモデルを設定",
+          "body": [
+            "設定 → モデルを開き、プロバイダーとモデルを選択します。そのプロバイダーの API キーを貼り付け、安全に保存をタップします。",
+            "キーは端末の安全なストレージに保管されます。推論には選択したプロバイダーを使用するため、依頼の送信時は端末をオンラインにしてください。"
+          ]
+        },
+        {
+          "action": "新規プロジェクト・Web / Expo",
+          "title": "プロジェクトを作成、またはリポジトリを読み込む",
+          "body": [
+            "新規プロジェクトをタップして名前を入力します。React の Web サイトと Web プレビューには Web、アプリとネイティブプレビューには Expo を選びます。",
+            "このデモでは Baby game と入力し、Expo を選択します。任意のリポジトリ欄は空のまま、作成してエージェントを開くをタップします。",
+            "既存のコードで作業する場合は、対応する Git リポジトリを指定します。読み込んだプロジェクトの runwhale.json がプレビューの種類を決めます。"
+          ]
+        },
+        {
+          "action": "エージェント",
+          "title": "実現したい結果を具体的に伝える",
+          "body": [
+            "作りたいものや変更内容、期待する動作を伝え、作業に必要な対応済みのチェックも依頼します。",
+            "このデモの依頼は「Make a game for baby」だけです。エージェントは、大きなタップ領域、やさしい反応、6 枚の動物カードを備えたゲームを計画します。"
+          ]
+        },
+        {
+          "action": "レビュー・今回のみ許可・アクティビティ",
+          "title": "作業の進行と結果を確認",
+          "body": [
+            "レビューモードでは、index.tsx に書き込む前に確認が表示されます。今回のみ許可をタップし、同じセッションで書き込みやチェックの進行を確認します。",
+            "エージェントは TypeScript 診断と Git 差分の確認を実行します。新しい環境で未解決の依存関係を報告した後、ネイティブプレビューで実際にアプリを起動して確認します。"
+          ]
+        },
+        {
+          "action": "実行 / 再読み込み・プレビュー",
+          "title": "同じプロジェクトをプレビューで実行",
+          "body": [
+            "動画ではエージェントがネイティブプレビューを直接起動します。応答の終了後に実行 / 再読み込みアイコンをタップすることもできます。Web プロジェクトは Web プレビュー、対応する Expo プロジェクトはネイティブプレビューで動作します。",
+            "最初の画面を見るだけでなく、操作も試しましょう。診断メッセージが出たらプロジェクトに戻り、その正確な内容を次の修正依頼に使います。"
+          ]
+        },
+        {
+          "action": "ネイティブプレビュー・Animal Parade",
+          "title": "動物をタップして反応を確認",
+          "body": [
+            "Animal Parade は犬、猫、牛、ひよこ、カエル、ライオンのカードの上に「Can you find the Dog?」を表示します。カードをタップして、問題や反応の変化を確認します。",
+            "デモでは「Yay!」「Great job!」「You found it!」などの反応に続いて、次の動物の問題が表示されます。さらに変更する場合は、保存された同じエージェントセッションに戻ります。"
+          ]
+        }
+      ],
+      "galleryLabel": "依頼からプレイまで",
+      "galleryTitle": "同じデモで見る 6 つの場面。",
+      "galleryBody": "プロジェクトを作成し、依頼を送信してファイルへの書き込みを承認します。チェック結果を確認し、ネイティブプレビューを開いてゲームを試します。",
+      "screenshots": [
+        {
+          "id": "01-create-baby-game",
+          "title": "Expo で Baby game を作成。",
+          "alt": "RunWhale の新規プロジェクト画面。Baby game が入力され、Expo が選択されており、任意の Git リポジトリ欄は空です。",
+          "avifSrcSet": "/media/optimized/v1/01-create-baby-game-360.avif 360w, /media/optimized/v1/01-create-baby-game-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/01-create-baby-game-360.webp 360w, /media/optimized/v1/01-create-baby-game-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/01-create-baby-game-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "02-prompt-and-agent-plan",
+          "title": "「赤ちゃん向けのゲームを作って」と依頼。",
+          "alt": "「Make a game for baby」という依頼と、大きなタップ領域、やさしい反応、失敗状態を設けない方針が表示されたセッション。",
+          "avifSrcSet": "/media/optimized/v1/02-prompt-and-agent-plan-360.avif 360w, /media/optimized/v1/02-prompt-and-agent-plan-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/02-prompt-and-agent-plan-360.webp 360w, /media/optimized/v1/02-prompt-and-agent-plan-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/02-prompt-and-agent-plan-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "03-approve-file-write",
+          "title": "ファイルの変更を承認。",
+          "alt": "index.tsx への書き込みを確認する RunWhale の画面。Reject と Allow once ボタンが表示されています。",
+          "avifSrcSet": "/media/optimized/v1/03-approve-file-write-360.avif 360w, /media/optimized/v1/03-approve-file-write-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/03-approve-file-write-360.webp 360w, /media/optimized/v1/03-approve-file-write-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/03-approve-file-write-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "04-checks-before-preview",
+          "title": "プレビュー前のチェックを確認。",
+          "alt": "TypeScript 診断と Git 差分の確認後、ネイティブプレビューの前に未解決の依存関係を説明するエージェントの概要。",
+          "avifSrcSet": "/media/optimized/v1/04-checks-before-preview-360.avif 360w, /media/optimized/v1/04-checks-before-preview-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/04-checks-before-preview-360.webp 360w, /media/optimized/v1/04-checks-before-preview-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/04-checks-before-preview-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "05-animal-parade-preview",
+          "title": "ネイティブプレビューで Animal Parade をプレイ。",
+          "alt": "ネイティブプレビューの Animal Parade。犬、猫、牛、ひよこ、カエル、ライオンのカードの上に「Can you find the Dog?」と表示されています。",
+          "avifSrcSet": "/media/optimized/v1/05-animal-parade-preview-360.avif 360w, /media/optimized/v1/05-animal-parade-preview-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/05-animal-parade-preview-360.webp 360w, /media/optimized/v1/05-animal-parade-preview-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/05-animal-parade-preview-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "06-interaction-feedback",
+          "title": "動物をタップして反応を確認。",
+          "alt": "ネイティブプレビューでの操作後、ライオンの横に「Great job!」と表示された Animal Parade。",
+          "avifSrcSet": "/media/optimized/v1/06-interaction-feedback-360.avif 360w, /media/optimized/v1/06-interaction-feedback-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/06-interaction-feedback-360.webp 360w, /media/optimized/v1/06-interaction-feedback-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/06-interaction-feedback-720.webp",
+          "width": 720,
+          "height": 1566
+        }
+      ],
+      "videoLabel": "全体の流れ",
+      "videoTitle": "依頼からプレビューまでを見る",
+      "videoBody": "約 2 分 12 秒の無音動画で、Baby game の作成、短い依頼、ファイルへの書き込み承認、チェック、ネイティブプレビューでの Animal Parade の操作までを紹介します。",
+      "videoAria": "Baby game からネイティブプレビューの Animal Parade までを紹介する RunWhale の無音デモ",
+      "videoFallback": "このブラウザーは動画の再生に対応していません。",
+      "videoCaption": "Animal Parade・全編デモ・約 2 分 12 秒・音声なし",
+      "videoSrc": "/media/demo/RunWhale-demo-readme.mp4",
+      "videoPoster": "/media/optimized/v1/runwhale-animal-parade-poster-720.webp",
+      "disclosure": "6 枚の画像は上のデモ動画から取得したもので、元の英語 UI をそのまま掲載しています。RunWhale コミュニティ版は無料・オープンソースです。AI プロバイダーの利用料がかかる場合があります。",
+      "nextTitle": "さらに学ぶ",
+      "nextLinks": {
+        "faq": {
+          "title": "よくある質問を読む",
+          "body": "ネットワーク、データの取り扱い、プロジェクトの制限、Git、よくあるエラーを確認します。"
+        },
+        "support": {
+          "title": "サポートに問い合わせる",
+          "body": "非公開の問い合わせを送るか、機密情報を含まない再現可能な問題を GitHub で報告できます。"
+        },
+        "privacy": {
+          "title": "データの取り扱いを確認",
+          "body": "端末上に保存される情報と、選択したサービスに送信される情報を確認します。"
+        },
+        "github": {
+          "title": "ソースコードを見る",
+          "body": "RunWhale の公開リポジトリ、プロジェクトの対象範囲、貢献ガイドを確認します。"
+        }
+      }
+    },
+    "faq": {
+      "metadataTitle": "RunWhale FAQ — 設定、プロジェクト、エージェント、プレビュー",
+      "metadataDescription": "設定、ローカル・リモート処理、対応プロジェクト、Git、依存関係、プレビュー、問題の解決方法について説明します。",
+      "eyebrow": "よくある質問",
+      "title": "RunWhale の疑問にお答えします",
+      "summary": "使い始める方法、端末上で動く処理、プロジェクトの制限、問題発生時の確認事項を紹介します。",
+      "intro": "以下から質問を選んでください。回答は、特定のプロバイダー、端末バージョン、配布経路を前提とせず、現在の製品の対応範囲を説明します。",
+      "groups": [
+        {
+          "title": "はじめに",
+          "items": [
+            {
+              "id": "first-agent-run",
+              "question": "初めてエージェントを使う前に何が必要ですか？",
+              "answer": [
+                "設定 → モデルでプロバイダーとモデルを選び、有効な API キーを保存して端末をオンラインにします。その後、Web・Expo プロジェクトを作るか、対応リポジトリを読み込みます。"
+              ]
+            },
+            {
+              "id": "web-or-expo",
+              "question": "Web と Expo のどちらを選べばよいですか？",
+              "answer": [
+                "React のサイトを Web プレビューで動かすなら Web を選びます。RunWhale の固定のネイティブコンテナ内で React Native プロジェクトを動かすなら Expo を選びます。どちらも同じプロジェクト・エージェントの作業手順を使えます。"
+              ]
+            },
+            {
+              "id": "import-repository",
+              "question": "既存のリポジトリを読み込めますか？",
+              "answer": [
+                "RunWhale の Web・Expo ランタイムに対応していれば読み込めます。runwhale.json でエントリーポイントとプレビュー対象を指定します。未対応のネイティブコード、バイナリ、ビルド手順を必要とするリポジトリには対応していません。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "ローカル実行とデータ",
+          "items": [
+            {
+              "id": "local-or-offline",
+              "question": "すべてローカルで動きますか？オフラインで使えますか？",
+              "answer": [
+                "ファイル、エージェントの制御、セッション、Node.js・TypeScript ツール、対応タスク、Git、Metro、プレビューは端末上で動作します。モデル推論は設定したリモートプロバイダーを使用します。Git のネットワーク操作や未キャッシュの依存関係の取得にもネットワークが必要なため、オフライン製品ではありません。"
+              ]
+            },
+            {
+              "id": "model-context",
+              "question": "どのプロジェクト情報がモデルプロバイダーに送られますか？",
+              "answer": [
+                "エージェントの実行時には、依頼と回答に必要なプロジェクトやセッションの情報を選択したプロバイダーに送ります。依頼によっては、ソースコード、ファイル内容、画像、ツールの結果、会話履歴が含まれます。"
+              ]
+            },
+            {
+              "id": "credential-storage",
+              "question": "API と Git の認証情報はどこに保存されますか？",
+              "answer": [
+                "モデル API キーと端末の Git 秘密鍵は、iOS キーチェーンまたは Android Keystore に保管されます。プロジェクトファイル、環境変数、Git 設定、エージェントセッション、ログ、プレビューバンドルには書き込まれません。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "対応範囲と制限",
+          "items": [
+            {
+              "id": "private-git",
+              "question": "非公開の Git リポジトリを使えますか？",
+              "answer": [
+                "GitHub のリポジトリを SSH で利用できます。設定 → Git SSH キーで端末の公開鍵を生成またはコピーし、GitHub に登録して、リポジトリの SSH URL を使います。秘密鍵は安全なストレージに残り、アクセスにはネットワークと GitHub 上の権限が必要です。"
+              ]
+            },
+            {
+              "id": "npm-packages",
+              "question": "すべての npm パッケージをインストールできますか？",
+              "answer": [
+                "いいえ。npm レジストリの対応する純粋な JavaScript パッケージが対象です。ライフサイクルスクリプトとバイナリリンクは無効です。Git・パス依存、ネイティブアドオンやバイナリ、動的な Expo 設定プラグイン、プロジェクト固有のネイティブ SDK には対応していません。権限モードによってはインストールの承認を求められます。"
+              ]
+            },
+            {
+              "id": "standalone-builds",
+              "question": "独立した iOS・Android アプリをビルドできますか？",
+              "answer": [
+                "いいえ。ユーザープロジェクトは RunWhale 内の Web・React Native プレビューとして実行されます。Xcode、Gradle、EAS、IPA、APK のビルドは起動しません。"
+              ]
+            },
+            {
+              "id": "background-work",
+              "question": "エージェントや Metro はバックグラウンドでも動き続けますか？",
+              "answer": [
+                "バックグラウンドでの継続動作を前提にしないでください。特に現在の製品では、iOS のバックグラウンド中にエージェントや Metro を継続実行しません。作業中やプレビューの準備中は RunWhale を前面に保ってください。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "トラブルシューティング",
+          "items": [
+            {
+              "id": "agent-wont-start",
+              "question": "エージェントが起動しないのはなぜですか？",
+              "answer": [
+                "選択したプロバイダーに有効な API キーが保存され、端末がオンラインであることを確認します。ローカルランタイムのエラーが出た場合は、プロジェクトを変更する前にランタイムを再起動して試してください。"
+              ]
+            },
+            {
+              "id": "preview-wont-open",
+              "question": "Web・ネイティブプレビューが開かないのはなぜですか？",
+              "answer": [
+                "実行 / 再読み込みをタップし、runwhale.json に意図したプレビュー対象と対応する Web・ネイティブのエントリーが設定されているか確認します。Metro やプレビューの診断を読み、機密情報を含まない正確なメッセージを修正依頼に使ってください。"
+              ]
+            },
+            {
+              "id": "git-operation-fails",
+              "question": "Git の clone・fetch・pull・push が失敗するのはなぜですか？",
+              "answer": [
+                "対応する HTTPS URL または GitHub SSH URL を使っているか確認し、ブランチ、接続、リモートの権限を確認します。SSH の場合は現在の端末公開鍵が GitHub に登録されている必要があります。pull には作業ツリーがクリーンであることも必要で、認証情報を埋め込んだ URL は拒否されます。"
+              ]
+            },
+            {
+              "id": "support-report",
+              "question": "サポートへの報告には何を含めればよいですか？",
+              "answer": [
+                "RunWhale のバージョン、端末と OS、試した操作、正確なエラー、最小限の再現手順、機密情報を含まない診断を添えてください。API キー、秘密鍵、認証情報、非公開のプロジェクト内容、個人情報、未確認のログやスクリーンショットは含めないでください。"
+              ]
+            }
+          ]
+        }
+      ],
+      "moreTitle": "まだ解決しませんか？",
+      "moreBody": "最初から最後までの手順はガイドをご覧ください。非公開の相談や再現可能な問題はサポートにお問い合わせください。",
+      "guideLabel": "ガイドを開く",
+      "supportLabel": "サポートに問い合わせる"
+    }
+  },
+  "discover": {
+    "examplesLabel": "作品例",
+    "updatesLabel": "更新履歴",
+    "examplesHref": "/ja/examples",
+    "updatesHref": "/ja/changelog",
+    "updated": "2026 年 9 月 5 日",
+    "purchase": {
+      "title": "ダウンロードの前に",
+      "downloadNote": "モデルの API キーが必要です。プロバイダーの利用料は別途請求されます。",
+      "summary": "アイデアとモデルの API キーを用意しましょう。",
+      "items": [
+        {
+          "title": "無料のコミュニティ版",
+          "body": "RunWhale コミュニティ版は無料・オープンソースです。RunWhale のアカウントやサブスクリプションは不要です。地域での提供状況は App Store をご確認ください。"
+        },
+        {
+          "title": "モデルの利用料は別途",
+          "body": "ご自身のプロバイダー API キーを使用します。モデルの利用料はそのプロバイダーが請求します。"
+        },
+        {
+          "title": "対応端末を確認",
+          "body": "iPhone・iPad の対応状況は App Store をご覧ください。エージェントへの依頼にはインターネット接続が必要です。"
+        }
+      ],
+      "guide": "最初のモデルを設定",
+      "limits": "プロジェクトの対応範囲を確認"
+    },
+    "examples": {
+      "title": "最初のアイデアを見つけよう。",
+      "summary": "実際の RunWhale の作業動画から 2 つのプロジェクトを紹介します。依頼文をコピーして、自分のプロジェクトに使えます。",
+      "all": "作品例を見る",
+      "watch": "動画を見る",
+      "copy": "依頼文をコピー",
+      "copied": "コピーしました",
+      "copyError": "コピーできませんでした。上の依頼文を選択してコピーしてください。",
+      "promptLabel": "最初の依頼文",
+      "originalPrompt": "デモの元の依頼文",
+      "suggestedPrompt": "依頼文の例",
+      "steps": "Expo プロジェクトを作成し、設定でモデルを選び、エージェントに依頼文を送ります。結果はネイティブプレビューで試せます。",
+      "note": "画像と動画は既存のデモを示しています。新しく実行した場合、結果は異なることがあります。以下の Snake の依頼文は短くまとめた例で、動画の依頼全文ではありません。",
+      "ideasTitle": "次は何を作りますか？",
+      "ideasBody": "自分で作り始めるためのアイデアです。指定のプロジェクト種別を選び、必要に応じて依頼文を調整してください。",
+      "guide": "設定ガイドを見る",
+      "cases": [
+        {
+          "id": "animal-parade",
+          "title": "Animal Parade",
+          "category": "Expo・学習ゲーム",
+          "description": "6 枚の動物カードとやさしい問題、タップするたびの反応。短いアイデアがネイティブプレビューで動くゲームになります。",
+          "image": "/media/optimized/v1/05-animal-parade-preview-720.webp",
+          "imageAlt": "6 枚の動物カードと犬を探す問題が表示された、ネイティブプレビューの Animal Parade。",
+          "width": 720,
+          "height": 1566,
+          "video": "/media/demo/RunWhale-demo-readme.mp4",
+          "prompt": "Make a game for baby",
+          "original": true
+        },
+        {
+          "id": "snake-sprint",
+          "title": "Snake Sprint",
+          "category": "Expo・アーケードゲーム",
+          "description": "タッチ操作で方向を変え、ゲームを一時停止し、追加の依頼で作られた障害物モードも試せます。",
+          "image": "/media/optimized/v1/05-see-features-come-to-life-framed-720.webp",
+          "imageAlt": "障害物モードを有効にして、オレンジ色の障害物が表示された Snake Sprint の実際のネイティブプレビュー。",
+          "width": 720,
+          "height": 1564,
+          "video": "/media/demo/runwhale-snake-agent-workflow.mp4",
+          "prompt": "React Native の組み込みコンポーネントで縦画面のスネークゲームを作成してください。エサ、リアルタイムの得点、大きな方向操作ボタン、開始・一時停止・再開・リスタート・ゲームオーバーの状態を追加してください。切り替えるとラウンドが再開し、壁に当たると終了する障害物モードのスイッチも追加してください。すべての操作ボタンをスマートフォンの画面内に表示してください。Native Preview を開く前に、対応するチェックを実行してください。",
+          "original": false
+        }
+      ],
+      "ideas": [
+        {
+          "title": "自分の Web サイト",
+          "category": "Web",
+          "prompt": "自己紹介、3つのプロジェクトカード、お問い合わせ欄を備えた、画面幅に対応する個人サイトを作成してください。編集しやすいサンプルコンテンツと CSS を使用してください。スマートフォンでナビゲーションが動作することを確認し、Web Preview の前に対応するチェックを実行してください。"
+        },
+        {
+          "title": "集中タイマー",
+          "category": "Expo",
+          "prompt": "React Native の組み込みコンポーネントで集中タイマーを作成してください。集中時間と休憩時間の調整、開始・一時停止・再開・リセット機能を追加してください。現在のセッションを示し、操作ボタンをタップしやすくしてください。計測中はアプリを前面に表示します。Native Preview の前に、対応するチェックを実行してください。"
+        }
+      ]
+    },
+    "updates": {
+      "title": "RunWhale の更新情報。",
+      "summary": "Web サイト、作品例、使い始めるための情報の更新を紹介します。",
+      "latest": "Web サイトの最新更新",
+      "all": "更新履歴を見る",
+      "website": "Web サイト",
+      "entries": [
+        {
+          "id": "2026-09-05",
+          "date": "2026 年 9 月 5 日",
+          "title": "最初のプロジェクトを見つけよう",
+          "summary": "実際の作業例、コピーできる依頼文、ダウンロード前のわかりやすい説明を追加しました。",
+          "changes": [
+            "Animal Parade と Snake Sprint を、動画や依頼文とともに紹介します。",
+            "ダウンロード欄の近くで、アプリの入手、モデルの料金、対応端末の情報をまとめて確認できます。",
+            "Web サイトの更新を日付ごとに確認できます。"
+          ]
+        },
+        {
+          "id": "2026-09-04",
+          "date": "2026 年 9 月 4 日",
+          "title": "最初の作業のためのガイド",
+          "summary": "英語と中国語のヘルプページに、設定、エージェントとの作業、プレビューの説明を追加しました。",
+          "changes": [
+            "モデルの設定からプロジェクトをプレビューで実行するまで、ガイドに沿って進められます。",
+            "対応するプロジェクト、Git、ネットワーク、よくあるエラーについて FAQ で確認できます。"
+          ]
+        }
+      ]
+    }
+  },
+  "navigation": {
+    "brand": "RunWhale",
+    "homeAria": "RunWhale ホーム",
+    "back": "ホームに戻る",
+    "resourcesAria": "RunWhale のガイドとサポート",
+    "footerAria": "ガイド、法的情報、サポート、言語、プロジェクトのリンク",
+    "updatedPrefix": "最終更新：",
+    "copyright": "© 2026 RunWhale。",
+    "links": {
+      "examples": {
+        "label": "作品例",
+        "href": "/ja/examples"
+      },
+      "changelog": {
+        "label": "更新履歴",
+        "href": "/ja/changelog"
+      },
+      "guide": {
+        "label": "ガイド",
+        "href": "/ja/guide"
+      },
+      "faq": {
+        "label": "よくある質問",
+        "href": "/ja/faq"
+      },
+      "support": {
+        "label": "サポート",
+        "href": "/ja/support"
+      },
+      "privacy": {
+        "label": "プライバシー",
+        "href": "/ja/privacy"
+      },
+      "terms": {
+        "label": "利用規約",
+        "href": "/ja/terms"
+      }
+    }
+  },
+  "documents": {
+    "privacy": {
+      "eyebrow": "プライバシー",
+      "title": "プライバシーポリシー",
+      "summary": "本ポリシーは RunWhale アプリと本サイトを対象とし、端末に保存する情報、選択したサービスと共有する情報、プライバシーに関する選択肢を説明します。",
+      "updated": "2026 年 9 月 15 日",
+      "updatedIso": "2026-09-15",
+      "metadataTitle": "RunWhale プライバシーポリシー",
+      "metadataDescription": "RunWhale のプライバシー：ローカルデータ、第三者 AI との共有、削除、Web ホスティング。",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "適用範囲"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本ポリシーは RunWhale モバイルアプリと Web サイトに適用され、当方によるデータの処理と共有を説明します。リンク先のモデルプロバイダー、Git ホスト、パッケージレジストリ、その他のサービスの方針は各サービスに関する補足情報であり、ここに記載する当方の責任に代わるものではありません。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "アプリの利用に RunWhale アカウントは不要です。利用状況の分析データや広告識別子を RunWhale に送信しません。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "アプリが取り扱う情報"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale は、プロジェクト、Git 履歴、エージェントセッション、添付ファイル、設定、プロジェクトのキャッシュ、生成データを端末のアプリ専用領域に保存します。モデルプロバイダーの API キーと端末の Git SSH 秘密鍵には、OS の安全なストレージを使用します。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale はプロジェクトやエージェントセッションのコピーを RunWhale サーバーにアップロードしません。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "選択したサービスに送る情報"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "AI 機能は、依頼内容と回答に必要な情報を選択したモデルサービスに送信します。送信先、データの種類、同意の選択肢、プロバイダーの規約は次の節で説明します。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "リポジトリの clone・fetch・pull・push では、指定した Git ホストと通信します。依存関係のインストール時にはパッケージレジストリに接続する場合があります。各サービスは自身の規約とプライバシーポリシーに従って情報を処理し、保存期間は各サービスとアカウント設定によって決まります。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "GitHub の共有リンクには、所有者、リポジトリ名、コミット SHA が含まれます。push はリポジトリのアクセス設定に従ってコミットを GitHub に公開し、非公開リポジトリへのアクセスは引き続き GitHub が管理します。外部サイトを開くと、IP アドレスなどの接続情報がそのホストに送信されます。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "第三者の AI サービス"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "AI への依頼内容を共有する前に、RunWhale は選択したプロバイダーと API アドレスを示し、明示的な同意を求めます。同意はその送信先に適用され、プロバイダーやアドレスの変更時には再度同意が必要です。同意しない場合、AI リクエストは送信されません。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "同意に基づき、エージェントは依頼文、会話履歴、関連するソースコードやファイル内容、ツールの結果、文脈に使う画像やプレビュー画像を、選択した Anthropic（Claude API）、DeepSeek、Google（Gemini API）、OpenAI に送信します。画像生成や Web 検索でも、そのプロバイダー経由で内容を送る場合があります。受信サービスは認証用 API キーと IP アドレスなどの接続情報を受け取ります。これらのリクエストは依頼した回答、コード、画像、操作を生成するためのもので、ファイルや画像内の個人情報を含む場合があります。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "カスタム API アドレスを使うと、その運営者にリクエストが送られ、さらに他のサービスに転送される場合があります。モデル名やプロバイダー名だけでは運営者を特定できません。同意する前に、運営者、プライバシーポリシー、再共有の方針を確認してください。"
+            },
+            {
+              "tag": "h3",
+              "attrs": {},
+              "children": "AI プロバイダーによる利用と保存"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "以下のリンクは本ポリシーを補足するものです。RunWhale は自身のデータ処理と共有について責任を負います。第三者の受信者には、本ポリシーと適用されるプライバシー要件に少なくとも相当する個人情報保護を求めます。プロバイダーは国外で処理する場合があり、API 機能、契約、地域、アカウント設定によって保存や学習利用が異なります。一般向けチャットと API の規則も異なる場合があります。概要は更新日時点の公開条件を説明するもので、保存されないことを保証するものではありません。アクセスや削除は各プロバイダーに、RunWhale の処理に関する支援は runwhale@runwhale.dev にお問い合わせください。"
+            },
+            {
+              "tag": "ul",
+              "attrs": {},
+              "children": [
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Anthropic。"
+                    },
+                    " API の入力・出力は原則として学習に使用されません。通常 30 日以内に削除されますが、機能、契約、安全対策、法的義務による例外があります。オプトインやフィードバックの送信により学習利用が認められる場合があります。",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://www.anthropic.com/legal/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "プライバシーポリシー"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API データの利用"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API データの保存"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "DeepSeek。"
+                    },
+                    " API には Open Platform の規約が適用されます。RunWhale は、固定の API 保存期間や学習に使用しないという確約を確認していません。個人情報を送る前に、アカウントに適用される条件を DeepSeek に確認してください。",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "プライバシーポリシー"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 利用規約"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Google（Gemini API）。"
+                    },
+                    " データの利用はサービス区分と地域によって異なります。無料サービスではモデル改善や人による確認に内容が使われる場合があるため、機微情報、機密情報、個人情報は送信しないでください。有料サービスの規則では製品改善への利用が除外され、EEA、スイス、英国にも適用されます。ただし、安全対策のログや機能ごとの保存が行われる場合があります。",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://policies.google.com/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "プライバシーポリシー"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://ai.google.dev/gemini-api/terms",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 利用規約"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "OpenAI。"
+                    },
+                    " オプトインしない限り、API データは学習に使用されません。不正利用監視ログは通常最大 30 日間保存されます。安全・法的要件、機能ごとの保存、承認されたアカウント設定により期間が変わる場合があります。",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://openai.com/policies/privacy-policy/",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "プライバシーポリシー"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://developers.openai.com/api/docs/guides/your-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API データの利用"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "プレビューで動作するプロジェクト"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "プレビュー内のコードは独自のサービスに接続し、入力した情報やアクセスを許可した写真、カメラ、マイク、位置情報などを処理する場合があります。実行前にソースコードと接続先を確認し、端末の権限はシステム設定で管理してください。エージェントへの依頼に含めたプレビュー内容は、上記のデータ共有の選択に従って、選択した AI サービスに送られます。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Web サイトのホスティング"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本サイトには分析スクリプト、広告トラッカー、アプリケーション Cookie は含まれません。ページとメディアは静的ファイルです。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "GitHub Pages でホストする場合、GitHub はサービスの運営と保護のため、IP アドレスなどのリクエスト情報を処理する場合があります。データの取り扱いと保存方針は、",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "GitHub プライバシー声明"
+                },
+                "をご覧ください。"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "情報の利用と共有"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "情報は、依頼した機能の提供、サイトの運営と安全確保、問題の診断に使用します。RunWhale は個人情報を販売せず、プロジェクト内容を広告に利用しません。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "情報は、利用を指示したサービスや上記のホスティング事業者と共有するほか、法令遵守、権利・安全の保護、不正行為の調査に必要な場合に共有します。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "保存、削除、選択肢"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "端末内のアプリデータは利用者が管理できます。ローカルの作業データはアプリ内で削除するか端末からアプリデータを消去するまで保存されますが、一時キャッシュは先に削除される場合があります。セッションやプロジェクトを削除し、設定 → モデルで保存済み API キーを削除し、設定で Git SSH キーを削除・更新できます。安全なストレージの情報はアンインストール後も残る場合があるため、先に削除してください。プロバイダーや Git ホストでも認証情報を失効させてください。ローカルデータの削除では第三者に送信済みのコピーは消えません。各サービスが管理する情報への権利行使は、そのサービスにお問い合わせください。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "設定 → このアプリについて → プライバシーポリシー → AI データ共有で同意を撤回できます。実行中のエージェントを停止し、再度同意するまでモデルへのリクエストを防ぎます。第三者が既に受け取った情報は削除されません。アプリには本ポリシーのオフライン版が含まれます。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "RunWhale が管理する情報への問い合わせ、削除依頼、適用される同意の撤回は、次のメールアドレスにご連絡ください：",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "."
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "サポートへの連絡時は、返信のためメールアドレスとメッセージを受け取ります。対応や法的義務に必要な期間、やり取りを保存します。アクセス、訂正、その他のプライバシーに関する依頼にも同じ窓口を使えます。API キーや秘密鍵は送らないでください。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "セキュリティと子ども"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale はローカル中心の設計に応じた技術的保護措置を講じますが、完全に安全な保存・送信方法はありません。プロジェクトファイル、依頼文、添付ファイル、ログ、プレビュー出力に秘密情報を含めないでください。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale は開発者向けツールで、13 歳未満の子どもを対象としていません。アプリを通じて子どもの個人情報を意図的に収集することはありません。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "変更と連絡先"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "RunWhale の変更に伴い本ポリシーを更新する場合があります。上記の日付が最新版を示します。製品のヘルプは、",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/ja/support"
+                  },
+                  "children": "RunWhale サポート"
+                },
+                "をご覧ください。質問やプライバシーに関する依頼はこちらへ：",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "commercial/privacy": {
+      "privacyHref": "/ja/commercial/privacy",
+      "eyebrow": "プライバシー",
+      "title": "プライバシーポリシー",
+      "summary": "本ポリシーは RunWhale アプリと本サイトを対象とし、ローカルデータ、接続する AI サービス、アカウント、サブスクリプション、利用状況分析、Web ホスティングを説明します。",
+      "updated": "2026 年 9 月 15 日",
+      "updatedIso": "2026-09-15",
+      "metadataTitle": "RunWhale プライバシーポリシー",
+      "metadataDescription": "RunWhale のプライバシー：ローカルデータ、接続する AI、アカウント、サブスクリプション、利用状況分析、Web ホスティング。",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "適用範囲"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本ポリシーは RunWhale モバイルアプリと Web サイトに適用され、当方によるデータの処理と共有を説明します。リンク先のモデルプロバイダー、Git ホスト、パッケージレジストリ、その他のサービスの方針は各サービスに関する補足情報であり、ここに記載する当方の責任に代わるものではありません。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "アプリが取り扱う情報"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale は、プロジェクト、Git 履歴、エージェントセッション、添付ファイル、設定、プロジェクトのキャッシュ、生成データを端末のアプリ専用領域に保存します。モデルプロバイダーの API キーと端末の Git SSH 秘密鍵には、OS の安全なストレージを使用します。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "アカウントとサブスクリプションは任意です。アカウントサービスはプロジェクトやエージェントセッションのコピーを保存しません。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "アカウントとサブスクリプション"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Google・Apple のログインを使うと、RunWhale は本人確認情報を検証し、アカウント識別子、連携したプロバイダー識別子、提供された場合の確認済みメールアドレス、アカウントとセッションの時刻を保存します。ログイントークンはアプリの安全なストレージに、サーバーではそのハッシュを保存します。プロジェクト、エージェントセッション、プレビューには渡されません。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Cloudflare はアカウント API とデータベースをホストし、提供に必要な通信を処理します。RevenueCat は RunWhale アカウント識別子とストア購入情報を受け取り、サブスクリプション、トライアル、更新、返金を検証します。RunWhale は契約状態と使用量の計算情報を記録します。支払いは Apple・Google が処理し、RunWhale はカード情報を受け取りません。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "選択したサービスに送る情報"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "AI 機能は、依頼と回答に必要な情報を選択したモデルサービスに送信します。データの種類とプロバイダーの規約は次の節で説明します。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "任意の RunWhale モデル API を使用する場合、リクエストは RunWhale バックエンドを経由して設定されたプロバイダーへ送られます。バックエンドは使用量の計算情報を保持し、依頼文、プロジェクトファイル、会話内容は保持しません。プロバイダー側の保存は、その方針に従います。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "リポジトリの clone・fetch・pull・push では、指定した Git ホストと通信します。依存関係のインストール時にはパッケージレジストリに接続する場合があります。各サービスは自身の規約とプライバシーポリシーに従って情報を処理し、保存期間は各サービスとアカウント設定によって決まります。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "GitHub の共有リンクには、所有者、リポジトリ名、コミット SHA が含まれます。push はリポジトリのアクセス設定に従ってコミットを GitHub に公開し、非公開リポジトリへのアクセスは引き続き GitHub が管理します。外部サイトを開くと、IP アドレスなどの接続情報がそのホストに送信されます。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "第三者の AI サービス"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "自身のプロバイダー設定でエージェントを使うと、依頼文、会話履歴、関連するソースコード・ファイル内容、ツールの結果、文脈に使う画像やプレビュー画像が、選択した Anthropic（Claude API）、DeepSeek、Google（Gemini API）、OpenAI に送られます。画像生成や Web 検索でも、そのプロバイダー経由で内容を送る場合があります。受信サービスは認証用 API キーや IP アドレスなどを受け取ります。リクエストは依頼した回答、コード、画像、操作を生成するためのもので、ファイルや画像内の個人情報を含む場合があります。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "カスタム API アドレスでは、その運営者に依頼が送られ、別のサービスへ転送される場合があります。モデル名やプロバイダー名だけでは運営者はわかりません。設定や利用の前に、運営者、プライバシー方針、再共有の方法を確認してください。"
+            },
+            {
+              "tag": "h3",
+              "attrs": {},
+              "children": "AI プロバイダーによる利用と保存"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "以下のリンクは本ポリシーを補足するものです。RunWhale は自身のデータ処理と共有について責任を負います。第三者の受信者には、本ポリシーと適用されるプライバシー要件に少なくとも相当する個人情報保護を求めます。プロバイダーは国外で処理する場合があり、API 機能、契約、地域、アカウント設定によって保存や学習利用が異なります。一般向けチャットと API の規則も異なる場合があります。概要は更新日時点の公開条件を説明するもので、保存されないことを保証するものではありません。アクセスや削除は各プロバイダーに、RunWhale の処理に関する支援は runwhale@runwhale.dev にお問い合わせください。"
+            },
+            {
+              "tag": "ul",
+              "attrs": {},
+              "children": [
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Anthropic。"
+                    },
+                    " API の入力・出力は原則として学習に使用されません。通常 30 日以内に削除されますが、機能、契約、安全対策、法的義務による例外があります。オプトインやフィードバックの送信により学習利用が認められる場合があります。",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://www.anthropic.com/legal/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "プライバシーポリシー"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API データの利用"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API データの保存"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "DeepSeek。"
+                    },
+                    " API には Open Platform の規約が適用されます。RunWhale は、固定の API 保存期間や学習に使用しないという確約を確認していません。個人情報を送る前に、アカウントに適用される条件を DeepSeek に確認してください。",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "プライバシーポリシー"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 利用規約"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Google（Gemini API）。"
+                    },
+                    " データの利用はサービス区分と地域によって異なります。無料サービスではモデル改善や人による確認に内容が使われる場合があるため、機微情報、機密情報、個人情報は送信しないでください。有料サービスの規則では製品改善への利用が除外され、EEA、スイス、英国にも適用されます。ただし、安全対策のログや機能ごとの保存が行われる場合があります。",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://policies.google.com/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "プライバシーポリシー"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://ai.google.dev/gemini-api/terms",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API 利用規約"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "OpenAI。"
+                    },
+                    " オプトインしない限り、API データは学習に使用されません。不正利用監視ログは通常最大 30 日間保存されます。安全・法的要件、機能ごとの保存、承認されたアカウント設定により期間が変わる場合があります。",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://openai.com/policies/privacy-policy/",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "プライバシーポリシー"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://developers.openai.com/api/docs/guides/your-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "API データの利用"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "プレビューで動作するプロジェクト"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "プレビュー内のコードは独自のサービスに接続し、入力情報やアクセスを許可した写真、カメラ、マイク、位置情報などを処理する場合があります。実行前にコードと接続先を確認し、権限はシステム設定で管理してください。依頼に含めたプレビュー内容は、その依頼を処理するモデルサービスに送られます。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "アプリの利用状況分析"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "アプリは利用状況の把握と信頼性向上のため Google Analytics for Firebase を使用し、起動時に自動で有効になります。Debug ビルドでは送信しません。分析専用の許可確認や切り替えスイッチはありません。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Google は起動・利用状況、プロジェクト作成・プレビューのイベント区分、結果と所要時間、アプリバージョン、端末モデル、OS、言語、ランダム生成のアプリインスタンス識別子を受け取ります。接続元 IP からおおよその位置を推定する場合がありますが、Analytics は個別の IP アドレスをログに記録・保存しません。RunWhale アカウント識別子、メール、コード、依頼文、プロジェクト名、ファイル内容、パス、URL、ログは分析イベントに含めません。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "広告識別子の収集、広告のパーソナライズ、自動画面レポートは無効です。分析は RunWhale アプリに限られ、ネイティブプレビューのプロジェクトには Firebase SDK を公開しません。Google は国外にある場合もある自社基盤でデータを処理します。処理は、次の文書に従います：",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://policies.google.com/privacy",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "Google プライバシーポリシー"
+                },
+                "、および",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.google.com/analytics/answer/6004245",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "Analytics のデータ保護対策"
+                },
+                "."
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "分析記録は当方の Google Analytics プロパティの保存設定に従います。RunWhale アカウントやローカルプロジェクトを削除しても、収集済みの分析情報は自動削除されません。当方はこれをアカウント識別子と関連付けていません。分析のプライバシーや削除の依頼は下記の窓口へご連絡ください。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Web サイトのホスティング"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本サイトには分析スクリプト、広告トラッカー、アプリケーション Cookie は含まれません。ページとメディアは静的ファイルです。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "GitHub Pages でホストする場合、GitHub はサービスの運営と保護のため、IP アドレスなどのリクエスト情報を処理する場合があります。データの取り扱いと保存方針は、",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "GitHub プライバシー声明"
+                },
+                "をご覧ください。"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "情報の利用と共有"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "情報は、依頼した機能の提供、サイトの運営と安全確保、問題の診断に使用します。RunWhale は個人情報を販売せず、プロジェクト内容を広告に利用しません。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "情報は、利用を指示したサービス、記載したアカウント・サブスクリプション・分析・ホスティング事業者と共有し、法令遵守、権利・安全の保護、不正調査に必要な場合にも共有します。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "保存、削除、選択肢"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "端末内のアプリデータは利用者が管理できます。ローカルの作業データはアプリ内で削除するか端末からアプリデータを消去するまで保存されますが、一時キャッシュは先に削除される場合があります。セッションやプロジェクトを削除し、設定 → モデルで保存済み API キーを削除し、設定で Git SSH キーを削除・更新できます。安全なストレージの情報はアンインストール後も残る場合があるため、先に削除してください。プロバイダーや Git ホストでも認証情報を失効させてください。ローカルデータの削除では第三者に送信済みのコピーは消えません。各サービスが管理する情報への権利行使は、そのサービスにお問い合わせください。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "再ログイン後、「自分」タブからアカウントを削除できます。アカウントの識別情報とセッションを削除し、ローカルプロジェクトは残します。仮名化した利用記録は定期削除まで通常 3～4 か月保管し、一時的なハッシュ識別子で翌 UTC 暦月まで利用枠リセットの不正を防ぎます。アカウント削除では App Store・Google Play の契約は解約されません。解約はストアで管理し、ストアの課金記録と RevenueCat の記録は各社の保存方針に従います。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "RunWhale が管理する情報への問い合わせ、削除依頼、適用される同意の撤回は、次のメールアドレスにご連絡ください：",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "."
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "サポートへの連絡時は、返信のためメールアドレスとメッセージを受け取ります。対応や法的義務に必要な期間、やり取りを保存します。アクセス、訂正、その他のプライバシーに関する依頼にも同じ窓口を使えます。API キーや秘密鍵は送らないでください。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "セキュリティと子ども"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale はローカル中心の設計に応じた技術的保護措置を講じますが、完全に安全な保存・送信方法はありません。プロジェクトファイル、依頼文、添付ファイル、ログ、プレビュー出力に秘密情報を含めないでください。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale は開発者向けツールで、13 歳未満の子どもを対象としていません。アプリを通じて子どもの個人情報を意図的に収集することはありません。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "変更と連絡先"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "RunWhale の変更に伴い本ポリシーを更新する場合があります。上記の日付が最新版を示します。製品のヘルプは、",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/ja/support"
+                  },
+                  "children": "RunWhale サポート"
+                },
+                "をご覧ください。質問やプライバシーに関する依頼はこちらへ：",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "eyebrow": "法的情報",
+      "title": "利用規約",
+      "summary": "アカウント、ストアのサブスクリプション、解約、プロジェクトなど、RunWhale の利用条件です。",
+      "updated": "2026年9月8日",
+      "updatedIso": "2026-09-08",
+      "metadataTitle": "RunWhale 利用規約 — アカウントとサブスクリプション",
+      "metadataDescription": "アカウント、ストアのサブスクリプション、解約、プロジェクトなど、RunWhale の利用条件です。",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "RunWhale の利用"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "本規約は RunWhale アプリ、ウェブサイト、任意のアカウント・サブスクリプションサービスに適用されます。利用により本規約に同意したものとします。同意しない場合は利用を中止してください。オープンソースの各コンポーネントには、それぞれのライセンスが適用されます。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "適用法令に基づき本契約を締結できる場合、または必要な保護者の許可・監督を受けている場合にのみ RunWhale を利用してください。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "アカウントとアクセス"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "コミュニティ版に RunWhale アカウントは不要です。商用版では、利用可能な Apple または Google の方法でログインしてアカウントと契約を管理します。ログインプロバイダーへのアクセスを保護し、不正利用の疑いがある場合はご連絡ください。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "ローカル開発と、ご自身のモデルプロバイダーの API キーの利用に、有料 RunWhale サブスクリプションは不要です。外部プロバイダーは各社の規約に基づき別途料金を請求する場合があります。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "サブスクリプションと支払い"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "契約が提供されている場合は「自分」タブを開き、ログインしてアプリ内で契約を選択します。ストアで購入を確定する前に、特典、価格、通貨、請求期間、無料体験や初回特典を確認してください。提供状況はプラットフォーム、地域、アプリのバージョンにより異なります。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "支払いは Apple App Store または Google Play が処理します。自動更新契約はストアの規約に従って解約するまで継続します。体験版の対象条件、期間、終了後の価格は確定前にストアに表示されます。必ず体験版があるとは限りません。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "契約の利用開始には購入・復元の検証が必要です。検証待ちの場合は再購入せず、後で更新するかサポートへご連絡ください。購入時の RunWhale アカウントとストアアカウントでログインして「購入を復元」を利用してください。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "解約と返金"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "アプリの「サブスクリプションを管理」またはストアアカウントで更新を管理・解約できます。ストアに表示される解約期限と利用終了日をご確認ください。Apple の体験版を継続しない場合は、終了の24時間前までに解約してください。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale のアンインストール、ログアウト、アカウント削除ではストア契約は解約されません。解約と返金は別の手続きです。返金の可否・処理にはストアの方針と適用法令が適用され、本規約は法定の消費者の権利を制限しません。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.apple.com/118428"
+                  },
+                  "children": "Apple の解約手順"
+                },
+                " · ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.apple.com/118223"
+                  },
+                  "children": "Apple の返金ヘルプ"
+                },
+                " · ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.google.com/googleplay/answer/7018481"
+                  },
+                  "children": "Google Play の定期購入管理"
+                },
+                " · ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.google.com/googleplay/answer/2479637"
+                  },
+                  "children": "Google Play の払い戻しポリシー"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "含まれる利用枠と提供状況"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "選択した契約に表示される機能・上限のみが含まれます。AI 利用枠が提供される場合、それはサービスの上限であり、現金や契約料金ではありません。アカウント画面に現在の利用枠と使用量を表示し、月次枠は UTC の各暦月の開始時にリセットされます。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "機能はネットワーク、端末、外部サービスに依存する場合があります。継続的な提供や、アプリのバージョン・選択したプランに含まれない機能へのアクセスは保証しません。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "プロジェクトと責任ある利用"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale に持ち込むコンテンツの権利はお客様に帰属します。プロジェクトファイル、プロンプト、依存関係、連携サービスの利用許可を得て、各ライセンス・規約を守る責任はお客様にあります。重要な作業はバックアップしてください。"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "AI の出力には誤りや安全でないコードが含まれる場合があります。利用、共有、デプロイの前に生成物を確認・テストしてください。違法行為、権利侵害、不正アクセス、マルウェア、サービスのセキュリティや利用制限の回避に RunWhale を使用しないでください。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "アカウント削除とサービスの変更"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "商用アプリの「自分」タブからアカウント削除を依頼できます。ローカルプロジェクトは端末に残ります。アカウント削除とデータの取り扱いは、",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/ja/commercial/privacy"
+                  },
+                  "children": "商用版プライバシーポリシー"
+                },
+                "で説明しています。アカウントを削除する前に、ストアの契約を別途解約してください。"
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "不正利用、セキュリティ上のリスク、法的要件への対応に必要な場合、アカウントサービスを制限することがあります。サービスの変更に伴い本規約を更新し、このページの日付で最新版を示します。必要な場合は重要な変更を発効前に通知します。本規約は、適用法令により除外できない権利や救済を除外しません。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "プライバシーとお問い合わせ"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "データの取り扱いについては、ご利用の版に応じて",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/ja/privacy"
+                  },
+                  "children": "コミュニティ版プライバシーポリシー"
+                },
+                "または",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/ja/commercial/privacy"
+                  },
+                  "children": "商用版プライバシーポリシー"
+                },
+                "をご覧ください。ヘルプは",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/ja/support"
+                  },
+                  "children": "サポート"
+                },
+                "をご覧いただくか、次のアドレスへご連絡ください：",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "support": {
+      "eyebrow": "ヘルプ",
+      "title": "RunWhale サポート",
+      "summary": "設定、プロジェクト、エージェントのセッション、Preview のサポートや不具合の報告はこちらです。",
+      "updated": "2026 年 9 月 4 日",
+      "updatedIso": "2026-09-04",
+      "activeResource": "support",
+      "metadataTitle": "RunWhale サポート — 設定・エージェント・Preview",
+      "metadataDescription": "RunWhale の設定、プロジェクト、AI エージェント、Git、Web Preview、Native Preview のヘルプを確認し、メールや GitHub Issues から不具合を報告できます。",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "目的に合った情報を探す"
+            },
+            {
+              "tag": "div",
+              "attrs": {
+                "className": "support-links"
+              },
+              "children": [
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/ja/guide"
+                  },
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "ステップごとのガイドを見る"
+                    },
+                    {
+                      "tag": "span",
+                      "attrs": {},
+                      "children": "モデルの設定、プロジェクトの作成・インポート、エージェントでの作業、Preview の起動手順をご案内します。"
+                    }
+                  ]
+                },
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/ja/faq"
+                  },
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "よくある質問を確認する"
+                    },
+                    {
+                      "tag": "span",
+                      "attrs": {},
+                      "children": "接続、データ、互換性、Git、よくあるエラーについての回答を確認できます。"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "サポートに問い合わせる"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "個別のサポートは次のアドレスへご連絡ください：",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "。機密情報を含まない再現可能な不具合や機能要望には、次をご利用ください：",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://github.com/zhiqingchen/RunWhale/issues",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "GitHub Issues"
+                },
+                "."
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale のバージョン、端末モデル、OS バージョン、試した操作、正確なエラーメッセージ、最小限の再現手順、アプリに表示された機密性のない診断情報を添えてください。API キー、秘密鍵、認証情報、非公開プロジェクトのデータ、個人情報、機密情報を除去していないログやスクリーンショットは絶対に含めないでください。"
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "プライバシー・セキュリティに関する報告"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "詳細は、",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/ja/privacy"
+                  },
+                  "children": "コミュニティ版プライバシーポリシー"
+                },
+                "または",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/ja/commercial/privacy"
+                  },
+                  "children": "商用版プライバシーポリシー"
+                },
+                "をご覧ください。各版のローカルデータ、連携サービス、ウェブホスティング、削除、プライバシーに関する依頼について説明しています。"
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "セキュリティ上の脆弱性を発見したと思われる場合や、プライバシーの依頼に機密情報を含める必要がある場合は、次のアドレスへメールしてください：",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "。公開 Issue への投稿は避けてください。"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "オープンソースプロジェクト"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "RunWhale のソースコードと公開情報は、",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://github.com/zhiqingchen/RunWhale",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "GitHub"
+                },
+                "で公開しています。公開 Issue の返信は誰でも閲覧できるため、非公開にすべき情報を含む依頼はメールで送信してください。"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

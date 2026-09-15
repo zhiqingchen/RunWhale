@@ -1,6 +1,6 @@
 # RunWhale website
 
-The bilingual product website for [RunWhale](https://github.com/zhiqingchen/RunWhale), with demos, examples, a getting-started guide, FAQ, changelog, privacy policy, and support information.
+The multilingual product website for [RunWhale](https://github.com/zhiqingchen/RunWhale), with demos, examples, a getting-started guide, FAQ, changelog, privacy policy, and support information.
 
 Built with Next.js and exported as static HTML, CSS, JavaScript, and media. No application server, runtime secrets, analytics scripts, or backend service is required.
 
@@ -46,7 +46,7 @@ The default project URL is `https://zhiqingchen.github.io/RunWhale/`. To use a c
 
 ## Content and media
 
-Keep English and Simplified Chinese content aligned in `src/app/`. Public support and privacy pages use `runwhale@runwhale.dev`.
+Keep English, Simplified Chinese, Spanish, French, and Japanese content aligned in `src/app/locales/`. Shared components render every language. English uses the root URLs; other languages use `/zh-CN`, `/es`, `/fr`, and `/ja`. Route and language definitions live in `src/app/i18n.ts`. Public support and privacy pages use `runwhale@runwhale.dev`.
 
 The demo recordings and screenshots in `public/media/` show Animal Parade and Snake Sprint. The Animal Parade prompt is “Make a game for baby”; the Snake prompt is labeled as a suggested starting prompt. Other example prompts are ideas to try, not recorded outcomes.
 

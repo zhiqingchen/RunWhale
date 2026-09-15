@@ -1,3 +1,4 @@
+import { localizedPath } from "./i18n";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check, Play } from "lucide-react";
@@ -6,7 +7,6 @@ import { discoverCopy } from "./discover-copy";
 
 export function PurchaseSummary({ locale }: { locale: WebsiteLocale }) {
   const copy = discoverCopy[locale].purchase;
-  const prefix = locale === "en" ? "" : "/zh-CN";
   return (
     <aside className="purchase-summary" aria-labelledby="purchase-title">
       <h2 id="purchase-title">{copy.title}</h2>
@@ -20,8 +20,8 @@ export function PurchaseSummary({ locale }: { locale: WebsiteLocale }) {
         ))}
       </dl>
       <div className="purchase-links">
-        <Link href={`${prefix}/guide`}>{copy.guide}<ArrowRight size={14} aria-hidden="true" /></Link>
-        <Link href={`${prefix}/faq#import-repository`}>{copy.limits}</Link>
+        <Link href={localizedPath(locale, "guide")}>{copy.guide}<ArrowRight size={14} aria-hidden="true" /></Link>
+        <Link href={`${localizedPath(locale, "faq")}#import-repository`}>{copy.limits}</Link>
       </div>
     </aside>
   );

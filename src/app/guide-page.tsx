@@ -1,3 +1,4 @@
+import { localizedPath } from "./i18n";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
@@ -43,18 +44,16 @@ function WorkflowScreenshot({
 export function GuidePage({ locale }: { locale: WebsiteLocale }) {
   const copy = helpCopy[locale];
   const guide = copy.guide;
-  const isChinese = locale === "zh-CN";
   const paths = {
-    language: isChinese ? "/guide" : "/zh-CN/guide",
-    faq: isChinese ? "/zh-CN/faq" : "/faq",
-    support: isChinese ? "/zh-CN/support" : "/support",
-    privacy: isChinese ? "/zh-CN/privacy" : "/privacy",
+    faq: localizedPath(locale, "faq"),
+    support: localizedPath(locale, "support"),
+    privacy: localizedPath(locale, "privacy"),
   };
 
   return (
     <ContentPage
       locale={locale}
-      languageHref={paths.language}
+      page="guide"
       eyebrow={guide.eyebrow}
       title={guide.title}
       summary={guide.summary}

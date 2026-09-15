@@ -1,109 +1,22 @@
-import { siteUrl } from "@/app/site-config";
 import type { MetadataRoute } from "next";
-
-const languageAlternates = (englishPath: string, chinesePath: string) => ({
-  languages: {
-    "en-US": `${siteUrl}${englishPath}`,
-    "zh-CN": `${siteUrl}${chinesePath}`,
-  },
-});
+import { siteUrl } from "./site-config";
+import { locales, pages, localizedPath } from "./i18n";
+import { languageAlternates } from "./page-metadata";
 
 const workflowImages = [
-  `${siteUrl}/media/optimized/v1/01-create-baby-game-720.webp`,
-  `${siteUrl}/media/optimized/v1/02-prompt-and-agent-plan-720.webp`,
-  `${siteUrl}/media/optimized/v1/03-approve-file-write-720.webp`,
-  `${siteUrl}/media/optimized/v1/04-checks-before-preview-720.webp`,
-  `${siteUrl}/media/optimized/v1/05-animal-parade-preview-720.webp`,
-  `${siteUrl}/media/optimized/v1/06-interaction-feedback-720.webp`,
-];
+  "01-create-baby-game", "02-prompt-and-agent-plan", "03-approve-file-write",
+  "04-checks-before-preview", "05-animal-parade-preview", "06-interaction-feedback",
+].map((name) => `${siteUrl}/media/optimized/v1/${name}-720.webp`);
 
 export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [
-    {
-      url: `${siteUrl}/`,
-      images: workflowImages,
-      alternates: languageAlternates("/", "/zh-CN"),
-    },
-    {
-      url: `${siteUrl}/zh-CN`,
-      alternates: languageAlternates("/", "/zh-CN"),
-    },
-    {
-      url: `${siteUrl}/examples`,
-      images: [workflowImages[4], `${siteUrl}/media/optimized/v1/05-see-features-come-to-life-framed-720.webp`],
-      alternates: languageAlternates("/examples", "/zh-CN/examples"),
-    },
-    {
-      url: `${siteUrl}/zh-CN/examples`,
-      alternates: languageAlternates("/examples", "/zh-CN/examples"),
-    },
-    {
-      url: `${siteUrl}/changelog`,
-      lastModified: "2026-09-05",
-      alternates: languageAlternates("/changelog", "/zh-CN/changelog"),
-    },
-    {
-      url: `${siteUrl}/zh-CN/changelog`,
-      lastModified: "2026-09-05",
-      alternates: languageAlternates("/changelog", "/zh-CN/changelog"),
-    },
-    {
-      url: `${siteUrl}/guide`,
-      images: workflowImages,
-      alternates: languageAlternates("/guide", "/zh-CN/guide"),
-    },
-    {
-      url: `${siteUrl}/zh-CN/guide`,
-      images: workflowImages,
-      alternates: languageAlternates("/guide", "/zh-CN/guide"),
-    },
-    {
-      url: `${siteUrl}/faq`,
-      alternates: languageAlternates("/faq", "/zh-CN/faq"),
-    },
-    {
-      url: `${siteUrl}/zh-CN/faq`,
-      alternates: languageAlternates("/faq", "/zh-CN/faq"),
-    },
-    {
-      url: `${siteUrl}/privacy`,
-      lastModified: "2026-09-15",
-      alternates: languageAlternates("/privacy", "/zh-CN/privacy"),
-    },
-    {
-      url: `${siteUrl}/zh-CN/privacy`,
-      lastModified: "2026-09-15",
-      alternates: languageAlternates("/privacy", "/zh-CN/privacy"),
-    },
-    {
-      url: `${siteUrl}/commercial/privacy`,
-      lastModified: "2026-09-15",
-      alternates: languageAlternates("/commercial/privacy", "/zh-CN/commercial/privacy"),
-    },
-    {
-      url: `${siteUrl}/zh-CN/commercial/privacy`,
-      lastModified: "2026-09-15",
-      alternates: languageAlternates("/commercial/privacy", "/zh-CN/commercial/privacy"),
-    },
-    {
-      url: `${siteUrl}/terms`,
-      lastModified: "2026-09-08",
-      alternates: languageAlternates("/terms", "/zh-CN/terms"),
-    },
-    {
-      url: `${siteUrl}/zh-CN/terms`,
-      lastModified: "2026-09-08",
-      alternates: languageAlternates("/terms", "/zh-CN/terms"),
-    },
-    {
-      url: `${siteUrl}/support`,
-      alternates: languageAlternates("/support", "/zh-CN/support"),
-    },
-    {
-      url: `${siteUrl}/zh-CN/support`,
-      alternates: languageAlternates("/support", "/zh-CN/support"),
-    },
-  ];
+  return pages.flatMap((page) => locales.map((locale) => ({
+    url: `${siteUrl}${localizedPath(locale, page)}`,
+    lastModified: "2026-09-15",
+    alternates: { languages: languageAlternates(page) },
+    images: page === "" || page === "guide" ? workflowImages : page === "examples"
+      ? [workflowImages[4], `${siteUrl}/media/optimized/v1/05-see-features-come-to-life-framed-720.webp`]
+      : undefined,
+  })));
 }

@@ -7,7 +7,7 @@ import type { WebsiteLocale } from "./home-copy";
 export function ChangelogPage({ locale }: { locale: WebsiteLocale }) {
   const copy = discoverCopy[locale];
   return (
-    <ContentPage locale={locale} languageHref={locale === "en" ? "/zh-CN/changelog" : "/changelog"} eyebrow={copy.updatesLabel} title={copy.updates.title} summary={copy.updates.summary} updated={copy.updated} updatedIso="2026-09-05" activeResource="changelog">
+    <ContentPage locale={locale} page="changelog" eyebrow={copy.updatesLabel} title={copy.updates.title} summary={copy.updates.summary} updated={copy.updated} updatedIso="2026-09-05" activeResource="changelog">
       {copy.updates.entries.map((entry, index) => (
         <section className="changelog-entry" id={entry.id} key={entry.id} aria-labelledby={`update-${entry.id}`}>
           <div className="changelog-meta"><time dateTime={entry.id}>{entry.date}</time><span>{copy.updates.website}</span></div>

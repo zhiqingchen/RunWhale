@@ -1,0 +1,1997 @@
+{
+  "home": {
+    "htmlLang": "es",
+    "brand": "RunWhale",
+    "homeAria": "Inicio de RunWhale",
+    "navAria": "Navegación principal",
+    "nav": {
+      "demo": "Demostración",
+      "features": "Funciones",
+      "workflow": "Cómo funciona",
+      "security": "Seguridad",
+      "guide": "Guía",
+      "faq": "Preguntas frecuentes",
+      "help": "Ayuda"
+    },
+    "guideHref": "/es/guide",
+    "faqHref": "/es/faq",
+    "eyebrow": "Explora a fondo. Hazlo realidad.",
+    "heroTitle": "Un agente de programación con IA y un entorno de desarrollo",
+    "heroAccent": "en tu teléfono.",
+    "heroLead": "Crea un proyecto Web o Expo, o importa un repositorio compatible. Pide al agente de IA de RunWhale que revise y edite código, ejecute las comprobaciones admitidas, examine cambios de Git y abra la vista previa Web o React Native. El entorno se ejecuta en tu teléfono; la inferencia del modelo utiliza el proveedor que configures.",
+    "beginnerPitch": "Vibe coding para principiantes: empieza con una idea y aprende creando.",
+    "downloadOnAppStore": "Descargar en el App Store",
+    "appStorePrice": "Edición comunitaria gratuita y de código abierto",
+    "watchWorkflow": "Ver un flujo de trabajo real",
+    "localNote": "Los archivos y las herramientas se ejecutan en tu dispositivo; la inferencia usa el proveedor configurado",
+    "whaleAlt": "Mascota de programación de RunWhale con cabello azul",
+    "trustAria": "Funciones en el dispositivo",
+    "trustLabel": "EN TU TELÉFONO",
+    "capabilities": [
+      "Proyectos",
+      "Sesiones del agente",
+      "Git",
+      "Node.js",
+      "Metro",
+      "Vista previa"
+    ],
+    "demo": {
+      "chip": "Flujo de trabajo real",
+      "title": "Una petición. Un juego listo para jugar.",
+      "description": "Crea un proyecto Expo llamado Baby game y pide «Make a game for baby». Sigue al agente mientras construye Animal Parade y prueba las tarjetas de animales en la vista previa nativa.",
+      "videoAria": "Demostración sin sonido de RunWhale: de Baby game a Animal Parade en la vista previa nativa",
+      "videoFallback": "Tu navegador no admite la reproducción de este vídeo.",
+      "videoCaption": "Animal Parade · Demostración completa · Unos 2 min 12 s · Sin sonido",
+      "kicker": "Un proyecto. Una sesión persistente.",
+      "spotlightTitle": "Crea un juego para un bebé.",
+      "spotlightBody": "Una petición breve se convierte en seis tarjetas de animales. Aprueba la edición, sigue las comprobaciones del agente y abre Animal Parade en la vista previa nativa. Al tocar las tarjetas aparecen mensajes de ánimo y la siguiente pregunta.",
+      "outline": [
+        {
+          "title": "Crear",
+          "body": "Llama al proyecto Baby game, elige Expo y abre el agente."
+        },
+        {
+          "title": "Construir",
+          "body": "Envía la petición, aprueba la edición y sigue las comprobaciones."
+        },
+        {
+          "title": "Jugar",
+          "body": "Busca el perro, toca las tarjetas y observa la respuesta del juego."
+        }
+      ],
+      "galleryLabel": "De la petición al juego",
+      "galleryTitle": "Seis momentos de la misma demostración.",
+      "galleryBody": "Crea el proyecto, envía una petición, aprueba la escritura del archivo, sigue las comprobaciones, abre la vista previa nativa y prueba el juego.",
+      "disclosure": "Las seis capturas proceden del vídeo anterior y conservan la interfaz original en inglés. RunWhale Community Edition es gratuita y de código abierto. El proveedor de IA puede cobrar por su uso."
+    },
+    "screenshots": [
+      {
+        "slug": "01-create-baby-game",
+        "title": "Crea Baby game con Expo.",
+        "alt": "Pantalla de nuevo proyecto de RunWhale con Baby game, Expo seleccionado y el repositorio opcional vacío."
+      },
+      {
+        "slug": "02-prompt-and-agent-plan",
+        "title": "Pide: crea un juego para un bebé.",
+        "alt": "Sesión de RunWhale con la petición Make a game for baby y un plan de controles grandes, respuestas amables y sin estado de derrota."
+      },
+      {
+        "slug": "03-approve-file-write",
+        "title": "Aprueba la modificación del archivo.",
+        "alt": "RunWhale solicita permiso para escribir index.tsx, con los botones Reject y Allow once."
+      },
+      {
+        "slug": "04-checks-before-preview",
+        "title": "Sigue las comprobaciones antes de la vista previa.",
+        "alt": "Diagnósticos de TypeScript y diferencias de Git, seguidos del resumen de dependencias sin resolver antes de la vista previa nativa."
+      },
+      {
+        "slug": "05-animal-parade-preview",
+        "title": "Juega a Animal Parade en la vista previa nativa.",
+        "alt": "Animal Parade en la vista previa nativa: Can you find the Dog? sobre seis tarjetas de perro, gato, vaca, pollito, rana y león."
+      },
+      {
+        "slug": "06-interaction-feedback",
+        "title": "Toca un animal y observa la respuesta.",
+        "alt": "Animal Parade muestra Great job! junto al león después de una interacción en la vista previa nativa."
+      }
+    ],
+    "featuresSection": {
+      "chip": "Por qué RunWhale",
+      "title": "Un ciclo de desarrollo enfocado,",
+      "titleSecondLine": "directamente en tu teléfono.",
+      "description": "No es un escritorio remoto ni un IDE en la nube. RunWhale ofrece un entorno de desarrollo enfocado y controlado en el propio dispositivo."
+    },
+    "features": [
+      {
+        "title": "Un agente de IA que trabaja en tu proyecto",
+        "body": "Pídele que revise, edite, pruebe y repare el código. RunWhale trabaja dentro de tu proyecto.",
+        "meta": "Revisar · Editar · Probar"
+      },
+      {
+        "title": "Vista previa Web y nativa",
+        "body": "Ejecuta proyectos compatibles en la vista previa Web o proyectos Expo de forma nativa en iOS y Android, sin generar compilaciones nativas ni en la nube para el proyecto del usuario.",
+        "meta": "Web · iOS · Android"
+      },
+      {
+        "title": "Entorno en el dispositivo",
+        "body": "El desarrollo principal se ejecuta en tu teléfono. La inferencia, las operaciones de red de Git solicitadas y las descargas de dependencias sin caché usan la red.",
+        "meta": "Herramientas locales · Modelos conectados"
+      }
+    ],
+    "workflow": {
+      "chip": "Del repositorio al resultado",
+      "title": "Abre un proyecto. Pídeselo al agente. Prueba el resultado.",
+      "description": "Menos cambios de contexto y más progreso. Cada paso permanece conectado en una sesión persistente del proyecto.",
+      "steps": [
+        {
+          "title": "Inicia un proyecto",
+          "body": "Crea un proyecto Web o Expo, o importa un repositorio Git compatible."
+        },
+        {
+          "title": "Encárgaselo al agente",
+          "body": "Deja que revise, modifique y verifique el código. Revisa las escrituras cuando quieras mantener el control."
+        },
+        {
+          "title": "Vista previa en el dispositivo",
+          "body": "Inicia la vista previa Web o nativa mediante Metro integrado y ve el resultado al instante."
+        }
+      ]
+    },
+    "security": {
+      "chip": "Arquitectura local primero",
+      "title": "El entorno de desarrollo permanece en tu dispositivo.",
+      "body": "Los proyectos, las herramientas y la vista previa se ejecutan localmente. La inferencia envía tu petición y el contexto necesario del proyecto o sesión al proveedor configurado. Las operaciones de red explícitas de Git y las descargas de dependencias sin caché también usan la red.",
+      "credentialBody": "Las claves API permanecen en el almacenamiento seguro del sistema y nunca se incluyen en proyectos, variables de entorno, sesiones, registros ni paquetes de vista previa.",
+      "contextLink": "Cómo gestiona RunWhale el contexto del proyecto",
+      "privacyHref": "/es/privacy",
+      "checks": [
+        "Tareas de Node.js y TypeScript en el dispositivo",
+        "Entorno localhost protegido por token",
+        "Claves SSH de Git generadas en el dispositivo"
+      ]
+    },
+    "finalCta": {
+      "chip": "Código abierto · Apache 2.0",
+      "title": "Cuando llegue tu próxima idea,",
+      "titleSecondLine": "ya estarás desarrollando.",
+      "tagline": "RunWhale — Explora a fondo. Hazlo realidad.",
+      "github": "Explora RunWhale en GitHub"
+    },
+    "footer": {
+      "copyright": "© 2026 RunWhale. Para trabajar a fondo.",
+      "navAria": "Guía, preguntas frecuentes, información legal, soporte, idiomas y proyecto",
+      "guide": "Guía",
+      "guideHref": "/es/guide",
+      "faq": "Preguntas frecuentes",
+      "faqHref": "/es/faq",
+      "privacy": "Privacidad",
+      "privacyHref": "/es/privacy",
+      "terms": "Condiciones",
+      "termsHref": "/es/terms",
+      "support": "Soporte",
+      "supportHref": "/es/support"
+    },
+    "metadataTitle": "RunWhale — Agente de programación con IA y vista previa en tu teléfono",
+    "metadataDescription": "RunWhale combina un agente de IA con un entorno en el dispositivo para proyectos Web y Expo compatibles, comprobaciones admitidas, revisión de Git y vista previa React Native."
+  },
+  "help": {
+    "updatedLabel": "4 de septiembre de 2026",
+    "updatedIso": "2026-09-04",
+    "guide": {
+      "metadataTitle": "Guía de RunWhale — De la configuración a la vista previa",
+      "metadataDescription": "Aprende a configurar un modelo, crear o importar un proyecto, trabajar con el agente y probar el resultado en la vista previa Web o nativa.",
+      "eyebrow": "Guía",
+      "title": "Empieza con RunWhale",
+      "summary": "Configura el modelo, abre un proyecto real, pide un cambio al agente y prueba el resultado en tu teléfono.",
+      "startTitle": "Antes de tu primera petición",
+      "startBody": "RunWhale mantiene el entorno en tu teléfono y usa el proveedor configurado para la inferencia. Estas tres comprobaciones facilitan el primer uso.",
+      "prerequisites": [
+        {
+          "title": "Prepara una clave API del modelo",
+          "body": "Usa una clave de tu proveedor elegido. Guárdala solo en Ajustes de RunWhale, nunca en un proyecto o petición."
+        },
+        {
+          "title": "Conéctate para trabajar con el agente",
+          "body": "La inferencia necesita red. Las operaciones de red de Git y las dependencias sin caché también pueden necesitarla."
+        },
+        {
+          "title": "Empieza con un proyecto compatible",
+          "body": "Elige una plantilla Web o Expo integrada, o importa un repositorio compatible con una entrada válida de RunWhale Preview."
+        }
+      ],
+      "workflowLabel": "Flujo principal",
+      "workflowTitle": "De la configuración a un resultado probado",
+      "workflowBody": "Tras configurar el modelo, sigue Baby game: crea un proyecto Expo, pide un juego, aprueba la edición y prueba Animal Parade en la vista previa nativa.",
+      "steps": [
+        {
+          "action": "Ajustes → Modelos · Guardar de forma segura",
+          "title": "Configura un proveedor y un modelo",
+          "body": [
+            "Abre Ajustes → Modelos, elige el proveedor y modelo, pega su clave API y pulsa Guardar de forma segura.",
+            "La clave permanece en el almacenamiento seguro del dispositivo. La inferencia usa el proveedor seleccionado; el dispositivo debe estar conectado al enviar una petición."
+          ]
+        },
+        {
+          "action": "Nuevo proyecto · Web / Expo",
+          "title": "Crea un proyecto o importa un repositorio",
+          "body": [
+            "Pulsa Nuevo proyecto, ponle un nombre y elige Web para una web React con vista previa Web, o Expo para una app con vista previa nativa.",
+            "En esta demostración, escribe Baby game, selecciona Expo, deja vacío el repositorio opcional y pulsa Crear y abrir agente.",
+            "Para continuar un código existente, introduce un repositorio Git compatible. Su archivo runwhale.json determina el destino de vista previa."
+          ]
+        },
+        {
+          "action": "Agente",
+          "title": "Describe un resultado concreto",
+          "body": [
+            "Explica qué quieres crear o cambiar, indica el comportamiento esperado y pide las comprobaciones admitidas que sean relevantes.",
+            "La petición completa de esta demo es «Make a game for baby». El agente diseña un juego con controles grandes, respuestas amables y seis tarjetas de animales."
+          ]
+        },
+        {
+          "action": "Revisión · Permitir una vez · Actividad",
+          "title": "Sigue el trabajo y revisa el resultado",
+          "body": [
+            "En modo Revisión, RunWhale pide permiso antes de escribir index.tsx. Pulsa Permitir una vez y sigue la escritura y las comprobaciones en la misma sesión.",
+            "El agente ejecuta diagnósticos de TypeScript y un diff de Git. Informa de dependencias sin resolver en el entorno nuevo y pasa a la vista previa nativa para comprobar la app en ejecución."
+          ]
+        },
+        {
+          "action": "Ejecutar / Recargar · Vista previa",
+          "title": "Ejecuta el mismo proyecto en la vista previa",
+          "body": [
+            "En el vídeo, el agente abre directamente la vista previa nativa. También puedes pulsar el icono Ejecutar / Recargar al terminar un turno. Los proyectos Web usan la vista previa Web; los Expo compatibles, la nativa.",
+            "Prueba las interacciones, no solo la primera pantalla. Si aparece un diagnóstico, vuelve al proyecto y usa el mensaje exacto para pedir la corrección."
+          ]
+        },
+        {
+          "action": "Vista previa nativa · Animal Parade",
+          "title": "Toca los animales y comprueba la respuesta",
+          "body": [
+            "Animal Parade muestra «Can you find the Dog?» sobre seis tarjetas: perro, gato, vaca, pollito, rana y león. Tócalas y observa cómo cambian la pregunta y la respuesta.",
+            "La demo muestra «Yay!», «Great job!» y «You found it!» antes de la siguiente pregunta. Para hacer otro cambio, vuelve a la misma sesión guardada del agente."
+          ]
+        }
+      ],
+      "galleryLabel": "De la petición al juego",
+      "galleryTitle": "Seis momentos de la misma demostración.",
+      "galleryBody": "Crea el proyecto, envía una petición, aprueba la escritura del archivo, sigue las comprobaciones, abre la vista previa nativa y prueba el juego.",
+      "screenshots": [
+        {
+          "id": "01-create-baby-game",
+          "title": "Crea Baby game con Expo.",
+          "alt": "Pantalla de nuevo proyecto de RunWhale con Baby game, Expo seleccionado y el repositorio opcional vacío.",
+          "avifSrcSet": "/media/optimized/v1/01-create-baby-game-360.avif 360w, /media/optimized/v1/01-create-baby-game-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/01-create-baby-game-360.webp 360w, /media/optimized/v1/01-create-baby-game-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/01-create-baby-game-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "02-prompt-and-agent-plan",
+          "title": "Pide: crea un juego para un bebé.",
+          "alt": "Sesión de RunWhale con la petición Make a game for baby y un plan de controles grandes, respuestas amables y sin estado de derrota.",
+          "avifSrcSet": "/media/optimized/v1/02-prompt-and-agent-plan-360.avif 360w, /media/optimized/v1/02-prompt-and-agent-plan-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/02-prompt-and-agent-plan-360.webp 360w, /media/optimized/v1/02-prompt-and-agent-plan-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/02-prompt-and-agent-plan-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "03-approve-file-write",
+          "title": "Aprueba la modificación del archivo.",
+          "alt": "RunWhale solicita permiso para escribir index.tsx, con los botones Reject y Allow once.",
+          "avifSrcSet": "/media/optimized/v1/03-approve-file-write-360.avif 360w, /media/optimized/v1/03-approve-file-write-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/03-approve-file-write-360.webp 360w, /media/optimized/v1/03-approve-file-write-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/03-approve-file-write-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "04-checks-before-preview",
+          "title": "Sigue las comprobaciones antes de la vista previa.",
+          "alt": "Diagnósticos de TypeScript y diferencias de Git, seguidos del resumen de dependencias sin resolver antes de la vista previa nativa.",
+          "avifSrcSet": "/media/optimized/v1/04-checks-before-preview-360.avif 360w, /media/optimized/v1/04-checks-before-preview-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/04-checks-before-preview-360.webp 360w, /media/optimized/v1/04-checks-before-preview-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/04-checks-before-preview-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "05-animal-parade-preview",
+          "title": "Juega a Animal Parade en la vista previa nativa.",
+          "alt": "Animal Parade en la vista previa nativa: Can you find the Dog? sobre seis tarjetas de perro, gato, vaca, pollito, rana y león.",
+          "avifSrcSet": "/media/optimized/v1/05-animal-parade-preview-360.avif 360w, /media/optimized/v1/05-animal-parade-preview-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/05-animal-parade-preview-360.webp 360w, /media/optimized/v1/05-animal-parade-preview-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/05-animal-parade-preview-720.webp",
+          "width": 720,
+          "height": 1566
+        },
+        {
+          "id": "06-interaction-feedback",
+          "title": "Toca un animal y observa la respuesta.",
+          "alt": "Animal Parade muestra Great job! junto al león después de una interacción en la vista previa nativa.",
+          "avifSrcSet": "/media/optimized/v1/06-interaction-feedback-360.avif 360w, /media/optimized/v1/06-interaction-feedback-720.avif 720w",
+          "webpSrcSet": "/media/optimized/v1/06-interaction-feedback-360.webp 360w, /media/optimized/v1/06-interaction-feedback-720.webp 720w",
+          "fallbackSrc": "/media/optimized/v1/06-interaction-feedback-720.webp",
+          "width": 720,
+          "height": 1566
+        }
+      ],
+      "videoLabel": "Recorrido completo",
+      "videoTitle": "Mira el proceso de la petición a la vista previa",
+      "videoBody": "En unos 2 minutos y 12 segundos, este vídeo sin sonido recorre la creación de Baby game, la petición, la aprobación de escritura, las comprobaciones y el uso de Animal Parade en la vista previa nativa.",
+      "videoAria": "Demostración sin sonido de RunWhale: de Baby game a Animal Parade en la vista previa nativa",
+      "videoFallback": "Tu navegador no admite la reproducción de este vídeo.",
+      "videoCaption": "Animal Parade · Demostración completa · Unos 2 min 12 s · Sin sonido",
+      "videoSrc": "/media/demo/RunWhale-demo-readme.mp4",
+      "videoPoster": "/media/optimized/v1/runwhale-animal-parade-poster-720.webp",
+      "disclosure": "Las seis capturas proceden del vídeo anterior y conservan la interfaz original en inglés. RunWhale Community Edition es gratuita y de código abierto. El proveedor de IA puede cobrar por su uso.",
+      "nextTitle": "Sigue aprendiendo",
+      "nextLinks": {
+        "faq": {
+          "title": "Consulta las preguntas frecuentes",
+          "body": "Conoce la conectividad, los datos, los límites de proyectos, Git y los errores comunes."
+        },
+        "support": {
+          "title": "Contacta con soporte",
+          "body": "Envía una consulta privada o informa en GitHub de un problema reproducible sin datos sensibles."
+        },
+        "privacy": {
+          "title": "Revisa el tratamiento de datos",
+          "body": "Descubre qué permanece en tu dispositivo y qué se envía a los servicios elegidos."
+        },
+        "github": {
+          "title": "Explora el código fuente",
+          "body": "Consulta el repositorio público, el alcance del proyecto y la guía de contribución de RunWhale."
+        }
+      }
+    },
+    "faq": {
+      "metadataTitle": "Preguntas frecuentes de RunWhale — Configuración, proyectos, agente y vista previa",
+      "metadataDescription": "Respuestas sobre configuración, procesamiento local y remoto, proyectos compatibles, Git, dependencias, vista previa y resolución de problemas.",
+      "eyebrow": "Preguntas frecuentes",
+      "title": "Respuestas a tus preguntas sobre RunWhale",
+      "summary": "Respuestas claras para empezar, saber qué se ejecuta en el teléfono, conocer los límites y comprobar rápidamente los fallos.",
+      "intro": "Elige una pregunta. Las respuestas describen los límites actuales sin presuponer un proveedor, una versión de dispositivo o un canal de distribución concreto.",
+      "groups": [
+        {
+          "title": "Primeros pasos",
+          "items": [
+            {
+              "id": "first-agent-run",
+              "question": "¿Qué necesito antes de usar el agente por primera vez?",
+              "answer": [
+                "Elige un proveedor y modelo en Ajustes → Modelos, guarda una clave API válida y mantén el dispositivo conectado. Después crea un proyecto Web o Expo, o importa un repositorio compatible."
+              ]
+            },
+            {
+              "id": "web-or-expo",
+              "question": "¿Debo elegir Web o Expo?",
+              "answer": [
+                "Elige Web para un sitio React en la vista previa Web. Elige Expo para un proyecto React Native en la vista previa nativa dentro del contenedor nativo fijo de RunWhale. Ambas plantillas comparten el flujo de proyectos y agente."
+              ]
+            },
+            {
+              "id": "import-repository",
+              "question": "¿Puedo importar un repositorio existente?",
+              "answer": [
+                "Sí, si es compatible con el entorno Web o Expo de RunWhale. El archivo runwhale.json declara las entradas y el destino de vista previa. Los repositorios que requieren código nativo, binarios o pasos de compilación no admitidos quedan fuera del entorno actual."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Entorno local y datos",
+          "items": [
+            {
+              "id": "local-or-offline",
+              "question": "¿Todo se ejecuta localmente? ¿Funciona sin conexión?",
+              "answer": [
+                "Los archivos, la coordinación del agente, las sesiones, Node.js, TypeScript, las tareas admitidas, Git, Metro y la vista previa se ejecutan en el teléfono. La inferencia usa el proveedor remoto configurado. Las operaciones de red de Git y las dependencias sin caché también usan red; RunWhale no es un producto sin conexión."
+              ]
+            },
+            {
+              "id": "model-context",
+              "question": "¿Qué datos del proyecto puede recibir el proveedor del modelo?",
+              "answer": [
+                "Al usar el agente, RunWhale envía tu petición y el contexto necesario del proyecto o sesión al proveedor seleccionado. Según la solicitud, puede incluir código, archivos, imágenes, resultados de herramientas e historial de conversación."
+              ]
+            },
+            {
+              "id": "credential-storage",
+              "question": "¿Dónde se guardan las credenciales de API y Git?",
+              "answer": [
+                "Las claves API y la clave privada de Git del dispositivo permanecen en iOS Keychain o Android Keystore. No se escriben en archivos de proyecto, variables de entorno, configuración de Git, sesiones, registros ni paquetes de vista previa."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Compatibilidad y límites",
+          "items": [
+            {
+              "id": "private-git",
+              "question": "¿Puedo usar un repositorio Git privado?",
+              "answer": [
+                "Sí, con repositorios GitHub por SSH. En Ajustes → Clave SSH de Git, genera o copia la clave pública del dispositivo, añádela a GitHub y usa la URL SSH del repositorio. La clave privada permanece en el almacenamiento seguro; el acceso depende de la red y de los permisos en GitHub."
+              ]
+            },
+            {
+              "id": "npm-packages",
+              "question": "¿Puede un proyecto instalar cualquier paquete npm?",
+              "answer": [
+                "No. Se admiten paquetes JavaScript puros compatibles del registro npm. Los scripts de ciclo de vida y enlaces binarios están desactivados. No se admiten dependencias Git o de rutas, complementos nativos, binarios, plugins dinámicos de Expo ni SDK nativos específicos. Según el modo de permisos, se puede solicitar tu aprobación."
+              ]
+            },
+            {
+              "id": "standalone-builds",
+              "question": "¿RunWhale compila apps iOS o Android independientes?",
+              "answer": [
+                "No. Los proyectos se ejecutan como vistas previas Web o React Native dentro de RunWhale. No generan compilaciones de Xcode, Gradle, EAS, IPA ni APK."
+              ]
+            },
+            {
+              "id": "background-work",
+              "question": "¿El agente o Metro siguen trabajando en segundo plano?",
+              "answer": [
+                "No dependas de una ejecución continua en segundo plano. En particular, el producto actual no mantiene al agente o Metro funcionando continuamente cuando iOS pasa a segundo plano. Mantén RunWhale en primer plano durante el trabajo activo o la preparación de la vista previa."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Resolución de problemas",
+          "items": [
+            {
+              "id": "agent-wont-start",
+              "question": "¿Por qué no inicia el agente?",
+              "answer": [
+                "Comprueba que el proveedor seleccionado tenga una clave API válida guardada y que haya conexión. Si aparece un error del entorno local, reinícialo y vuelve a intentarlo antes de modificar el proyecto."
+              ]
+            },
+            {
+              "id": "preview-wont-open",
+              "question": "¿Por qué no abre la vista previa Web o nativa?",
+              "answer": [
+                "Pulsa Ejecutar / Recargar y comprueba que runwhale.json declare el destino y una entrada Web o nativa correspondiente. Lee el diagnóstico de Metro o de la vista previa y usa ese mensaje exacto, sin datos sensibles, al pedir la corrección."
+              ]
+            },
+            {
+              "id": "git-operation-fails",
+              "question": "¿Por qué falló clone, fetch, pull o push de Git?",
+              "answer": [
+                "Comprueba que se use una URL HTTPS admitida o una URL SSH de GitHub. Revisa la rama, la conexión y los permisos remotos. Para SSH, confirma que la clave pública actual esté registrada en GitHub. Pull requiere además un árbol de trabajo limpio; las URL con credenciales incrustadas se rechazan."
+              ]
+            },
+            {
+              "id": "support-report",
+              "question": "¿Qué debo incluir al informar de un problema?",
+              "answer": [
+                "Incluye la versión de RunWhale, modelo y sistema operativo del dispositivo, acción intentada, error exacto, pasos mínimos para reproducirlo y diagnósticos no sensibles. Nunca incluyas claves API o privadas, credenciales, datos privados del proyecto, datos personales ni registros o capturas sin depurar."
+              ]
+            }
+          ]
+        }
+      ],
+      "moreTitle": "¿Necesitas más ayuda?",
+      "moreBody": "Sigue la guía paso a paso para tu primer flujo completo, o contacta con soporte si tienes una consulta privada o un problema reproducible.",
+      "guideLabel": "Abrir la guía",
+      "supportLabel": "Contacta con soporte"
+    }
+  },
+  "discover": {
+    "examplesLabel": "Ejemplos",
+    "updatesLabel": "Novedades",
+    "examplesHref": "/es/examples",
+    "updatesHref": "/es/changelog",
+    "updated": "5 de septiembre de 2026",
+    "purchase": {
+      "title": "Antes de descargar",
+      "downloadNote": "Necesitas una clave API. El uso del proveedor se factura aparte.",
+      "summary": "Prepara tu idea y una clave API.",
+      "items": [
+        {
+          "title": "Edición comunitaria gratuita",
+          "body": "RunWhale Community Edition es gratuita y de código abierto. No requiere cuenta ni suscripción de RunWhale. Consulta la disponibilidad regional en el App Store."
+        },
+        {
+          "title": "El uso del modelo es independiente",
+          "body": "Usa tu propia clave API. El proveedor te factura cualquier uso del modelo."
+        },
+        {
+          "title": "Comprueba tu dispositivo",
+          "body": "Consulta la compatibilidad con iPhone y iPad en el App Store. Las peticiones al agente requieren conexión a Internet."
+        }
+      ],
+      "guide": "Configura tu primer modelo",
+      "limits": "Comprueba la compatibilidad del proyecto"
+    },
+    "examples": {
+      "title": "Una idea para empezar.",
+      "summary": "Explora dos proyectos de sesiones grabadas de RunWhale y copia una petición para tu propio proyecto.",
+      "all": "Explorar ejemplos",
+      "watch": "Ver la grabación",
+      "copy": "Copiar petición",
+      "copied": "Petición copiada",
+      "copyError": "No se pudo copiar. Selecciona y copia el texto anterior.",
+      "promptLabel": "Petición inicial",
+      "originalPrompt": "Petición original de la demo",
+      "suggestedPrompt": "Petición inicial sugerida",
+      "steps": "Crea un proyecto Expo, configura el modelo en Ajustes y envía la petición al agente. Abre la vista previa nativa para probar el resultado.",
+      "note": "Las capturas y vídeos muestran demos existentes. Otras ejecuciones pueden dar resultados distintos; la petición de Snake es una sugerencia abreviada, no la solicitud completa grabada.",
+      "ideasTitle": "¿Qué crearías después?",
+      "ideasBody": "Son ideas para construir por tu cuenta. Elige el tipo de proyecto indicado y adapta la petición.",
+      "guide": "Sigue la guía de configuración",
+      "cases": [
+        {
+          "id": "animal-parade",
+          "title": "Animal Parade",
+          "category": "Expo · Juego educativo",
+          "description": "Seis tarjetas de animales, una pregunta amable y una respuesta con cada toque. Una idea breve se convierte en un juego en la vista previa nativa.",
+          "image": "/media/optimized/v1/05-animal-parade-preview-720.webp",
+          "imageAlt": "Animal Parade en la vista previa nativa, con seis tarjetas y una pregunta para encontrar al perro.",
+          "width": 720,
+          "height": 1566,
+          "video": "/media/demo/RunWhale-demo-readme.mp4",
+          "prompt": "Make a game for baby",
+          "original": true
+        },
+        {
+          "id": "snake-sprint",
+          "title": "Snake Sprint",
+          "category": "Expo · Juego arcade",
+          "description": "Dirige con controles táctiles, pausa la partida y prueba un modo de obstáculos añadido mediante otra petición.",
+          "image": "/media/optimized/v1/05-see-features-come-to-life-framed-720.webp",
+          "imageAlt": "Vista previa grabada de Snake Sprint con modo de obstáculos y barreras naranjas.",
+          "width": 720,
+          "height": 1564,
+          "video": "/media/demo/runwhale-snake-agent-workflow.mp4",
+          "prompt": "Crea un juego de Snake en vertical con los componentes integrados de React Native. Añade comida, puntuación en tiempo real, controles táctiles de dirección grandes y estados de inicio, pausa, continuación, reinicio y fin de partida. Añade un interruptor de modo de obstáculos que reinicie la ronda y haga que chocar con una barrera termine la partida. Mantén todos los controles visibles en un teléfono. Ejecuta las comprobaciones admitidas antes de que abra Native Preview.",
+          "original": false
+        }
+      ],
+      "ideas": [
+        {
+          "title": "Tu sitio web personal",
+          "category": "Web",
+          "prompt": "Crea un sitio web personal adaptable con una presentación, tres tarjetas de proyectos y una sección de contacto. Usa contenido de ejemplo editable y CSS para el diseño. Haz que la navegación funcione en un teléfono y ejecuta las comprobaciones admitidas antes de Web Preview."
+        },
+        {
+          "title": "Un temporizador de concentración",
+          "category": "Expo",
+          "prompt": "Crea un temporizador de concentración con los componentes integrados de React Native. Añade duraciones ajustables de concentración y descanso, e inicio, pausa, continuación y reinicio. Muestra la sesión activa y facilita la pulsación de todos los controles. Mantén la app en primer plano durante la cuenta. Ejecuta las comprobaciones admitidas antes de Native Preview."
+        }
+      ]
+    },
+    "updates": {
+      "title": "Novedades de RunWhale.",
+      "summary": "Sigue los cambios del sitio, los ejemplos y los recursos para empezar.",
+      "latest": "Última actualización del sitio",
+      "all": "Leer las novedades",
+      "website": "Sitio web",
+      "entries": [
+        {
+          "id": "2026-09-05",
+          "date": "5 de septiembre de 2026",
+          "title": "Encuentra tu primer proyecto",
+          "summary": "Ejemplos grabados, peticiones para copiar e información más clara antes de descargar.",
+          "changes": [
+            "Explora Animal Parade y Snake Sprint, con vídeos y peticiones para empezar.",
+            "Encuentra información sobre la app, la facturación de modelos y los dispositivos junto a la descarga.",
+            "Consulta aquí las actualizaciones del sitio por fecha."
+          ]
+        },
+        {
+          "id": "2026-09-04",
+          "date": "4 de septiembre de 2026",
+          "title": "Una guía para tu primer flujo de trabajo",
+          "summary": "Las páginas de ayuda en inglés y chino ya cubren la configuración, el agente y la vista previa.",
+          "changes": [
+            "Sigue la guía desde la configuración del modelo hasta ejecutar un proyecto en la vista previa.",
+            "Consulta la FAQ sobre proyectos compatibles, Git, conexión y errores comunes."
+          ]
+        }
+      ]
+    }
+  },
+  "navigation": {
+    "brand": "RunWhale",
+    "homeAria": "Inicio de RunWhale",
+    "back": "Volver al inicio",
+    "resourcesAria": "Guías y soporte de RunWhale",
+    "footerAria": "Guías, información legal, soporte, idiomas y proyecto",
+    "updatedPrefix": "Última actualización: ",
+    "copyright": "© 2026 RunWhale.",
+    "links": {
+      "examples": {
+        "label": "Ejemplos",
+        "href": "/es/examples"
+      },
+      "changelog": {
+        "label": "Novedades",
+        "href": "/es/changelog"
+      },
+      "guide": {
+        "label": "Guía",
+        "href": "/es/guide"
+      },
+      "faq": {
+        "label": "Preguntas frecuentes",
+        "href": "/es/faq"
+      },
+      "support": {
+        "label": "Soporte",
+        "href": "/es/support"
+      },
+      "privacy": {
+        "label": "Privacidad",
+        "href": "/es/privacy"
+      },
+      "terms": {
+        "label": "Condiciones",
+        "href": "/es/terms"
+      }
+    }
+  },
+  "documents": {
+    "privacy": {
+      "eyebrow": "Privacidad",
+      "title": "Política de privacidad",
+      "summary": "Esta política cubre la app RunWhale y este sitio. Explica qué permanece en tu dispositivo, qué se comparte con los servicios que eliges y tus opciones de privacidad.",
+      "updated": "15 de septiembre de 2026",
+      "updatedIso": "2026-09-15",
+      "metadataTitle": "Política de privacidad de RunWhale",
+      "metadataDescription": "Privacidad de RunWhale: datos locales, intercambio con IA de terceros, eliminación y alojamiento web.",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Ámbito de aplicación"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Esta política se aplica a la app móvil y al sitio web de RunWhale. Describe nuestro tratamiento e intercambio de datos. Las políticas enlazadas de proveedores de modelos, alojamiento Git, registros de paquetes y otros servicios aportan información adicional sobre ellos y no sustituyen nuestras responsabilidades aquí descritas."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "La app no requiere una cuenta de RunWhale. No envía analíticas de uso ni identificadores publicitarios a RunWhale."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Información tratada por la app"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale guarda proyectos, historial Git, sesiones del agente, adjuntos, preferencias, cachés y datos generados en el contenedor local de la app en tu dispositivo. Las claves API de modelos y la clave SSH privada de Git se guardan en el almacenamiento seguro del sistema operativo."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale no sube copias de tus proyectos ni sesiones del agente a un servidor de RunWhale."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Información enviada a los servicios que eliges"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Las funciones de IA envían la solicitud y el contexto necesario al servicio de modelos elegido. La siguiente sección describe los destinatarios, las categorías de datos, el consentimiento y las condiciones de los proveedores."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Al clonar, obtener, descargar o subir cambios de un repositorio, la app se comunica con el host Git indicado. Instalar dependencias puede contactar registros de paquetes. Estos servicios tratan los datos conforme a sus propias condiciones y políticas; la conservación depende de ellos y de la configuración de tu cuenta."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Un enlace compartido de GitHub revela el propietario, nombre del repositorio y SHA del commit. Push publica el commit según los permisos del repositorio; GitHub sigue controlando el acceso privado. Abrir sitios externos envía datos de conexión, incluida tu IP, a sus hosts."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Servicios de IA de terceros"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Antes de compartir solicitudes de IA, RunWhale identifica el proveedor y la dirección API elegidos y solicita tu consentimiento explícito. El consentimiento se limita a ese destinatario; cambiar de proveedor o dirección exige consentir de nuevo. Rechazarlo impide la solicitud."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Con tu consentimiento, el agente envía peticiones, historial de conversación, código y archivos relevantes, resultados de herramientas e imágenes o capturas usadas como contexto a Anthropic (Claude API), DeepSeek, Google (Gemini API) u OpenAI, según tu elección. La generación de imágenes y la búsqueda web también pueden enviar contenido mediante ese proveedor. El servicio recibe la clave API para autenticarse y datos de conexión como tu IP. Estas solicitudes generan las respuestas, código, imágenes o acciones que pides y pueden contener datos personales de tus archivos o imágenes."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Una dirección API personalizada envía las solicitudes a su operador, que puede reenviarlas a otros servicios. El nombre del modelo o proveedor no identifica por sí solo al operador. Revisa su identidad, política de privacidad y prácticas de reenvío antes de consentir."
+            },
+            {
+              "tag": "h3",
+              "attrs": {},
+              "children": "Proveedores de IA, uso y conservación de datos"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Estos enlaces complementan esta política. RunWhale sigue siendo responsable de su tratamiento e intercambio de datos. Exigimos a los destinatarios una protección de datos personales al menos equivalente a esta política y a los requisitos aplicables. Los proveedores pueden procesar solicitudes fuera de tu país. Sus funciones API, acuerdos, región y ajustes afectan a la conservación y al entrenamiento; las reglas de un chat de consumo pueden diferir de las de su API. Los resúmenes reflejan las condiciones publicadas en la fecha indicada, no garantizan conservación cero. Para acceder o eliminar datos, contacta con el proveedor o con runwhale@runwhale.dev para solicitudes sobre el tratamiento de RunWhale."
+            },
+            {
+              "tag": "ul",
+              "attrs": {},
+              "children": [
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Anthropic."
+                    },
+                    " Por defecto, las entradas y salidas API no se usan para entrenar. Normalmente se eliminan en 30 días, salvo funciones, acuerdos, medidas de seguridad u obligaciones legales específicas. Autorizarlo o enviar comentarios puede permitir el entrenamiento. ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://www.anthropic.com/legal/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Política de privacidad"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Uso de datos API"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Conservación de datos API"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "DeepSeek."
+                    },
+                    " Las condiciones de Open Platform se aplican a la API. RunWhale no ha confirmado un plazo fijo de conservación ni un compromiso de no entrenamiento. Confirma con DeepSeek las condiciones de tu cuenta antes de enviar datos personales. ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Política de privacidad"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Condiciones de la API"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Google (Gemini API)."
+                    },
+                    " El uso de datos depende del nivel de servicio y la región. Los servicios gratuitos pueden usar el contenido para mejorar modelos y para revisión humana; no les envíes información sensible, confidencial o personal. Las reglas de pago excluyen el uso para mejorar productos y también se aplican en el EEE, Suiza y Reino Unido. Pueden seguir aplicándose registros de seguridad y conservación específica de funciones. ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://policies.google.com/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Política de privacidad"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://ai.google.dev/gemini-api/terms",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Condiciones de la API"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "OpenAI."
+                    },
+                    " Los datos API no se usan para entrenar salvo autorización. Los registros de control de abusos suelen durar hasta 30 días; la seguridad, las obligaciones legales, el almacenamiento de ciertas funciones y los controles de cuenta aprobados pueden cambiar la conservación. ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://openai.com/policies/privacy-policy/",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Política de privacidad"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://developers.openai.com/api/docs/guides/your-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Uso de datos API"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Proyectos en la vista previa"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "El código en la vista previa puede contactar sus propios servicios y procesar información que introduzcas o autorices, como fotos, cámara, micrófono o ubicación. Revisa el código y los servicios antes de ejecutarlo. Gestiona los permisos en Ajustes del sistema. El contenido de vista previa incluido en una petición del agente se envía al servicio de IA seleccionado según las opciones de intercambio anteriores."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Alojamiento del sitio web"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Este sitio no incluye scripts de analítica, rastreadores publicitarios ni cookies de aplicación. Las páginas y los medios son archivos estáticos."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Cuando se aloja en GitHub Pages, GitHub puede procesar solicitudes, incluidas direcciones IP, para operar y proteger el servicio. Consulta la ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "Declaración de privacidad de GitHub"
+                },
+                " para conocer el tratamiento y la conservación de datos."
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Uso e intercambio de la información"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "La información se usa para ofrecer las funciones solicitadas, operar y proteger el sitio y diagnosticar problemas. RunWhale no vende tus datos personales ni usa el contenido de proyectos para publicidad."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Se comparte información con los servicios que indiques a la app y el proveedor de alojamiento descrito, o cuando sea necesario para cumplir la ley, proteger derechos y seguridad o investigar abusos."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Conservación, eliminación y opciones"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Controlas los datos guardados en tu dispositivo. El entorno local permanece hasta que lo elimines en la app o borres sus datos; las cachés temporales pueden borrarse antes. Elimina sesiones o proyectos, quita las claves API en Ajustes → Modelos y elimina o rota la clave SSH de Git en Ajustes. El almacenamiento seguro puede sobrevivir a la desinstalación: elimina primero esas entradas. Revoca también las credenciales en el proveedor o host Git. Borrar datos locales no elimina copias ya enviadas a terceros; contacta con ellos para ejercer derechos sobre los datos que controlan."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Retira el consentimiento en Ajustes → Acerca de → Política de privacidad → Intercambio de datos de IA. Se detienen los agentes activos y las nuevas solicitudes hasta que vuelvas a consentir. No se elimina lo ya recibido por terceros. La app incluye una copia sin conexión de esta política."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Para consultar datos controlados por RunWhale, pedir su eliminación o retirar el consentimiento cuando corresponda, escribe a ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "."
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Al contactar con soporte, recibimos tu correo y mensaje para responder. Conservamos la correspondencia mientras sea necesaria para atender la solicitud o cumplir obligaciones legales. Puedes usar el mismo correo para acceso, corrección u otras solicitudes de privacidad. No envíes claves API ni privadas."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Seguridad y menores"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale aplica protecciones técnicas adecuadas a su diseño local, pero ningún método de almacenamiento o transmisión es totalmente seguro. No pongas secretos en archivos de proyecto, peticiones, adjuntos, registros ni salidas de vista previa."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale es una herramienta para desarrolladores y no está dirigida a menores de 13 años. No recopilamos conscientemente datos personales de menores mediante la app."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Cambios y contacto"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Podemos actualizar esta política cuando cambie RunWhale. La fecha anterior identifica la última versión. Para ayuda del producto, visita ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/es/support"
+                  },
+                  "children": "Soporte de RunWhale"
+                },
+                ". Las consultas y solicitudes de privacidad pueden enviarse a ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "commercial/privacy": {
+      "privacyHref": "/es/commercial/privacy",
+      "eyebrow": "Privacidad",
+      "title": "Política de privacidad",
+      "summary": "Esta política cubre la app RunWhale y este sitio: datos locales, servicios de IA conectados, cuentas, suscripciones, analíticas de uso y alojamiento web.",
+      "updated": "15 de septiembre de 2026",
+      "updatedIso": "2026-09-15",
+      "metadataTitle": "Política de privacidad de RunWhale",
+      "metadataDescription": "Privacidad de RunWhale: datos locales, IA conectada, cuentas, suscripciones, analíticas de uso y alojamiento web.",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Ámbito de aplicación"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Esta política se aplica a la app móvil y al sitio web de RunWhale. Describe nuestro tratamiento e intercambio de datos. Las políticas enlazadas de proveedores de modelos, alojamiento Git, registros de paquetes y otros servicios aportan información adicional sobre ellos y no sustituyen nuestras responsabilidades aquí descritas."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Información tratada por la app"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale guarda proyectos, historial Git, sesiones del agente, adjuntos, preferencias, cachés y datos generados en el contenedor local de la app en tu dispositivo. Las claves API de modelos y la clave SSH privada de Git se guardan en el almacenamiento seguro del sistema operativo."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Las cuentas y suscripciones son opcionales. El servicio de cuentas no guarda copias de proyectos ni sesiones del agente."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Cuentas y suscripciones"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Al iniciar sesión con Google o Apple, RunWhale verifica la prueba de identidad y guarda tu identificador de cuenta, los identificadores vinculados del proveedor, el correo verificado si se facilita y las marcas de tiempo de cuenta y sesión. Los tokens quedan en el almacenamiento seguro; el servidor guarda sus hashes. No se proporcionan a proyectos, sesiones del agente ni vistas previas."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Cloudflare aloja la API de cuentas y la base de datos y procesa sus solicitudes de red. RevenueCat recibe el identificador de RunWhale y datos de compras para verificar suscripciones, pruebas, renovaciones y reembolsos. RunWhale registra el estado y la contabilidad de uso. Apple o Google procesa los pagos; RunWhale no recibe datos de tarjetas."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Información enviada a los servicios que eliges"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Las funciones de IA envían la petición y el contexto necesario al servicio de modelos seleccionado. La siguiente sección explica los datos y las condiciones de los proveedores."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Si usas la API de modelos opcional de RunWhale, las solicitudes pasan por su backend al proveedor configurado. El backend conserva la contabilidad de uso, no peticiones, archivos ni conversaciones. La conservación del proveedor depende de sus políticas."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Al clonar, obtener, descargar o subir cambios de un repositorio, la app se comunica con el host Git indicado. Instalar dependencias puede contactar registros de paquetes. Estos servicios tratan los datos conforme a sus propias condiciones y políticas; la conservación depende de ellos y de la configuración de tu cuenta."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Un enlace compartido de GitHub revela el propietario, nombre del repositorio y SHA del commit. Push publica el commit según los permisos del repositorio; GitHub sigue controlando el acceso privado. Abrir sitios externos envía datos de conexión, incluida tu IP, a sus hosts."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Servicios de IA de terceros"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Al usar el agente con tu propio proveedor, las solicitudes envían peticiones, historial, código y archivos relevantes, resultados de herramientas e imágenes o capturas de contexto a Anthropic (Claude API), DeepSeek, Google (Gemini API) u OpenAI, según tu selección. La generación de imágenes y la búsqueda web pueden enviar contenido mediante el proveedor. Este recibe la clave API de autenticación y datos como la IP. Las solicitudes producen las respuestas, código, imágenes o acciones pedidas y pueden contener datos personales de archivos o imágenes."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Una dirección API personalizada envía las solicitudes a su operador, que puede reenviarlas. Un nombre de modelo o proveedor no identifica al operador. Revisa su identidad, privacidad y reenvío antes de configurar o usar esa dirección."
+            },
+            {
+              "tag": "h3",
+              "attrs": {},
+              "children": "Proveedores de IA, uso y conservación de datos"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Estos enlaces complementan esta política. RunWhale sigue siendo responsable de su tratamiento e intercambio de datos. Exigimos a los destinatarios una protección de datos personales al menos equivalente a esta política y a los requisitos aplicables. Los proveedores pueden procesar solicitudes fuera de tu país. Sus funciones API, acuerdos, región y ajustes afectan a la conservación y al entrenamiento; las reglas de un chat de consumo pueden diferir de las de su API. Los resúmenes reflejan las condiciones publicadas en la fecha indicada, no garantizan conservación cero. Para acceder o eliminar datos, contacta con el proveedor o con runwhale@runwhale.dev para solicitudes sobre el tratamiento de RunWhale."
+            },
+            {
+              "tag": "ul",
+              "attrs": {},
+              "children": [
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Anthropic."
+                    },
+                    " Por defecto, las entradas y salidas API no se usan para entrenar. Normalmente se eliminan en 30 días, salvo funciones, acuerdos, medidas de seguridad u obligaciones legales específicas. Autorizarlo o enviar comentarios puede permitir el entrenamiento. ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://www.anthropic.com/legal/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Política de privacidad"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Uso de datos API"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Conservación de datos API"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "DeepSeek."
+                    },
+                    " Las condiciones de Open Platform se aplican a la API. RunWhale no ha confirmado un plazo fijo de conservación ni un compromiso de no entrenamiento. Confirma con DeepSeek las condiciones de tu cuenta antes de enviar datos personales. ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Política de privacidad"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Condiciones de la API"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Google (Gemini API)."
+                    },
+                    " El uso de datos depende del nivel de servicio y la región. Los servicios gratuitos pueden usar el contenido para mejorar modelos y para revisión humana; no les envíes información sensible, confidencial o personal. Las reglas de pago excluyen el uso para mejorar productos y también se aplican en el EEE, Suiza y Reino Unido. Pueden seguir aplicándose registros de seguridad y conservación específica de funciones. ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://policies.google.com/privacy",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Política de privacidad"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://ai.google.dev/gemini-api/terms",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Condiciones de la API"
+                    }
+                  ]
+                },
+                {
+                  "tag": "li",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "OpenAI."
+                    },
+                    " Los datos API no se usan para entrenar salvo autorización. Los registros de control de abusos suelen durar hasta 30 días; la seguridad, las obligaciones legales, el almacenamiento de ciertas funciones y los controles de cuenta aprobados pueden cambiar la conservación. ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://openai.com/policies/privacy-policy/",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Política de privacidad"
+                    },
+                    " · ",
+                    {
+                      "tag": "a",
+                      "attrs": {
+                        "href": "https://developers.openai.com/api/docs/guides/your-data",
+                        "target": "_blank",
+                        "rel": "noreferrer"
+                      },
+                      "children": "Uso de datos API"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Proyectos en la vista previa"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "El código en la vista previa puede contactar sus servicios y procesar información que introduzcas o autorices, como fotos, cámara, micrófono o ubicación. Revisa el código y conexiones antes de ejecutarlo y gestiona permisos en Ajustes del sistema. El contenido de vista previa incluido en una petición se envía al servicio de modelos que la procesa."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Analíticas de uso de la app"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "La app usa Google Analytics for Firebase, activado automáticamente al iniciarse, para conocer el uso y mejorar la fiabilidad. Las versiones Debug no envían estas analíticas. No hay una solicitud de permiso separada ni un interruptor para desactivarlas."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Google recibe aperturas e interacción, categorías de creación de proyectos y vista previa, resultados y duración, versión de app, modelo de dispositivo, sistema, idioma e identificador aleatorio de instancia. Puede inferir ubicación aproximada de la IP; Analytics no registra ni guarda IP individuales. No enviamos identificador de cuenta, correo, código, peticiones, nombres de proyectos, archivos, rutas, URL ni registros como eventos analíticos."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "La recopilación de identificadores publicitarios, la personalización de anuncios y los informes automáticos de pantallas están desactivados. La analítica se limita a RunWhale; el SDK Firebase no está expuesto a proyectos de la vista previa nativa. Google trata estos datos en su infraestructura, posiblemente fuera de tu país, según la ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://policies.google.com/privacy",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "Política de privacidad de Google"
+                },
+                " y sus ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.google.com/analytics/answer/6004245",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "medidas de protección de datos de Analytics"
+                },
+                "."
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Los registros siguen la conservación configurada en nuestra propiedad Google Analytics. Eliminar una cuenta o proyectos no borra automáticamente las analíticas previas, que no vinculamos al identificador de cuenta. Contacta con la dirección siguiente para consultas de privacidad o eliminación."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Alojamiento del sitio web"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Este sitio no incluye scripts de analítica, rastreadores publicitarios ni cookies de aplicación. Las páginas y los medios son archivos estáticos."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Cuando se aloja en GitHub Pages, GitHub puede procesar solicitudes, incluidas direcciones IP, para operar y proteger el servicio. Consulta la ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "Declaración de privacidad de GitHub"
+                },
+                " para conocer el tratamiento y la conservación de datos."
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Uso e intercambio de la información"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "La información se usa para ofrecer las funciones solicitadas, operar y proteger el sitio y diagnosticar problemas. RunWhale no vende tus datos personales ni usa el contenido de proyectos para publicidad."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Se comparte información con los servicios que indiques, los proveedores de cuentas, suscripciones, analíticas y alojamiento descritos, o para cumplir la ley, proteger derechos y seguridad o investigar abusos."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Conservación, eliminación y opciones"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Controlas los datos guardados en tu dispositivo. El entorno local permanece hasta que lo elimines en la app o borres sus datos; las cachés temporales pueden borrarse antes. Elimina sesiones o proyectos, quita las claves API en Ajustes → Modelos y elimina o rota la clave SSH de Git en Ajustes. El almacenamiento seguro puede sobrevivir a la desinstalación: elimina primero esas entradas. Revoca también las credenciales en el proveedor o host Git. Borrar datos locales no elimina copias ya enviadas a terceros; contacta con ellos para ejercer derechos sobre los datos que controlan."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Puedes eliminar tu cuenta desde Yo tras volver a iniciar sesión. Se borran identidades y sesiones de cuenta, pero se conservan los proyectos locales. Los registros seudónimos de uso permanecen hasta la limpieza programada, normalmente de tres a cuatro meses; un identificador hash temporal evita abusar del reinicio de cuota hasta el siguiente mes UTC. Borrar la cuenta no cancela suscripciones del App Store o Google Play. Cancela en la tienda; sus registros y los de RevenueCat siguen sus propias políticas de conservación."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Para consultar datos controlados por RunWhale, pedir su eliminación o retirar el consentimiento cuando corresponda, escribe a ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "."
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Al contactar con soporte, recibimos tu correo y mensaje para responder. Conservamos la correspondencia mientras sea necesaria para atender la solicitud o cumplir obligaciones legales. Puedes usar el mismo correo para acceso, corrección u otras solicitudes de privacidad. No envíes claves API ni privadas."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Seguridad y menores"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale aplica protecciones técnicas adecuadas a su diseño local, pero ningún método de almacenamiento o transmisión es totalmente seguro. No pongas secretos en archivos de proyecto, peticiones, adjuntos, registros ni salidas de vista previa."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "RunWhale es una herramienta para desarrolladores y no está dirigida a menores de 13 años. No recopilamos conscientemente datos personales de menores mediante la app."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Cambios y contacto"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Podemos actualizar esta política cuando cambie RunWhale. La fecha anterior identifica la última versión. Para ayuda del producto, visita ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/es/support"
+                  },
+                  "children": "Soporte de RunWhale"
+                },
+                ". Las consultas y solicitudes de privacidad pueden enviarse a ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "eyebrow": "Legal",
+      "title": "Condiciones de servicio",
+      "summary": "Condiciones de uso de RunWhale, incluidas cuentas, suscripciones en las tiendas, cancelación y tus proyectos.",
+      "updated": "8 de septiembre de 2026",
+      "updatedIso": "2026-09-08",
+      "metadataTitle": "Condiciones de RunWhale — Cuentas y suscripciones",
+      "metadataDescription": "Condiciones de uso de RunWhale, incluidas cuentas, suscripciones en las tiendas, cancelación y tus proyectos.",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Uso de RunWhale"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Estas condiciones se aplican a la app, el sitio web y los servicios opcionales de cuenta y suscripción de RunWhale. Al utilizarlos, aceptas estas condiciones. Si no estás de acuerdo, deja de usar los servicios. Los componentes de código abierto se rigen por sus respectivas licencias."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Usa RunWhale solo si puedes celebrar este acuerdo según la legislación aplicable, o con el permiso y la supervisión de un padre, madre o tutor cuando sean necesarios."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Cuentas y acceso"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "La edición comunitaria no requiere una cuenta de RunWhale. En la edición comercial, inicia sesión con una opción disponible de Apple o Google para gestionar tu cuenta y suscripciones. Protege el acceso a tu proveedor de inicio de sesión y contáctanos si sospechas un uso no autorizado."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "El desarrollo local y el uso de tus propias claves API de proveedores de modelos no requieren una suscripción de pago a RunWhale. Los proveedores externos pueden cobrar por separado según sus propias condiciones."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Suscripciones y pago"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Cuando haya suscripciones disponibles, abre Yo, inicia sesión y elige una suscripción en la app. Revisa las ventajas, el precio, la moneda, el período de facturación y cualquier prueba u oferta introductoria antes de confirmar la compra en la tienda. La disponibilidad puede depender de la plataforma, región y versión de la app."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Apple App Store o Google Play procesa el pago. Las suscripciones de renovación automática continúan hasta que se cancelan en la tienda, según sus condiciones. La tienda muestra la elegibilidad, duración y precio posterior de cualquier prueba antes de confirmar. No des por hecho que existe una prueba."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "La compra y la restauración deben verificarse antes de activar el acceso. Si la verificación está pendiente, actualiza más tarde o contacta con soporte en lugar de comprar de nuevo. Usa Restaurar compras con la cuenta original de RunWhale y la cuenta de la tienda que realizó la compra."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Cancelación y reembolsos"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Usa Gestionar suscripción en la app o tu cuenta de la tienda para gestionar o cancelar la renovación. Respeta el plazo de cancelación y la fecha de fin de acceso que muestra la tienda. Para las pruebas de Apple, cancela al menos 24 horas antes del final si no deseas renovar."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Desinstalar RunWhale, cerrar sesión o eliminar tu cuenta de RunWhale no cancela una suscripción de la tienda. La cancelación y el reembolso son acciones distintas. Los reembolsos se rigen por las políticas de la tienda y la legislación aplicable; estas condiciones no eliminan tus derechos legales como consumidor."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.apple.com/118428"
+                  },
+                  "children": "Instrucciones de cancelación de Apple"
+                },
+                " · ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.apple.com/118223"
+                  },
+                  "children": "Ayuda de Apple con reembolsos"
+                },
+                " · ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.google.com/googleplay/answer/7018481"
+                  },
+                  "children": "Gestión de suscripciones de Google Play"
+                },
+                " · ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://support.google.com/googleplay/answer/2479637"
+                  },
+                  "children": "Políticas de reembolso de Google Play"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Uso incluido y disponibilidad"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Solo se incluyen las funciones y límites mostrados para la suscripción elegida. Una cuota de uso de IA, si se ofrece, es un límite del servicio, no dinero ni el precio de la suscripción. La pantalla de cuenta muestra la cuota y el consumo actuales; las cuotas mensuales se reinician al comienzo de cada mes natural UTC."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Algunas funciones dependen de la red, el dispositivo y servicios externos. No garantizamos disponibilidad ininterrumpida ni acceso a funciones que no estén incluidas en tu versión de la app y plan elegido."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Tus proyectos y el uso responsable"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Conservas tus derechos sobre el contenido que aportas a RunWhale. Eres responsable de tener permiso para usar archivos, prompts, dependencias y servicios conectados, y de respetar sus licencias y condiciones. Guarda copias de seguridad del trabajo importante."
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "La salida de la IA puede contener errores o código inseguro. Revisa y prueba el trabajo generado antes de usarlo, compartirlo o desplegarlo. No uses RunWhale para actividades ilegales, infracciones, accesos no autorizados, malware o intentos de eludir la seguridad y los límites de uso del servicio."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Eliminación de cuentas y cambios del servicio"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Puedes solicitar la eliminación de tu cuenta desde Yo en la app comercial. Los proyectos locales permanecen en el dispositivo. La eliminación de cuentas y el tratamiento de datos se explican en la ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/es/commercial/privacy"
+                  },
+                  "children": "Política de privacidad de la edición comercial"
+                },
+                "; cancela cualquier suscripción de la tienda por separado antes de eliminar la cuenta."
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Podemos restringir los servicios de cuenta para abordar abusos, riesgos de seguridad u obligaciones legales. Podemos actualizar estas condiciones cuando cambie el servicio e identificaremos la versión más reciente por la fecha de esta página. Cuando sea obligatorio, comunicaremos los cambios sustanciales antes de su entrada en vigor. Estas condiciones no excluyen derechos ni recursos que la legislación aplicable no permita excluir."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Privacidad y contacto"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Para el tratamiento de datos, consulta la ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/es/privacy"
+                  },
+                  "children": "Política de privacidad de la edición comunitaria"
+                },
+                " o la ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/es/commercial/privacy"
+                  },
+                  "children": "Política de privacidad de la edición comercial"
+                },
+                " de tu edición. Para obtener ayuda, visita ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/es/support"
+                  },
+                  "children": "Soporte"
+                },
+                " o escribe a ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                "."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "support": {
+      "eyebrow": "Ayuda",
+      "title": "Soporte de RunWhale",
+      "summary": "Obtén ayuda con la configuración, los proyectos, las sesiones del agente y Preview, o cuéntanos si algo falla.",
+      "updated": "4 de septiembre de 2026",
+      "updatedIso": "2026-09-04",
+      "activeResource": "support",
+      "metadataTitle": "Soporte de RunWhale — Configuración, agente y Preview",
+      "metadataDescription": "Obtén ayuda para configurar RunWhale, gestionar proyectos y sesiones del agente de IA, Git, Web Preview y Native Preview, o informa de errores por correo o GitHub Issues.",
+      "body": [
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Empieza por el recurso adecuado"
+            },
+            {
+              "tag": "div",
+              "attrs": {
+                "className": "support-links"
+              },
+              "children": [
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/es/guide"
+                  },
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Sigue la guía paso a paso"
+                    },
+                    {
+                      "tag": "span",
+                      "attrs": {},
+                      "children": "Configura un modelo, crea o importa un proyecto, trabaja con el agente y abre Preview."
+                    }
+                  ]
+                },
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/es/faq"
+                  },
+                  "children": [
+                    {
+                      "tag": "strong",
+                      "attrs": {},
+                      "children": "Consulta las preguntas frecuentes"
+                    },
+                    {
+                      "tag": "span",
+                      "attrs": {},
+                      "children": "Encuentra respuestas sobre conexión, datos, compatibilidad, Git y errores habituales."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Contacta con soporte"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Escribe a ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                " para solicitudes privadas de soporte. Para errores reproducibles y propuestas que no contengan información sensible, utiliza ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://github.com/zhiqingchen/RunWhale/issues",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "GitHub Issues"
+                },
+                "."
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": "Incluye tu versión de RunWhale, modelo del dispositivo, versión del sistema operativo, acción intentada, mensaje de error exacto, los pasos mínimos para reproducirlo y los diagnósticos no sensibles que muestre la app. Nunca incluyas claves API, claves privadas, credenciales, datos privados de proyectos, datos personales ni registros o capturas sin revisar y ocultar la información sensible."
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Informes de privacidad y seguridad"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Lee la ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/es/privacy"
+                  },
+                  "children": "Política de privacidad de la edición comunitaria"
+                },
+                " o la ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "/es/commercial/privacy"
+                  },
+                  "children": "Política de privacidad de la edición comercial"
+                },
+                " para conocer el tratamiento de datos locales, servicios conectados, alojamiento web, eliminación y solicitudes de privacidad de tu edición."
+              ]
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "Si crees haber encontrado una vulnerabilidad de seguridad o necesitas compartir información sensible en una solicitud de privacidad, escribe a ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "mailto:runwhale@runwhale.dev"
+                  },
+                  "children": "runwhale@runwhale.dev"
+                },
+                " en lugar de abrir un Issue público."
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "section",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "h2",
+              "attrs": {},
+              "children": "Proyecto de código abierto"
+            },
+            {
+              "tag": "p",
+              "attrs": {},
+              "children": [
+                "El código fuente y la información pública de RunWhale están disponibles en ",
+                {
+                  "tag": "a",
+                  "attrs": {
+                    "href": "https://github.com/zhiqingchen/RunWhale",
+                    "target": "_blank",
+                    "rel": "noreferrer"
+                  },
+                  "children": "GitHub"
+                },
+                ". Las respuestas a los Issues públicos son visibles para todos, así que usa el correo si tu solicitud incluye información que deba permanecer privada."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

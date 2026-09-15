@@ -1,3 +1,5 @@
+import { localizedPath } from "./i18n";
+import { LanguageSwitcher } from "./language-switcher";
 import { siteUrl, sitePath } from "@/app/site-config";
 import Image from "next/image";
 import { Card, Chip, Link } from "@heroui/react";
@@ -38,8 +40,8 @@ export function HomePage({ locale }: { locale: WebsiteLocale }) {
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "@id": locale === "en" ? `${siteUrl}/#website` : `${siteUrl}/zh-CN#website`,
-    url: locale === "en" ? `${siteUrl}/` : `${siteUrl}/zh-CN`,
+    "@id": `${siteUrl}${localizedPath(locale)}#website`,
+    url: `${siteUrl}${localizedPath(locale)}`,
     name: copy.brand,
     alternateName: locale === "en" ? "runwhale.dev" : "RunWhale",
     inLanguage: copy.htmlLang,
@@ -72,14 +74,7 @@ export function HomePage({ locale }: { locale: WebsiteLocale }) {
           <Link className="mobile-help-link" href={sitePath(copy.guideHref)}>
             {copy.nav.help}
           </Link>
-          <Link
-            className="language-link"
-            href={sitePath(copy.languageHref)}
-            hrefLang={locale === "en" ? "zh-CN" : "en-US"}
-            aria-label={copy.languageAria}
-          >
-            {copy.languageLabel}
-          </Link>
+          <LanguageSwitcher locale={locale} page="" />
           <Link className="nav-cta" href={appStoreUrl} target="_blank" rel="noreferrer">
             <Download size={17} /> {copy.downloadOnAppStore}
           </Link>
@@ -291,7 +286,7 @@ export function HomePage({ locale }: { locale: WebsiteLocale }) {
           <Chip color="success" variant="soft">{copy.security.chip}</Chip>
           <h2>{copy.security.title}</h2>
           <p>{copy.security.body}</p>
-          <p>{copy.security.credentialBody} <Link className="security-link" href={sitePath(copy.security.privacyHref)}>{copy.security.contextLink}</Link>{locale === "zh-CN" ? "。" : "."}</p>
+          <p>{copy.security.credentialBody} <Link className="security-link" href={sitePath(copy.security.privacyHref)}>{copy.security.contextLink}</Link>{locale === "zh-CN" || locale === "ja" ? "。" : "."}</p>
         </div>
         <ul>
           {copy.security.checks.map((check) => (
@@ -330,7 +325,7 @@ export function HomePage({ locale }: { locale: WebsiteLocale }) {
           <Link href={sitePath(copy.footer.privacyHref)}>{copy.footer.privacy}</Link>
           <Link href={sitePath(copy.footer.termsHref)}>{copy.footer.terms}</Link>
           <Link href={sitePath(copy.footer.supportHref)}>{copy.footer.support}</Link>
-          <Link href={sitePath(copy.languageHref)} hrefLang={locale === "en" ? "zh-CN" : "en-US"}>{copy.languageLabel}</Link>
+          <LanguageSwitcher locale={locale} page="" />
           <Link href={githubUrl} target="_blank" rel="noreferrer"><GitHubIcon size={15} /> GitHub <ArrowRight size={14} /></Link>
         </nav>
       </footer>
