@@ -32,7 +32,7 @@ export const homeCopy = {
     watchWorkflow: "Watch a real workflow",
     localNote:
       "Workspace files and tools run on your device; model inference uses your configured provider",
-    whaleAlt: "RunWhale whale mark",
+    whaleAlt: "RunWhale blue-haired coding mascot",
     trustAria: "On-device capabilities",
     trustLabel: "ON YOUR PHONE",
     capabilities: ["Projects", "Agent sessions", "Git", "Node.js", "Metro", "Preview"],
@@ -205,7 +205,7 @@ export const homeCopy = {
     appStorePrice: "免费开源社区版",
     watchWorkflow: "观看真实工作流程",
     localNote: "工作区文件和工具在设备本地运行；模型推理由你配置的服务商提供",
-    whaleAlt: "哪里跑鲸鱼标志",
+    whaleAlt: "RunWhale 蓝发编程角色标志",
     trustAria: "设备端能力",
     trustLabel: "就在你的手机上",
     capabilities: ["项目", "智能体会话", "Git", "Node.js", "Metro", "预览"],

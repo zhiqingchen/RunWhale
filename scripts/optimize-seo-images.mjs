@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, readdir, copyFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -33,6 +33,10 @@ const screenshotNames = [
   "06-interaction-feedback.png",
 ].sort();
 const screenshotSizes = [360, 720];
+const framedNames = (await readdir(screenshotDirectory)).filter((name) =>
+  name.endsWith("-framed.png"),
+).sort();
+const framedSizes = [360, 720, 960];
 
 const posterSource = path.join(
   screenshotDirectory,
@@ -93,19 +97,30 @@ async function generatePoster(size) {
 }
 
 async function generateOgImage() {
-  await loadImage(ogSource)
-    .resize({
-      width: 1200,
-      height: 630,
-      fit: "cover",
-      position: "centre",
-      withoutEnlargement: true,
-    })
+  const background = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+    <defs>
+      <linearGradient id="paper" x2="1" y2="1"><stop stop-color="#f8faff"/><stop offset="1" stop-color="#e3edff"/></linearGradient>
+      <radialGradient id="glow"><stop stop-color="#93c5ff" stop-opacity=".5"/><stop offset="1" stop-color="#93c5ff" stop-opacity="0"/></radialGradient>
+    </defs>
+    <rect width="1200" height="630" fill="url(#paper)"/>
+    <circle cx="990" cy="340" r="360" fill="url(#glow)"/>
+    <g font-family="Arial, sans-serif">
+      <text x="64" y="275" font-size="82" font-weight="700" letter-spacing="-3" fill="#09152d">RunWhale</text>
+      <text x="68" y="342" font-size="35" fill="#2855ee">Dive deep. Get it done.</text>
+      <text x="68" y="553" font-size="24" fill="#526480">runwhale.dev</text>
+    </g>
+  </svg>`);
+  const mascot = await loadImage(iconSource).resize(560, 560).toBuffer();
+  await sharp(background)
+    .composite([{ input: mascot, left: 625, top: 46 }])
     .png({ compressionLevel: 9, adaptiveFiltering: true })
-    .toFile(outputPath("runwhale-og-1200x630.png"));
+    .toFile(ogSource);
+  await copyFile(ogSource, outputPath("runwhale-og-1200x630.png"));
 }
 
 await mkdir(outputDirectory, { recursive: true });
+await loadImage(iconSource).resize(512, 512).png()
+  .toFile(path.join(projectDirectory, "src", "app", "icon.png"));
 
 for (const size of iconSizes) {
   await generateIcon(size);
@@ -113,6 +128,12 @@ for (const size of iconSizes) {
 
 for (const name of screenshotNames) {
   for (const size of screenshotSizes) {
+    await generateScreenshot(name, size);
+  }
+}
+
+for (const name of framedNames) {
+  for (const size of framedSizes) {
     await generateScreenshot(name, size);
   }
 }
@@ -126,6 +147,7 @@ await generateOgImage();
 const generatedCount =
   iconSizes.length * 2 +
   screenshotNames.length * screenshotSizes.length * 2 +
+  framedNames.length * framedSizes.length * 2 +
   posterSizes.length +
   1;
 

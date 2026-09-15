@@ -50,6 +50,6 @@ Keep English and Simplified Chinese content aligned in `src/app/`. Public suppor
 
 The demo recordings and screenshots in `public/media/` show Animal Parade and Snake Sprint. The Animal Parade prompt is “Make a game for baby”; the Snake prompt is labeled as a suggested starting prompt. Other example prompts are ideas to try, not recorded outcomes.
 
-Run `pnpm optimize:seo-images` to regenerate the Animal Parade image variants and shared brand assets. Existing Snake Sprint assets are retained. Changelog dates describe website updates, not mobile-app releases. Check the App Store listing before changing app pricing or availability claims.
+Use `public/runwhale-icon.png` as the brand source. Run `pnpm optimize:seo-images` to regenerate the browser icon, social card, brand variants, and screenshot variants for Animal Parade and Snake Sprint. Changelog dates describe website updates, not mobile-app releases. Check the App Store listing before changing app pricing or availability claims.
 
 Only approved public material belongs in `public/`: every file there is included in the export, even if no page links to it. Keep private diagnostics, development captures, local paths, credentials, and build output out of the repository.
