@@ -11,6 +11,7 @@ patchedDependencies:
   '@deepseek-ai/dsh-code-runtime-worker-thread@0.1.5-rc.2': 4b5a13e491f20a8dec767f0e7b5c394a97d8e457df0e7ea208b4bb82ef8ea441
   '@deepseek-ai/dsh-llm-pi-ai@0.1.5-rc.2': afc131fa1e792018f45c30a994177dff4919457ae5ee09ae12ad4c107ee2404a
   '@expo/dom-webview@57.0.1': 8ea81885e1f1e3e67315f283a0f84be8b608c1945a7d3e73d4a7125eee323673
+  '@expo/image-utils@0.11.5': f4b15b6422a9d49b82f91c59eeafd434315e3867aab7850692afd91a27145406
   expo-file-system@57.0.6: 3c41712fd8a15a59dd53f868fba0864a49b4b9e79e0b0ea8e0a2a4f1341c4c26
   expo-modules-core@57.0.15: 08c6065aafe2ac6edb5ec10758056af3e20e00c3d443d48f6bd3798e36ae4446
   heroui-native@1.0.9: d169cb984492645e3be2fd6d0af27df055e4d3e0649919e4a4820a5c5800f194
@@ -6994,7 +6995,7 @@ snapshots:
       '@expo/config-plugins': 57.0.9(supports-color@8.1.1)(typescript@6.0.3)
       '@expo/devcert': 1.2.1(supports-color@8.1.1)
       '@expo/env': 2.4.3(supports-color@8.1.1)
-      '@expo/image-utils': 0.11.5(supports-color@8.1.1)(typescript@6.0.3)
+      '@expo/image-utils': 0.11.5(patch_hash=f4b15b6422a9d49b82f91c59eeafd434315e3867aab7850692afd91a27145406)(supports-color@8.1.1)(typescript@6.0.3)
       '@expo/inline-modules': 0.1.7(supports-color@8.1.1)(typescript@6.0.3)
       '@expo/json-file': 11.0.1
       '@expo/log-box': 57.0.4(@expo/dom-webview@57.0.1)(expo@57.0.19)(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
@@ -7152,7 +7153,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@expo/image-utils@0.11.5(supports-color@8.1.1)(typescript@6.0.3)':
+  '@expo/image-utils@0.11.5(patch_hash=f4b15b6422a9d49b82f91c59eeafd434315e3867aab7850692afd91a27145406)(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       '@expo/require-utils': 57.0.5(supports-color@8.1.1)(typescript@6.0.3)
       '@expo/spawn-async': 1.8.0
@@ -7296,7 +7297,7 @@ snapshots:
       '@expo/config': 57.0.9(supports-color@8.1.1)(typescript@6.0.3)
       '@expo/config-plugins': 57.0.9(supports-color@8.1.1)(typescript@6.0.3)
       '@expo/config-types': 57.0.2
-      '@expo/image-utils': 0.11.5(supports-color@8.1.1)(typescript@6.0.3)
+      '@expo/image-utils': 0.11.5(patch_hash=f4b15b6422a9d49b82f91c59eeafd434315e3867aab7850692afd91a27145406)(supports-color@8.1.1)(typescript@6.0.3)
       '@expo/json-file': 11.0.1
       '@react-native/normalize-colors': 0.86.3
       debug: 4.4.3(supports-color@8.1.1)
@@ -8727,7 +8728,7 @@ snapshots:
 
   expo-asset@57.0.16(expo@57.0.19)(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3):
     dependencies:
-      '@expo/image-utils': 0.11.5(supports-color@8.1.1)(typescript@6.0.3)
+      '@expo/image-utils': 0.11.5(patch_hash=f4b15b6422a9d49b82f91c59eeafd434315e3867aab7850692afd91a27145406)(supports-color@8.1.1)(typescript@6.0.3)
       expo: 57.0.19(2b41da233386ad1d2b715aba6998b7ec)
       expo-constants: 57.0.17(expo@57.0.19)(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(supports-color@8.1.1)
       react: 19.2.3
@@ -8878,7 +8879,7 @@ snapshots:
 
   expo-location@57.0.15(expo@57.0.19)(supports-color@8.1.1)(typescript@6.0.3):
     dependencies:
-      '@expo/image-utils': 0.11.5(supports-color@8.1.1)(typescript@6.0.3)
+      '@expo/image-utils': 0.11.5(patch_hash=f4b15b6422a9d49b82f91c59eeafd434315e3867aab7850692afd91a27145406)(supports-color@8.1.1)(typescript@6.0.3)
       expo: 57.0.19(2b41da233386ad1d2b715aba6998b7ec)
     transitivePeerDependencies:
       - supports-color
@@ -9013,7 +9014,7 @@ snapshots:
   expo-splash-screen@57.0.8(expo@57.0.19)(supports-color@8.1.1)(typescript@6.0.3):
     dependencies:
       '@expo/config-plugins': 57.0.9(supports-color@8.1.1)(typescript@6.0.3)
-      '@expo/image-utils': 0.11.5(supports-color@8.1.1)(typescript@6.0.3)
+      '@expo/image-utils': 0.11.5(patch_hash=f4b15b6422a9d49b82f91c59eeafd434315e3867aab7850692afd91a27145406)(supports-color@8.1.1)(typescript@6.0.3)
       expo: 57.0.19(2b41da233386ad1d2b715aba6998b7ec)
       xml2js: 0.6.0
     transitivePeerDependencies:

@@ -94,7 +94,7 @@ export function OnboardingScene({ page, active, expanded = false }: { page: numb
       <Animated.View style={[styles.liveBadge, appeared]}><View style={styles.liveDot} /><Text style={styles.badgeText}>{t('preview')}</Text><AppIcon icon={Play} color={colors.accent} size={13} /></Animated.View>
     </> : <View style={[styles.composition, expanded && styles.compositionExpanded]}>
       <View style={styles.chat}>
-        <View style={styles.chatHeader}><Image source={require('../../assets/images/runwhale-adaptive-foreground.png')} style={styles.avatar} /><Text style={styles.chatBrand}>RunWhale</Text><View style={styles.chatDots}><View style={styles.dot} /><View style={styles.dot} /><View style={styles.dot} /></View></View>
+        <View style={styles.chatHeader}><Image source={require('../../assets/images/runwhale-icon.png')} style={styles.avatar} /><Text style={styles.chatBrand}>RunWhale</Text><View style={styles.chatDots}><View style={styles.dot} /><View style={styles.dot} /><View style={styles.dot} /></View></View>
         <View style={styles.conversation}>
           <View style={styles.promptBubble}><Text style={styles.promptText}>{typedPrompt}{typedPrompt.length < prompt.length ? <Text style={styles.cursor}>▍</Text> : null}</Text></View>
           <View style={styles.reply}><View style={styles.replyMark}><AppIcon icon={Code2} color={colors.accent} size={16} /></View><Text style={styles.replyText}>{typedResponse || '···'}</Text></View>

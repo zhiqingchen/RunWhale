@@ -127,7 +127,7 @@ export default function HomeScreen() {
             <Text style={styles.welcome}>{t('welcomeBack')}</Text>
             <Text style={styles.heroTitle}>{t('heroTitle')}</Text>
           </View>
-          <Image source={require('../../assets/images/runwhale-adaptive-foreground.png')} style={styles.whale} resizeMode="contain" />
+          <Image source={require('../../assets/images/runwhale-icon.png')} style={styles.whale} resizeMode="contain" />
         </View>
 
         <NewProjectButton />

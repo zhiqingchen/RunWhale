@@ -24,6 +24,7 @@ patchedDependencies:
   expo-modules-core@57.0.15: patches/expo-modules-core@57.0.15.patch
   heroui-native@1.0.9: patches/heroui-native@1.0.9.patch
   '@deepseek-ai/dsh-llm-pi-ai@0.1.5-rc.2': patches/@deepseek-ai__dsh-llm-pi-ai@0.1.5-rc.2.patch
+  '@expo/image-utils@0.11.5': patches/@expo__image-utils@0.11.5.patch
 
 minimumReleaseAgeExclude:
   - '@runwhale/node-mobile-runtime@24.19.0-runwhale.1'

@@ -42,7 +42,7 @@
       "targetSdkVersion": 36,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/runwhale-adaptive-foreground-safe.png",
+        "foregroundImage": "./assets/images/runwhale-icon.png",
         "backgroundColor": "#F5F8FF"
       },
       "intentFilters": [
@@ -139,12 +139,15 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/runwhale-splash-mark.png",
+          "image": "./assets/images/runwhale-icon.png",
           "imageWidth": 220,
+          "android": {
+            "imageWidth": 160
+          },
           "resizeMode": "contain",
           "backgroundColor": "#F7F9FF",
           "dark": {
-            "image": "./assets/images/runwhale-splash-mark.png",
+            "image": "./assets/images/runwhale-icon.png",
             "backgroundColor": "#07182A"
           }
         }

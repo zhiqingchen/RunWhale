@@ -140,7 +140,7 @@ export function OnboardingScreen() {
   const continueDisabled = busy || (isKeyPage && (credential.busy || !credential.configured || credential.hasDraft))
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']} testID="onboarding-screen">
     <View style={styles.header}>
-      <View style={styles.brand}><Image source={require('../../assets/images/runwhale-adaptive-foreground.png')} style={styles.logo} /><Text style={styles.brandText}>RunWhale</Text></View>
+      <View style={styles.brand}><Image source={require('../../assets/images/runwhale-icon.png')} style={styles.logo} /><Text style={styles.brandText}>RunWhale</Text></View>
       <Button size="sm" variant="ghost" isDisabled={busy} onPress={() => { void finish('skip') }} style={styles.skip} testID="onboarding-skip"><Button.Label style={styles.skipText}>{t('onboardingSkip')}</Button.Label></Button>
     </View>
     <KeyboardAvoidingView style={styles.body} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

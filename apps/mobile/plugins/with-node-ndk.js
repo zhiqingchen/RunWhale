@@ -7,9 +7,9 @@ const ASYNC_STORAGE_DB_SIZE_MB = '64'
 
 function disableExpoAndroidSplashLock(contents) {
   return contents
-    .replace('import expo.modules.splashscreen.SplashScreenManager\n\n', '')
+    .replace(/^import expo\.modules\.splashscreen\.SplashScreenManager\r?\n/m, '')
     .replace('    SplashScreenManager.registerOnActivity(this)\n', '    // RunWhale keeps its native overlay visible until the initial React root renders.\n')
-    .replace('    // setTheme(R.style.AppTheme);\n', '    setTheme(R.style.AppTheme)\n')
+    .replace(/^(\s*)\/\/ setTheme\(R\.style\.AppTheme\);?$/m, '$1setTheme(R.style.AppTheme)')
 }
 
 module.exports = function withNodeNdk(config) {
@@ -56,6 +56,7 @@ module.exports = function withNodeNdk(config) {
   config = withMainActivity(config, (project) => {
     if (project.modResults.language !== 'kt') throw new Error('RunWhale requires a Kotlin MainActivity')
     let contents = disableExpoAndroidSplashLock(project.modResults.contents)
+      .replace('val imageWidth = (220 * resources.displayMetrics.density).toInt()', 'val imageWidth = (288 * resources.displayMetrics.density).toInt()')
     if (!contents.includes('import android.view.Gravity')) {
       contents = contents.replace('import android.os.Bundle', `import android.os.Bundle
 import android.view.Gravity
@@ -81,7 +82,8 @@ import com.facebook.react.devsupport.DefaultDevLoadingViewImplementation`)
       setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.splashscreen_background))
       importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
     }
-    val imageWidth = (220 * resources.displayMetrics.density).toInt()
+    // Match Expo's drawable canvas so the system splash and overlay use the same scale.
+    val imageWidth = (288 * resources.displayMetrics.density).toInt()
     val mark = ImageView(this).apply {
       setImageResource(R.drawable.splashscreen_logo)
       scaleType = ImageView.ScaleType.FIT_CENTER

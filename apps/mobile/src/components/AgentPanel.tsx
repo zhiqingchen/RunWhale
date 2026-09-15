@@ -176,7 +176,7 @@ export function AgentPanel(props: AgentPanelProps) {
         accessibilityLabel={`RunWhale. ${t('heroTitle')}`}
         style={[styles.emptyState, { marginTop: Math.min(104, Math.max(48, windowHeight * 0.1)) }]}
       >
-        <Image source={require('../../assets/images/runwhale-adaptive-foreground.png')} resizeMode="contain" style={styles.emptyLogo} />
+        <Image source={require('../../assets/images/runwhale-icon.png')} resizeMode="contain" style={styles.emptyLogo} />
         <Text style={styles.emptyTagline}>{t('heroTitle')}</Text>
       </View>}
     </>}

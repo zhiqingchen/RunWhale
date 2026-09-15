@@ -1,0 +1,17 @@
+diff --git a/build/jimp.js b/build/jimp.js
+index aba7da71d429f6a5cf0c6a16fba85b38e1f1596e..25cfb7dc349bf0d4ecfe7cbba71539cdede03289 100644
+--- a/build/jimp.js
++++ b/build/jimp.js
+@@ -165,7 +165,11 @@ async function resize({ input, quality = 100 }, { background, position, fit, wid
+         initialImage = initialImage.cover(width, height, jimpPosition);
+     }
+     else if (fit === 'contain') {
+-        initialImage = initialImage.contain(width, height, jimpPosition);
++        // Jimp contain premultiplies RGB into a transparent canvas. Avoid that
++        // padding path when the aspect ratios already match (e.g. app icons).
++        initialImage = initialImage.bitmap.width * height === initialImage.bitmap.height * width
++            ? initialImage.resize(width, height)
++            : initialImage.contain(width, height, jimpPosition);
+     }
+     else {
+         throw new Error(`Unsupported fit: ${fit}. Supported values are 'cover' or 'contain' when using Jimp`);
