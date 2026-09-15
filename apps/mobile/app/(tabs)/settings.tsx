@@ -18,7 +18,7 @@ import { loadSshSettingsStorage, SSH_PRIVATE_CREDENTIAL_STORAGE_KEY, SSH_PUBLIC_
 import { settingsAccessibilityContract } from '@/utils/settings-accessibility'
 import { settingsDetailRoutes } from '@/utils/settings-routes'
 import { runtimeSettingsSummaryState } from '@/utils/settings-runtime'
-import { settingsUseStackedRows } from '@/utils/settings-layout'
+import { settingsLayout, settingsUseStackedRows } from '@/utils/settings-layout'
 import { deviceLayout } from '@/utils/device-layout'
 import { tabScreenBackground } from '@/theme/tab-screen-background'
 
@@ -138,7 +138,7 @@ function createStyles(colors: ThemeColors) {
   pageTitle: { color: colors.text, ...topLevelPageTitleStyle },
   section: { color: controlColors.choiceForeground, fontSize: typeScale.micro, letterSpacing: 1, fontWeight: '900', marginTop: 9, marginBottom: 2 },
   settingsGroup: { overflow: 'hidden', borderRadius: 18, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.panel },
-  settingsLink: { height: 'auto', minHeight: 64, width: '100%', paddingLeft: 8, paddingRight: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 10 },
+  settingsLink: { height: 'auto', minHeight: 64, width: '100%', paddingLeft: settingsLayout.cardPadding, paddingRight: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 10 },
   settingsDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   settingsIcon: { width: 34, height: 34, flexShrink: 0, borderRadius: 10, backgroundColor: colors.accentDeep, alignItems: 'center', justifyContent: 'center' },
   settingsCopy: { flex: 1, minWidth: 0, gap: 2 },
