@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { StoredPreferences } from '@/state/preference-context'
 import type { ModelAccess, ModelAccessContext, PreferenceUpdate, StudioOperation, StudioOperationOutcome, StudioOperationTarget } from '@/extension-types'
 
+export const onboardingEnabled = false
 export function renderSlot(_name: string, _props?: object): ReactNode { return null }
 export function beginStudioOperation(_operation: StudioOperation, _target: StudioOperationTarget): (outcome: StudioOperationOutcome) => void { return () => {} }
 export function studioPreviewOpened(_platform: 'ios' | 'android' | 'web'): void {}

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { onboardingEnabled } from '#extensions'
 import { router, usePathname } from 'expo-router'
 import { useEffect } from 'react'
 import { useI18n } from '@/i18n'
@@ -15,7 +16,7 @@ export function FirstRunGuide() {
   const hasProjects = projects.length > 0
 
   useEffect(() => {
-    if (pathname !== '/' || !languageReady || !preferencesReady || loadStatus !== 'ready') return
+    if (!onboardingEnabled || pathname !== '/' || !languageReady || !preferencesReady || loadStatus !== 'ready') return
     let active = true
     void AsyncStorage.getItem(ONBOARDING_STORAGE_KEY).then(async (completed) => {
       if (!active || completed) return

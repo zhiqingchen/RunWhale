@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
 }))
 
 vi.mock('@react-native-async-storage/async-storage', () => ({ default: { getItem: state.read, setItem: state.persist } }))
+vi.mock('#extensions', () => ({ onboardingEnabled: true }))
 vi.mock('expo-router', () => ({ router: { replace: state.replace }, usePathname: () => state.pathname }))
 vi.mock('@/i18n', () => ({ useI18n: () => ({ languageReady: state.languageReady }) }))
 vi.mock('@/state/preferences', () => ({ usePreferences: () => ({ preferencesReady: state.preferencesReady }) }))
