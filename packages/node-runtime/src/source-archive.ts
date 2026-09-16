@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { constants } from 'node:fs'
-import { lstat, mkdir, open, readdir, realpath, rename, rm, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, open, readdir, realpath, rename, rm, symlink, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, sep } from 'node:path'
 import { inflateRawSync } from 'node:zlib'
 import { zipSync } from 'fflate'
@@ -110,7 +110,7 @@ export async function encodeSource(root: string, input: SourceAttribution, signa
   }
   await visit(projectRoot)
   signal?.throwIfAborted()
-  const data = Buffer.from(zipSync(files, { level: 6 }))
+  const data = Buffer.from(zipSync(files, { level: 6, mtime: new Date('1980-01-01T00:00:00Z') }))
   if (data.length > LIMITS.archiveBytes) throw new Error('Source archive exceeds 32 MiB')
   return data
 }
@@ -214,7 +214,7 @@ export function decodeSource(data: Buffer): { files: Map<string, Buffer>; metada
   return { files, metadata }
 }
 
-type Transfer = { data: Buffer; offset: number; touched: number; input?: SourceImportInput }
+type Transfer = { data: Buffer; offset: number; touched: number; input?: SourceImportInput; root?: string }
 
 export class SourceArchives {
   private transfers = new Map<string, Transfer>()
@@ -232,7 +232,7 @@ export class SourceArchives {
     try {
       const data = await encodeSource(root, input, signal)
       const id = randomUUID()
-      this.transfers.set(id, { data, offset: data.length, touched: Date.now() })
+      this.transfers.set(id, { data, offset: data.length, touched: Date.now(), root: await realpath(root) })
       return { id, bytes: data.length, sha256: hash(data) }
     } finally { this.pending-- }
   }
@@ -242,6 +242,25 @@ export class SourceArchives {
     if (!transfer || transfer.input || !Number.isSafeInteger(offset) || offset < 0 || offset > transfer.data.length) throw new Error('Invalid source transfer')
     transfer.touched = Date.now()
     return { chunk: transfer.data.subarray(offset, offset + LIMITS.chunkBytes).toString('base64'), done: offset + LIMITS.chunkBytes >= transfer.data.length }
+  }
+
+  async withSnapshot<T>(id: string, root: string, run: (snapshot: string) => Promise<T>, signal?: AbortSignal): Promise<T> {
+    const transfer = this.transfers.get(id)
+    if (!transfer || transfer.input || transfer.root !== await realpath(root)) throw new Error('Source snapshot does not belong to this project')
+    transfer.touched = Date.now()
+    const snapshot = join(this.stagingRoot, 'export-' + randomUUID())
+    try {
+      for (const [path, bytes] of decodeSource(transfer.data).files) {
+        signal?.throwIfAborted()
+        const target = join(snapshot, path)
+        await mkdir(dirname(target), { recursive: true })
+        await writeFile(target, bytes)
+      }
+      const dependencies = join(root, 'node_modules')
+      if (await lstat(dependencies).catch(() => undefined)) await symlink(dependencies, join(snapshot, 'node_modules'), 'dir')
+      signal?.throwIfAborted()
+      return await run(snapshot)
+    } finally { await rm(snapshot, { recursive: true, force: true }) }
   }
 
   begin(input: SourceImportInput) {

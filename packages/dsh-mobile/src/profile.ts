@@ -1,4 +1,4 @@
-import { providerAdapter } from '#extensions'
+import { providerAdapter, registerHarnessExtensions } from '#extensions'
 import { MOBILE_PROVIDERS, parseMobileModelEndpoint } from '@runwhale/mobile-protocol'
 import { Context } from '@deepseek-ai/cordis'
 import type { ImageMediaType } from '@deepseek-ai/dsh-attachment'
@@ -580,6 +580,7 @@ export async function createMobileHarness(options: MobileHarnessOptions): Promis
     } } : {}),
     ...(options.requestPackageInstall ? { requestPackageInstall: options.requestPackageInstall } : {}),
   })
+  registerHarnessExtensions(ctx, (sessionId) => workspaces.get(sessionId), options.workspaceServices ?? {})
   if (options.mode !== 'deterministic' && supportsModelWebSearch(currentProvider, agentModel, options.modelProfile)) {
     await ctx.plugin(WebRuntime, { searchProvider: currentProvider })
     ctx.web.registerSearchProvider(mobileWebSearchProvider({

@@ -306,7 +306,8 @@ export interface MobileHostRequestMap extends AdditionalHostRequests {
   'package.install': { params: { planId: string }; result: { installId: string } }
   'package.reject': { params: { planId: string }; result: { rejected: boolean } }
   'package.cancel': { params: { installId: string }; result: { cancelled: boolean } }
-  'release.export': { params: { projectId: string; platform: PreviewPlatform }; result: ReleaseTransfer }
+  'release.export': { params: { projectId: string; platform: PreviewPlatform; sourceId?: string }; result: ReleaseTransfer }
+  'project.identity': { params: { projectId: string }; result: { id: string } }
   'release.read': { params: { id: string; offset: number }; result: { chunk: string; done: boolean } }
   'release.discard': { params: { id: string }; result: { discarded: true } }
   'source.export': { params: { projectId: string; attribution: SourceAttribution }; result: ReleaseTransfer }
