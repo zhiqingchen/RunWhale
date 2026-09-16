@@ -29,6 +29,7 @@ export interface MobilePackageInstallOutcome {
 }
 
 export interface MobileWorkspaceServices {
+  projectIdFor?: (projectRoot: string, sessionId: string) => string
   generateImage?: (request: ModelImageRequest) => Promise<Uint8Array>
   moduleStore?: string
   ensureModuleStore?: () => Promise<void>

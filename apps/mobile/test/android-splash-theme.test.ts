@@ -34,5 +34,9 @@ class MainActivity : ReactActivity() {
     const generated = result.modResults.contents
     expect(generated).toMatch(/^    setTheme\(R\.style\.AppTheme\)$/m)
     expect(generated.indexOf('    setTheme(')).toBeLessThan(generated.indexOf('    super.onCreate('))
+    expect(generated).toContain('text = "RunWhale"')
+    expect(generated).toContain('onViewDetachedFromWindow(view: View) { motion.cancel() }')
+    const repeated = await config.mods.android.mainActivity({ ...project, modResults: { language: 'kt', contents: generated } })
+    expect(repeated.modResults.contents).toBe(generated)
   })
 })

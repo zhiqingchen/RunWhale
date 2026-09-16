@@ -68,13 +68,24 @@ import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import com.facebook.react.devsupport.DefaultDevLoadingViewImplementation`)
     }
+    if (!contents.includes('import android.animation.ObjectAnimator')) {
+      contents = contents.replace('import android.os.Bundle', `import android.os.Bundle
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
+import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.Typeface
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.TextView`)
+    }
     if (!contents.includes('private var whaleSplashOverlay')) {
       contents = contents.replace('class MainActivity : ReactActivity() {', 'class MainActivity : ReactActivity() {\n  private var whaleSplashOverlay: View? = null')
     }
     if (!contents.includes('installWhaleSplashOverlay()')) {
       contents = contents.replace('    super.onCreate(null)\n', '    DefaultDevLoadingViewImplementation.setDevLoadingEnabled(false)\n    super.onCreate(null)\n    installWhaleSplashOverlay()\n')
     }
-    if (!contents.includes('private fun installWhaleSplashOverlay')) {
+    {
       const marker = '  /**\n   * Returns the name of the main component registered from JavaScript.'
       const implementation = `  private fun installWhaleSplashOverlay() {
     val content = findViewById<ViewGroup>(android.R.id.content)
@@ -89,6 +100,37 @@ import com.facebook.react.devsupport.DefaultDevLoadingViewImplementation`)
       scaleType = ImageView.ScaleType.FIT_CENTER
     }
     overlay.addView(mark, FrameLayout.LayoutParams(imageWidth, imageWidth, Gravity.CENTER))
+    val density = resources.displayMetrics.density
+    val dark = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+    val name = TextView(this).apply {
+      text = "RunWhale"
+      textSize = 28f
+      typeface = Typeface.create("sans-serif", Typeface.BOLD)
+      gravity = Gravity.CENTER
+      includeFontPadding = false
+      setTextColor(Color.parseColor(if (dark) "#F4F7FF" else "#101A3A"))
+      // The 288dp drawable canvas contains the configured 160dp logo.
+      translationY = (80 + 12 + 18) * density
+    }
+    overlay.addView(name, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (36 * density).toInt(), Gravity.CENTER))
+    val motion = AnimatorSet().apply {
+      playTogether(
+        ObjectAnimator.ofFloat(mark, View.TRANSLATION_Y, 0f, -6 * density).apply {
+          repeatCount = ValueAnimator.INFINITE
+          repeatMode = ValueAnimator.REVERSE
+        },
+        ObjectAnimator.ofFloat(name, View.ALPHA, 1f, 0.65f).apply {
+          repeatCount = ValueAnimator.INFINITE
+          repeatMode = ValueAnimator.REVERSE
+        },
+      )
+      duration = 1400
+      interpolator = AccelerateDecelerateInterpolator()
+    }
+    overlay.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+      override fun onViewAttachedToWindow(view: View) { motion.start() }
+      override fun onViewDetachedFromWindow(view: View) { motion.cancel() }
+    })
     content.addView(overlay, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
     whaleSplashOverlay = overlay
 
@@ -117,7 +159,14 @@ import com.facebook.react.devsupport.DefaultDevLoadingViewImplementation`)
 
 `
       if (!contents.includes(marker)) throw new Error('Android MainActivity component marker is unavailable')
-      contents = contents.replace(marker, implementation + marker)
+      const existingStart = contents.indexOf('  private fun installWhaleSplashOverlay() {')
+      if (existingStart >= 0) {
+        const existingEnd = contents.indexOf(marker, existingStart)
+        if (existingEnd < 0) throw new Error('Android splash overlay boundary is unavailable')
+        contents = contents.slice(0, existingStart) + implementation + contents.slice(existingEnd)
+      } else {
+        contents = contents.replace(marker, implementation + marker)
+      }
     }
     project.modResults.contents = contents
     return project
