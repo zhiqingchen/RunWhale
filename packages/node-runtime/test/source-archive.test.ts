@@ -20,6 +20,25 @@ const temporaryRoot = async () => {
 }
 afterEach(async () => { await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))) })
 
+it('bundles the exact exported snapshot even after the editable project changes and excludes publication identity', async () => {
+  const root = await temporaryRoot()
+  const project = join(root, 'project')
+  await mkdir(join(project, '.runwhale'), { recursive: true })
+  await writeFile(join(project, 'index.ts'), 'export const value = 1')
+  await writeFile(join(project, '.runwhale/project-identity'), 'private-installation-id')
+  const sources = new SourceArchives(join(root, 'projects'), join(root, 'staging'))
+  const transfer = await sources.export(project, attribution)
+  const repeated = await sources.export(project, attribution)
+  expect(transfer.sha256).toBe(repeated.sha256)
+  await writeFile(join(project, 'index.ts'), 'export const value = 2')
+  await sources.withSnapshot(transfer.id, project, async snapshot => {
+    expect(await readFile(join(snapshot, 'index.ts'), 'utf8')).toBe('export const value = 1')
+    expect(await readdir(snapshot)).not.toContain('.runwhale')
+  })
+  expect(await readdir(join(root, 'staging'))).toEqual([])
+  await expect(sources.withSnapshot(transfer.id, root, async () => {})).rejects.toThrow('does not belong')
+})
+
 it('exports editable files, assets, attribution and licenses without credentials, runtime data, dependencies or builds', async () => {
   const root = await temporaryRoot()
   const paths = ['index.tsx', 'assets/icon.png', 'LICENSE', '.env', '.env.production', '.npmrc', '.git/config', '.runwhale/sessions/private.json', 'node_modules/lib/index.js', 'dist/app.js', 'nested/node_modules/lib/index.js']

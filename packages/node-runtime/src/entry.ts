@@ -45,6 +45,7 @@ const harnessOptions = (mode: 'deepseek' | 'deterministic', provider: MobileMode
   requestUserQuestions: (request, signal) => requireHost().requestAgentQuestions(request, signal),
   requestPackageInstall: (sessionId, projectRoot, dependencies, offline, signal) => requireHost().requestAgentPackageInstall(sessionId, projectRoot, dependencies, offline, signal),
   workspaceServices: {
+    projectIdFor: (projectRoot, sessionId) => requireHost().agentProjectId(projectRoot, sessionId),
     moduleStore,
     typescriptWorkerUrl: new URL('./runwhale-task-worker.mjs', import.meta.url),
     ensureModuleStore: () => requireHost().ensureModuleStore(),
