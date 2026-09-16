@@ -155,6 +155,7 @@
       "./plugins/with-node-ndk",
       "./plugins/with-android-icon-inset",
       "./plugins/with-ios-runtime-dependencies",
+      "./plugins/with-ios-launch-brand",
       "expo-status-bar"
     ],
     "experiments": {
