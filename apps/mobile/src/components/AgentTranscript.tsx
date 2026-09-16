@@ -1,7 +1,7 @@
 import { WebSearchSources } from '@/components/WebSearchSources'
 import { webSourceUrl } from '@/utils/web-search'
 import { memo, type ReactNode, type Ref, type RefObject, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { Bot, Check, ChevronDown, ChevronRight, Circle, CircleCheck, CircleX, Code2, Copy, Database, GitBranch, History, Image as ImageIcon, Maximize2, RefreshCw } from '@/components/icons'
+import { Check, ChevronDown, ChevronRight, Circle, CircleCheck, CircleX, Code2, Copy, Database, GitBranch, History, Image as ImageIcon, Maximize2, RefreshCw } from '@/components/icons'
 import { FlatList, Image, Linking, type LayoutChangeEvent, type ListRenderItemInfo, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { NodeHost } from '@runwhale/node-host'
 import { Alert } from 'heroui-native/alert'
@@ -10,6 +10,7 @@ import { Spinner } from 'heroui-native/spinner'
 import { useI18n } from '@/i18n'
 import { type ThemeColors, useAppColors } from '@/theme/tokens'
 import { AppIcon } from '@/components/AppIcon'
+import { WhaleTailIcon } from '@/components/WhaleTailIcon'
 import { PendingButton } from '@/components/PendingButton'
 import { TranscriptCodeBlock, useClipboardCopyFeedback } from '@/components/TranscriptCodeBlock'
 import { ToolActivityDialog } from '@/components/ToolActivityDialog'
@@ -329,7 +330,7 @@ function AssistantMessage({ status, event, blocks, branchSequence, onBranch, bra
 
 function MessageHeader({ label, time, action }: { label: string; time?: number; action?: ReactNode }) {
   const styles = useTranscriptStyles()
-  return <View style={styles.messageHeader}><View accessible accessibilityLabel={label} style={[styles.messageAvatar, styles.agentAvatar]}><AppIcon icon={Bot} color="#FFFFFF" size={12} /></View><View style={styles.messageHeaderSpacer} />{action}{time !== undefined && <Text style={styles.messageTime}>{formatMessageTime(time)}</Text>}</View>
+  return <View style={styles.messageHeader}><View accessible accessibilityLabel={label} style={styles.messageAvatar}><WhaleTailIcon size={14} /></View><View style={styles.messageHeaderSpacer} />{action}{time !== undefined && <Text style={styles.messageTime}>{formatMessageTime(time)}</Text>}</View>
 }
 
 function AssistantMessageBranchAction({ sequence, onBranch, branching, available }: { sequence?: number; onBranch(sequence?: number): void; branching?: TranscriptBranchInFlight; available: boolean }) {
@@ -666,8 +667,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   userBubble: { alignSelf: 'flex-end', maxWidth: '92%', borderRadius: 12, backgroundColor: colors.accent, padding: 13 },
   messageHeader: { height: transcriptLayoutContract.messageHeaderHeight, marginTop: transcriptLayoutContract.messageHeaderMarginTop, marginBottom: transcriptLayoutContract.messageHeaderMarginBottom, flexDirection: 'row', alignItems: 'center', gap: 8 },
   messageActions: { flexDirection: 'row', alignItems: 'center' },
-  messageAvatar: { width: 21, height: 21, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#4C6DB3' },
-  agentAvatar: { backgroundColor: '#6F63E8' },
+  messageAvatar: { width: 21, height: 21, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E8F2FF' },
   messageHeaderSpacer: { flex: 1 },
   messageTime: { color: colors.muted, fontSize: 9 },
   messageImages: { maxWidth: 220, flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 8 },
