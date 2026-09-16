@@ -1,4 +1,4 @@
-![RunWhale — Dive deep. Get it done. Build from anywhere.](.github/assets/runwhale-banner.png)
+![RunWhale — Build from anywhere.](.github/assets/runwhale-banner.png)
 
 English | [简体中文](README.zh-CN.md)
 

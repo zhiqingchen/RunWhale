@@ -1,4 +1,4 @@
-![哪里跑——深入探索，高效完成，随处构建。](.github/assets/runwhale-banner.png)
+![RunWhale — Build from anywhere.](.github/assets/runwhale-banner.png)
 
 [English](README.md) | 简体中文
 
