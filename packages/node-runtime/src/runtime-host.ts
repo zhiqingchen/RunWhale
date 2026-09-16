@@ -4,6 +4,7 @@ import type { AgentDriver, AgentCancellationResult, AgentImageInput } from './ag
 export type { AgentDriver, AgentRunOptions, AgentCancellationResult, AgentImageInput } from './agent-driver.js'
 import { AgentSessionExecution } from './session-execution.js'
 import { PreviewTesting } from './preview-testing.js'
+import { projectIdentity } from './project-identity.js'
 import { exportSessionLog } from './session-log-export.js'
 import { randomUUID } from 'node:crypto'
 import type { Stats } from 'node:fs'
@@ -187,6 +188,7 @@ export class RunWhaleRuntimeHost {
       },
       'ssh.credential.status': async () => ({ configured: Boolean(await this.options.secrets?.get(GITHUB_SSH_PRIVATE_KEY_REFERENCE)) }),
       'project.list': async () => this.listProjects(),
+      'project.identity': async ({ projectId }) => this.withProjectWork(projectId, async () => ({ id: await projectIdentity(this.projectRoot(projectId)) })),
       'project.create': async ({ id, name }) => this.createProject(String(name), id === undefined ? undefined : String(id)),
       'project.rename': async ({ projectId, name }) => {
         const selectedProjectId = String(projectId)
@@ -378,11 +380,11 @@ export class RunWhaleRuntimeHost {
         return { rejected }
       },
       'package.cancel': async ({ installId }) => ({ cancelled: await this.options.packageInstaller?.cancel(String(installId)) ?? false }),
-      'release.export': async ({ projectId, platform }, { signal }) => this.enqueuePreviewOperation(signal, async () => {
+      'release.export': async ({ projectId, platform, sourceId }, { signal }) => this.enqueuePreviewOperation(signal, async () => {
         await this.assertExistingProjectDirectory(projectId)
         await this.ensureModuleStore()
-        const bundle = await this.metro.bundle(this.projectRoot(projectId), previewPlatform(platform))
-        return this.library.export(bundle)
+        const bundle = async (root: string) => this.library.export(await this.metro.bundle(root, previewPlatform(platform)))
+        return sourceId ? this.sources.withSnapshot(sourceId, this.projectRoot(projectId), bundle, signal) : bundle(this.projectRoot(projectId))
       }),
       'release.read': async ({ id, offset }) => this.library.read(id, offset),
       'release.discard': async ({ id }) => this.library.discard(id),
@@ -730,6 +732,12 @@ export class RunWhaleRuntimeHost {
     } finally {
       signal.removeEventListener('abort', abort)
     }
+  }
+
+  agentProjectId(projectRoot: string, sessionId: string): string {
+    const id = this.projectIdForRoot(projectRoot)
+    if (this.agentSessions.get(sessionId)?.projectId !== id) throw new Error('Agent session is not bound to this mobile project')
+    return id
   }
 
   async runAgentNodeTask(projectRoot: string, entry: string, args: string[] | undefined, timeoutMs: number | undefined, signal: AbortSignal) {
