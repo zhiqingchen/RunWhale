@@ -344,8 +344,23 @@ function AssistantMessageBranchAction({ sequence, onBranch, branching, available
 function TranscriptNotice({ row, onPress }: { row: Extract<TranscriptRow, { kind: 'notice' }>; onPress(): void }) {
   const { t } = useI18n()
   const colors = useAppColors()
+  const styles = useTranscriptStyles()
   const label = noticeLabel(row.label, t)
-  const error = row.label === 'error' ? asRecord(row.event.data?.reason)?.error : row.event.data?.error
+  if (row.label === 'error') {
+    const { message, metadata } = noticeErrorDetails(row)
+    return <Button size="sm" variant="ghost" accessibilityLabel={[label, metadata, message].filter(Boolean).join(', ')} accessibilityHint={t('details')} onPress={onPress} style={[styles.activity, styles.errorNotice]}>
+      <View style={styles.errorNoticeRow}>
+        <AppIcon icon={CircleX} color={colors.danger} size={16} />
+        <Text style={[styles.activityTools, styles.danger]}>{label}</Text>
+        {metadata ? <Text style={styles.activityDetail}>{metadata}</Text> : null}
+      </View>
+      <View style={[styles.errorNoticeRow, styles.errorNoticeBody]}>
+        <Text numberOfLines={1} style={[styles.activityDetail, styles.errorNoticeText]}>{message || label}</Text>
+        <AppIcon icon={ChevronRight} color={colors.muted} size={13} />
+      </View>
+    </Button>
+  }
+  const error = row.event.data?.error
   const summary = conciseToolValue(error) ?? contextDetailSummary(row.text)
   return <TranscriptDetailCard
     label={label}
@@ -355,6 +370,16 @@ function TranscriptNotice({ row, onPress }: { row: Extract<TranscriptRow, { kind
     running={row.busy}
     icon={row.busy ? <Spinner size="sm" color={colors.blue} /> : <AppIcon icon={row.failed ? CircleX : ({ command: Code2, compaction: Database, retry: RefreshCw, error: CircleX, 'max-tokens': Circle })[row.label]} color={row.failed ? colors.danger : colors.blue} size={17} />}
   />
+}
+
+function noticeErrorDetails(row: Extract<TranscriptRow, { kind: 'notice' }>): { message: string; metadata: string } {
+  const error = asRecord(row.event.data?.reason)?.error
+  const text = firstToolText(error) ?? row.text
+  const wrapper = text.match(/^(.+?) API error\s*\((\d{3})\):\s*([\s\S]*)$/i)
+  let message = wrapper?.[3] ?? text
+  try { message = firstToolText(JSON.parse(message)) ?? message } catch { /* Plain-text errors need no decoding. */ }
+  const status = asRecord(error)?.status ?? wrapper?.[2]
+  return { message, metadata: [wrapper?.[1], status ? `HTTP ${status}` : undefined].filter(Boolean).join(' · ') }
 }
 
 function noticeLabel(label: Extract<TranscriptRow, { kind: 'notice' }>['label'], t: ReturnType<typeof useI18n>['t']): string {
@@ -704,6 +729,10 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   reasoningTitle: { color: '#6C5AD9', fontSize: 11, fontWeight: '900' },
   reasoningMeta: { color: colors.muted, fontSize: 10 },
   activity: { width: '100%', minHeight: transcriptInteractionContract.disclosureMinimumHeight, height: 'auto', borderWidth: 1, borderColor: colors.border, borderRadius: 11, backgroundColor: colors.panel, padding: transcriptLayoutContract.toolCardPadding, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  errorNotice: { flexDirection: 'column', alignItems: 'stretch', gap: 3, borderColor: `${colors.danger}35`, backgroundColor: `${colors.danger}08` },
+  errorNoticeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  errorNoticeBody: { paddingLeft: 24 },
+  errorNoticeText: { flex: 1, minWidth: 0 },
   toolActivityGroup: { gap: 6 },
   toolScroll: { flexGrow: 0 },
   toolRow: { flexGrow: 1, gap: TOOL_ROW_GAP },
