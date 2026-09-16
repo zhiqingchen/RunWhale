@@ -90,16 +90,19 @@ export function runtimeProjectFileContent(
   return `${JSON.stringify(manifest, null, 2)}\n`
 }
 
+/** Validate a parsed snapshot without migrating or mutating it. */
+export function validateStoredProjects(value: unknown): asserts value is Array<StudioProject & { lastTask?: unknown }> {
+  if (!Array.isArray(value) || !value.every(isStoredProject)) throw new Error('Saved project data is invalid.')
+}
+
 export function deserializeProjects(value: string | null): StudioProject[] {
   if (!value) return []
   const parsed: unknown = JSON.parse(value)
-  if (!Array.isArray(parsed) || !parsed.every(isStoredProject)) throw new Error('Saved project data is invalid.')
-  return parsed
-    .filter((project) => project.id !== 'vibe-game')
-    .map((project) => {
-      const { lastTask: _legacyTaskPresentation, ...current } = project
-      return current
-    })
+  validateStoredProjects(parsed)
+  return parsed.map((project) => {
+    const { lastTask: _legacyTaskPresentation, ...current } = project
+    return current
+  })
 }
 
 export function createProjectLoader(read: () => Promise<string | null>): () => Promise<StudioProject[]> {
@@ -127,7 +130,7 @@ interface ProjectStorageManifest {
   chunks: number
 }
 
-export function createChunkedProjectSnapshotStorage(storage: ProjectSnapshotStorage): { read(): Promise<string | null>; write(value: string): Promise<void>; prepareLegacyRecovery(): Promise<void> } {
+export function createChunkedProjectSnapshotStorage(storage: ProjectSnapshotStorage): { read(): Promise<string | null>; write(value: string): Promise<void> } {
   return {
     async read() {
       const storedManifest = await storage.getItem(STORAGE_MANIFEST_KEY)
@@ -159,26 +162,6 @@ export function createChunkedProjectSnapshotStorage(storage: ProjectSnapshotStor
         await storage.multiRemove(staleKeys).catch(() => undefined)
       }
     },
-    prepareLegacyRecovery() {
-      return storage.multiSet([[LEGACY_STORAGE_KEY, LEGACY_RUNTIME_RECOVERY_MARKER]])
-    },
-  }
-}
-
-function isProjectStorageRuntimeRecoveryRequired(cause: unknown): boolean {
-  const message = cause instanceof Error ? cause.message : String(cause)
-  return message === RUNTIME_RECOVERY_REQUIRED_MESSAGE || /row too big to fit into cursorwindow/i.test(message)
-}
-
-export async function loadProjectsWithRuntimeRecovery(
-  load: () => Promise<StudioProject[]>,
-  recover?: () => Promise<StudioProject[]>,
-): Promise<StudioProject[]> {
-  try {
-    return await load()
-  } catch (cause) {
-    if (!recover || !isProjectStorageRuntimeRecoveryRequired(cause)) throw cause
-    return recover()
   }
 }
 

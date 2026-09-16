@@ -1,5 +1,5 @@
 import { validatedProjectName, type ProjectImage } from '@runwhale/mobile-protocol'
-import { deserializeProjects, type ProjectFile, type StudioProject } from './project-data'
+import { deserializeProjects, validateStoredProjects, type ProjectFile, type StudioProject } from './project-data'
 
 export type ProjectMetadata = Omit<StudioProject, 'files' | 'filePaths' | 'icon'>
 export interface EditorDraft {
@@ -92,7 +92,7 @@ export class NativeProjectStore {
         || !Array.isArray(saved.projects) || !Array.isArray(saved.drafts)
         || !saved.drafts.every((draft) => typeof draft.projectId === 'string' && typeof draft.path === 'string' && typeof draft.content === 'string'
           && ['pending', 'recovered', 'failed', 'conflict'].includes(draft.status))) throw new Error('Saved project metadata or drafts are invalid.')
-      deserializeProjects(JSON.stringify(saved.projects.map((project) => ({ ...project, files: [] }))))
+      validateStoredProjects(saved.projects.map((project) => ({ ...project, files: [] })))
       this.saved = saved
     }
     this.projects = this.saved.projects.map((project) => ({ ...project, files: [], filePaths: [] }))

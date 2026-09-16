@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createChunkedProjectSnapshotStorage, createProjectDraft, createProjectLoader, createProjectPersistenceCoordinator, deserializeProjects, isGitHubImportedProject, loadProjectsWithRuntimeRecovery, PROJECT_STORAGE_CHUNK_LENGTH, removeProjectFromList, runtimeProjectFileContent, type ProjectPersistenceFailure, type ProjectSnapshotStorage } from '../src/state/project-data'
+import { createChunkedProjectSnapshotStorage, createProjectDraft, createProjectLoader, createProjectPersistenceCoordinator, deserializeProjects, isGitHubImportedProject, validateStoredProjects, PROJECT_STORAGE_CHUNK_LENGTH, removeProjectFromList, runtimeProjectFileContent, type ProjectPersistenceFailure, type ProjectSnapshotStorage } from '../src/state/project-data'
 
 describe('project persistence', () => {
   it('stores large snapshots in bounded rows without splitting surrogate pairs', async () => {
@@ -28,32 +28,13 @@ describe('project persistence', () => {
     await expect(snapshots.read()).resolves.toBe(legacy)
   })
 
-  it('recovers only CursorWindow overflow failures from the embedded runtime', async () => {
-    const recovered = [createProjectDraft('Recovered', 'web', 'recovered')]
-    const recover = vi.fn(async () => recovered)
-
-    await expect(loadProjectsWithRuntimeRecovery(
-      async () => { throw new Error('Row too big to fit into CursorWindow requiredPos=0, totalRows=1') },
-      recover,
-    )).resolves.toBe(recovered)
-    await expect(loadProjectsWithRuntimeRecovery(
-      async () => { throw new Error('storage unavailable') },
-      recover,
-    )).rejects.toThrow('storage unavailable')
-    expect(recover).toHaveBeenCalledTimes(1)
-  })
-
-  it('marks an unreadable legacy row for crash-safe recovery before committing chunks', async () => {
+  it('recognizes an existing runtime-recovery marker without presenting an empty list', async () => {
     const { storage, values } = memoryProjectStorage()
     const snapshots = createChunkedProjectSnapshotStorage(storage)
-    values.set('runwhale.projects.v1', 'unreadable oversized data')
+    values.set('runwhale.projects.v1', '{"version":2,"recovery":"runtime"}')
 
-    await snapshots.prepareLegacyRecovery()
     await expect(snapshots.read()).rejects.toThrow('requires runtime recovery')
-    await snapshots.write(JSON.stringify([createProjectDraft('Recovered', 'web', 'recovered')]))
-
-    expect(values.has('runwhale.projects.v1')).toBe(false)
-    await expect(snapshots.read()).resolves.toContain('Recovered')
+    expect(values.get('runwhale.projects.v1')).toBe('{"version":2,"recovery":"runtime"}')
   })
 
   it('keeps an initial read failure distinct from a ready empty project list', async () => {
@@ -102,14 +83,27 @@ describe('project persistence', () => {
     expect(() => deserializeProjects('[{"id":"x","name":"X","description":"","updatedAt":1e400,"files":[]}]')).toThrow('Saved project data is invalid.')
   })
 
-  it('preserves legacy cleanup after validating stored projects', () => {
+  it('preserves edited demo projects while removing obsolete presentation fields', () => {
     const current = { ...createProjectDraft('Current', 'web', 'current'), lastTask: { title: 'legacy' } }
-    const removed = createProjectDraft('Removed', 'web', 'vibe-game')
-    const projects = deserializeProjects(JSON.stringify([current, removed]))
+    const editedDemo = { ...createProjectDraft('My edited project', 'web', 'vibe-game'), files: [{ path: 'README.md', content: 'User-authored content' }] }
+    const projects = deserializeProjects(JSON.stringify([current, editedDemo]))
 
-    expect(projects).toHaveLength(1)
+    expect(projects).toHaveLength(2)
     expect(projects[0]).toMatchObject({ id: 'current', name: 'Current' })
     expect(projects[0]).not.toHaveProperty('lastTask')
+    expect(projects[1]).toEqual(editedDemo)
+  })
+
+  it('validates parsed snapshots without changing IDs, content, or legacy fields', () => {
+    const project = { ...createProjectDraft('Edited demo', 'web', 'vibe-game'), lastTask: { title: 'legacy' } }
+    const snapshot = [project]
+    const original = structuredClone(snapshot)
+
+    validateStoredProjects(snapshot)
+
+    expect(snapshot).toEqual(original)
+    expect(snapshot[0]).toBe(project)
+    expect(() => validateStoredProjects([{ ...project, updatedAt: Infinity }])).toThrow('Saved project data is invalid.')
   })
 
   it('persists template provenance while accepting projects created before it existed', () => {

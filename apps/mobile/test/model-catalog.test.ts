@@ -4,9 +4,11 @@ import { realpathSync } from 'node:fs'
 import {
   cloneDefaultModelProfiles,
   MOBILE_DEFAULT_MODEL_PROFILES,
+  MOBILE_DEFAULT_MODELS,
   modelProfileOverrides,
   matchesModelPattern,
   restoreModelProfiles,
+  selectCatalogModels,
 } from '../src/utils/model-catalog'
 
 describe('harness model catalog preferences', () => {
@@ -20,16 +22,28 @@ describe('harness model catalog preferences', () => {
     expect(matchesModelPattern('gpt-5.4-mini', '*5.4*mini')).toBe(true)
   })
 
-  it('excludes configured defaults while preserving custom profiles', () => {
-    const ids = MOBILE_DEFAULT_MODEL_PROFILES.openai.models.map(({ id }) => id)
-    expect(ids).toEqual(expect.arrayContaining([
-      'gpt-4o-mini', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.5',
-      'gpt-5.6-luna', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-6-astra',
-    ]))
-    for (const excluded of ['gpt-4o', 'gpt-4o-2024-08-06', 'gpt-4.1', 'gpt-5.2', 'gpt-5.5-pro', 'gpt-5.4-nano', 'gpt-5.3-codex', 'gpt-realtime-2.1', 'o3']) {
-      expect(ids).not.toContain(excluded)
-    }
-    expect(ids[0]).toBe('gpt-5.4-mini')
+  it('filters catalog entries and stably prioritizes the preferred model without mutating the input', () => {
+    const models = [
+      { id: 'keep-first', name: 'First' },
+      { id: 'old-1', name: 'Retired' },
+      { id: 'keep-last', name: 'Last' },
+      { id: 'preferred', name: 'Preferred' },
+      { id: 'model.1', name: 'Excluded literal' },
+      { id: 'modelx1', name: 'Kept literal' },
+    ]
+    const original = structuredClone(models)
+    expect(selectCatalogModels(models, 'preferred', ['old-*', 'model.1'])).toEqual([
+      { id: 'preferred', name: 'Preferred' },
+      { id: 'keep-first', name: 'First' },
+      { id: 'keep-last', name: 'Last' },
+      { id: 'modelx1', name: 'Kept literal' },
+    ])
+    expect(models).toEqual(original)
+    expect(selectCatalogModels(models, 'missing', [])).toEqual(models)
+  })
+
+  it('keeps the installed preferred model available without filtering custom profiles', () => {
+    expect(MOBILE_DEFAULT_MODEL_PROFILES.openai.models[0]?.id).toBe(MOBILE_DEFAULT_MODELS.openai)
     const custom = { models: [{ id: 'gpt-4o' }] }
     expect(restoreModelProfiles({ openai: custom }, 2).openai).toEqual(custom)
   })

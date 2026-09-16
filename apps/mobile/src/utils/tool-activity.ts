@@ -102,12 +102,13 @@ export function projectHistoryToolActivities(events: readonly unknown[]): Histor
     const source: ToolPosition = { position, event, ...(sequence === undefined ? {} : { sequence }), ...(turn === undefined ? {} : { turn }), ...(step === undefined ? {} : { step }) }
 
     if (event.type === 'tool/call') {
+      const input = toolInput(data)
       addToolCall(builder, source, {
         callId: nonEmptyString(data.callId),
         name: nonEmptyString(data.name) ?? 'unknown',
-        input: toolInput(data),
+        input,
         meta: data.meta,
-        target: toolTarget(data, toolInput(data)),
+        target: toolTarget(data, input),
       })
       return
     }
@@ -125,7 +126,6 @@ export function projectHistoryToolActivities(events: readonly unknown[]): Histor
     entries.push({ kind: 'event', id: uniqueId(baseId, entryIdCounts), event })
   })
 
-  finalizeGroups(builder)
   return entries
 }
 
@@ -301,17 +301,8 @@ function stopRunningItems(builder: ProjectionBuilder, group: ToolActivityGroup):
   recomputeGroupState(group)
 }
 
-function finalizeGroups(builder: ProjectionBuilder): void {
-  for (const group of builder.groups) recomputeGroupState(group)
-}
-
 function recomputeGroupState(group: ToolActivityGroup): void {
   group.state = aggregateState(group.items)
-  const sequences = group.items.flatMap((item) => item.sourceSequences)
-  if (sequences.length > 0) {
-    group.startSequence = Math.min(...sequences)
-    group.endSequence = Math.max(...sequences)
-  }
 }
 
 function aggregateState(items: readonly ToolActivityItem[]): ToolActivityState {
@@ -342,15 +333,16 @@ function resultDetail(data: Record<string, unknown>): ToolResultDetail {
   const directIsError = typeof data.isError === 'boolean' ? data.isError : undefined
   const failed = nestedIsError ?? directIsError ?? hasErrorValue(data.error)
   const nestedError = failed ? matchingBlock?.content : undefined
-  const output = message?.content ?? data.output ?? data.content
+  const output = content
   const error = failed ? data.error ?? nestedError ?? output : undefined
+  const target = toolTarget(data, output)
   return {
     ...(callId === undefined ? {} : { callId }),
     ...(output === undefined ? {} : { output }),
     ...(error === undefined ? {} : { error }),
     ...(data.meta === undefined ? {} : { meta: data.meta }),
     failed,
-    ...(toolTarget(data, output) === undefined ? {} : { target: toolTarget(data, output) }),
+    ...(target === undefined ? {} : { target }),
   }
 }
 

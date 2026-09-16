@@ -16,14 +16,17 @@ export function matchesModelPattern(id: string, pattern: string): boolean {
   return new RegExp(`^${expression}$`).test(id)
 }
 
-/** Filtered harness models, with the product's preferred selection first. */
-export const MOBILE_DEFAULT_MODEL_PROFILES = Object.fromEntries<MobileModelProviderProfile>(providers.map((provider) => {
-  const models = Object.values(catalog[provider as keyof typeof catalog] ?? {})
-    .filter(({ id }) => !MODEL_CATALOG_FILTERS[provider]?.exclude.some((pattern) => matchesModelPattern(id, pattern)))
+export function selectCatalogModels(models: readonly { id: string; name: string }[], preferredId: string, excluded: readonly string[]): { id: string; name: string }[] {
+  return models
+    .filter(({ id }) => !excluded.some((pattern) => matchesModelPattern(id, pattern)))
     .map(({ id, name }) => ({ id, name }))
-    .sort((a, b) => Number(b.id === MOBILE_DEFAULT_MODELS[provider]) - Number(a.id === MOBILE_DEFAULT_MODELS[provider]))
-  return [provider, { models }]
-})) as Record<MobileModelProvider, MobileModelProviderProfile>
+    .sort((a, b) => Number(b.id === preferredId) - Number(a.id === preferredId))
+}
+
+/** Filtered harness models, with the product's preferred selection first. */
+export const MOBILE_DEFAULT_MODEL_PROFILES = Object.fromEntries<MobileModelProviderProfile>(providers.map((provider) => [provider, {
+  models: selectCatalogModels(Object.values(catalog[provider as keyof typeof catalog] ?? {}), MOBILE_DEFAULT_MODELS[provider], MODEL_CATALOG_FILTERS[provider]?.exclude ?? []),
+}])) as Record<MobileModelProvider, MobileModelProviderProfile>
 
 export function cloneDefaultModelProfiles(): Record<MobileModelProvider, MobileModelProviderProfile> {
   return Object.fromEntries<MobileModelProviderProfile>(providers.map((provider) => [provider, {

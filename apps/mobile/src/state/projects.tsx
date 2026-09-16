@@ -1,17 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { type PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Platform } from 'react-native'
-import { createChunkedProjectSnapshotStorage, createProjectLoader, createProjectPersistenceCoordinator, loadProjectsWithRuntimeRecovery, removeProjectFromList, renameProjectManifest, type ProjectFile, type StudioProject, type ProjectLoadStatus } from './project-data'
+import { createChunkedProjectSnapshotStorage, createProjectLoader, createProjectPersistenceCoordinator, removeProjectFromList, renameProjectManifest, type ProjectFile, type StudioProject, type ProjectLoadStatus } from './project-data'
 import { ProjectContext, type ProjectStore } from './project-context'
 import { NativeProjectProvider, type NativeProjectProviderProps } from './projects-native'
 export * from './project-data'
 export { useProjects } from './project-context'
 
-export function ProjectProvider(props: PropsWithChildren<NativeProjectProviderProps & { recoverProjects?: () => Promise<StudioProject[]> }>) {
+export function ProjectProvider(props: PropsWithChildren<NativeProjectProviderProps>) {
   return Platform.OS === 'web' ? <LocalProjectProvider {...props} /> : <NativeProjectProvider {...props} />
 }
 
-export function LocalProjectProvider({ children, recoverProjects }: PropsWithChildren<{ recoverProjects?: () => Promise<StudioProject[]> }>) {
+export function LocalProjectProvider({ children }: PropsWithChildren) {
   const [projects, setProjects] = useState<StudioProject[]>([])
   const projectsRef = useRef<StudioProject[]>([])
   const [loadStatus, setLoadStatus] = useState<ProjectLoadStatus>('loading')
@@ -29,20 +29,11 @@ export function LocalProjectProvider({ children, recoverProjects }: PropsWithChi
     projectStorage.write,
     (failure) => setPersistenceError(failure?.message),
   ), [projectStorage])
-  const recoverUnreadableProjects = useCallback(async () => {
-    if (!recoverProjects) throw new Error('Embedded runtime project recovery is unavailable.')
-    const recovered = await recoverProjects()
-    // Replace the unreadable legacy row with a small durable recovery marker
-    // before writing chunks. A process interruption will retry runtime recovery
-    // instead of presenting an empty project list on the next launch.
-    await projectStorage.prepareLegacyRecovery()
-    return recovered
-  }, [projectStorage, recoverProjects])
   const retryLoad = useCallback(async () => {
     setLoadStatus('loading')
     setLoadError(undefined)
     try {
-      const storedProjects = await loadProjectsWithRuntimeRecovery(loadProjects, recoverProjects ? recoverUnreadableProjects : undefined)
+      const storedProjects = await loadProjects()
       projectsRef.current = storedProjects
       setProjects(storedProjects)
       setLoadStatus('ready')
@@ -51,7 +42,7 @@ export function LocalProjectProvider({ children, recoverProjects }: PropsWithChi
       setLoadError(cause instanceof Error ? cause.message : String(cause))
       setLoadStatus('failed')
     }
-  }, [loadProjects, persistence, recoverProjects, recoverUnreadableProjects])
+  }, [loadProjects, persistence])
 
   useEffect(() => {
     void retryLoad()

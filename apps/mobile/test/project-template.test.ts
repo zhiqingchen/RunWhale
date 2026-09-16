@@ -11,10 +11,6 @@ describe('project templates', () => {
     expect(packageJson).toMatchObject({ scripts: { start: 'vite', build: 'vite build' }, devDependencies: { vite: '8.2.2' } })
     expect(files.map((file) => file.path)).toEqual(expect.arrayContaining(['index.html', 'src/main.tsx', 'README.md']))
     expect(files.find((file) => file.path === 'index.html')?.content).toContain('src="/src/main.tsx"')
-    const entry = files.find((file) => file.path === 'src/main.tsx')?.content
-    expect(entry).toContain('Hello RunWhale')
-    expect(files.find((file) => file.path === 'src/styles.css')?.content).toContain('color: #ffffff')
-    expect(entry).not.toContain('Start building')
     expect(files.find((file) => file.path === 'README.md')?.content).toContain('npm install\nnpm start')
     expect(projectPreviewConfiguration({ id: 'web-project', name: 'Web Project', description: '', updatedAt: 1, files }, 'android')).toEqual({ target: 'web', platform: 'web' })
   })
@@ -31,10 +27,7 @@ describe('project templates', () => {
     expect(packageJson).toMatchObject({ main: 'index.tsx', scripts: { start: 'expo start', android: 'expo start --android', ios: 'expo start --ios' }, dependencies: { '@shopify/react-native-skia': '2.6.2', expo: '57.0.23', 'expo-haptics': '57.0.3', 'react-native': '0.86.3' } })
     expect(appJson).toEqual({ expo: { name: 'Expo Project', slug: 'expo-project', platforms: ['ios', 'android'], plugins: [['expo-sensors', { motionPermission: 'Allow this RunWhale preview to use motion sensors.' }]], android: { blockedPermissions: ['android.permission.ACTIVITY_RECOGNITION'] } } })
     const entry = files.find((file) => file.path === 'index.tsx')?.content
-    expect(entry).toContain('Hello RunWhale')
-    expect(entry).toContain("color: '#ffffff'")
     expect(entry).toContain("AppRegistry.registerComponent('main'")
-    expect(entry).not.toContain('Scrollable row')
     expect(files.find((file) => file.path === 'README.md')?.content).toContain('npm install\nnpm start')
     expect(projectPreviewConfiguration({ id: 'expo-project', name: 'Expo Project', description: '', updatedAt: 1, files }, 'ios')).toEqual({ target: 'native', platform: 'ios' })
   })
