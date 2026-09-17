@@ -34,8 +34,10 @@ class MainActivity : ReactActivity() {
     const generated = result.modResults.contents
     expect(generated).toMatch(/^    setTheme\(R\.style\.AppTheme\)$/m)
     expect(generated.indexOf('    setTheme(')).toBeLessThan(generated.indexOf('    super.onCreate('))
-    expect(generated).toContain('text = "RunWhale"')
-    expect(generated).toContain('onViewDetachedFromWindow(view: View) { motion.cancel() }')
+    expect(generated).toContain('setImageResource(R.drawable.runwhale_splash)')
+    expect(generated).toContain('scaleType = ImageView.ScaleType.CENTER_CROP')
+    expect(generated).not.toContain('text = "RunWhale"')
+    expect(generated).toContain('if (!hasRenderedReactChild(content, overlay)) return')
     const repeated = await config.mods.android.mainActivity({ ...project, modResults: { language: 'kt', contents: generated } })
     expect(repeated.modResults.contents).toBe(generated)
   })

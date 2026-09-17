@@ -139,16 +139,14 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/runwhale-icon.png",
-          "imageWidth": 220,
+          "image": "./assets/images/runwhale-splash.png",
+          "enableFullScreenImage_legacy": true,
+          "resizeMode": "cover",
+          "backgroundColor": "#2459B9",
           "android": {
-            "imageWidth": 160
-          },
-          "resizeMode": "contain",
-          "backgroundColor": "#F7F9FF",
-          "dark": {
             "image": "./assets/images/runwhale-icon.png",
-            "backgroundColor": "#07182A"
+            "imageWidth": 160,
+            "resizeMode": "contain"
           }
         }
       ],

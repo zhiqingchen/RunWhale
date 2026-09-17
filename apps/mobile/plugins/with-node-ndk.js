@@ -1,4 +1,4 @@
-const { readFile, writeFile } = require('node:fs/promises')
+const { copyFile, mkdir, readFile, writeFile } = require('node:fs/promises')
 const path = require('node:path')
 const { AndroidConfig, withAndroidStyles, withAppBuildGradle, withEntitlementsPlist, withFinalizedMod, withGradleProperties, withMainActivity, withMainApplication, withProjectBuildGradle, withXcodeProject } = require('@expo/config-plugins')
 
@@ -56,7 +56,6 @@ module.exports = function withNodeNdk(config) {
   config = withMainActivity(config, (project) => {
     if (project.modResults.language !== 'kt') throw new Error('RunWhale requires a Kotlin MainActivity')
     let contents = disableExpoAndroidSplashLock(project.modResults.contents)
-      .replace('val imageWidth = (220 * resources.displayMetrics.density).toInt()', 'val imageWidth = (288 * resources.displayMetrics.density).toInt()')
     if (!contents.includes('import android.view.Gravity')) {
       contents = contents.replace('import android.os.Bundle', `import android.os.Bundle
 import android.view.Gravity
@@ -67,17 +66,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import com.facebook.react.devsupport.DefaultDevLoadingViewImplementation`)
-    }
-    if (!contents.includes('import android.animation.ObjectAnimator')) {
-      contents = contents.replace('import android.os.Bundle', `import android.os.Bundle
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
-import android.content.res.Configuration
-import android.graphics.Color
-import android.graphics.Typeface
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.widget.TextView`)
     }
     if (!contents.includes('private var whaleSplashOverlay')) {
       contents = contents.replace('class MainActivity : ReactActivity() {', 'class MainActivity : ReactActivity() {\n  private var whaleSplashOverlay: View? = null')
@@ -93,44 +81,11 @@ import android.widget.TextView`)
       setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.splashscreen_background))
       importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
     }
-    // Match Expo's drawable canvas so the system splash and overlay use the same scale.
-    val imageWidth = (288 * resources.displayMetrics.density).toInt()
     val mark = ImageView(this).apply {
-      setImageResource(R.drawable.splashscreen_logo)
-      scaleType = ImageView.ScaleType.FIT_CENTER
+      setImageResource(R.drawable.runwhale_splash)
+      scaleType = ImageView.ScaleType.CENTER_CROP
     }
-    overlay.addView(mark, FrameLayout.LayoutParams(imageWidth, imageWidth, Gravity.CENTER))
-    val density = resources.displayMetrics.density
-    val dark = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-    val name = TextView(this).apply {
-      text = "RunWhale"
-      textSize = 28f
-      typeface = Typeface.create("sans-serif", Typeface.BOLD)
-      gravity = Gravity.CENTER
-      includeFontPadding = false
-      setTextColor(Color.parseColor(if (dark) "#F4F7FF" else "#101A3A"))
-      // The 288dp drawable canvas contains the configured 160dp logo.
-      translationY = (80 + 12 + 18) * density
-    }
-    overlay.addView(name, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, (36 * density).toInt(), Gravity.CENTER))
-    val motion = AnimatorSet().apply {
-      playTogether(
-        ObjectAnimator.ofFloat(mark, View.TRANSLATION_Y, 0f, -6 * density).apply {
-          repeatCount = ValueAnimator.INFINITE
-          repeatMode = ValueAnimator.REVERSE
-        },
-        ObjectAnimator.ofFloat(name, View.ALPHA, 1f, 0.65f).apply {
-          repeatCount = ValueAnimator.INFINITE
-          repeatMode = ValueAnimator.REVERSE
-        },
-      )
-      duration = 1400
-      interpolator = AccelerateDecelerateInterpolator()
-    }
-    overlay.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-      override fun onViewAttachedToWindow(view: View) { motion.start() }
-      override fun onViewDetachedFromWindow(view: View) { motion.cancel() }
-    })
+    overlay.addView(mark, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER))
     content.addView(overlay, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
     whaleSplashOverlay = overlay
 
@@ -175,7 +130,7 @@ import android.widget.TextView`)
     project.modResults = AndroidConfig.Styles.assignStylesValue(project.modResults, {
       add: true,
       name: 'android:windowBackground',
-      value: '@drawable/ic_launcher_background',
+      value: '@color/splashscreen_background',
       parent: AndroidConfig.Styles.getAppThemeGroup(),
     })
     return project
@@ -193,6 +148,9 @@ import android.widget.TextView`)
     const mainActivity = path.join(project.modRequest.platformProjectRoot, 'app/src/main/java', ...packageName.split('.'), 'MainActivity.kt')
     const contents = await readFile(mainActivity, 'utf8')
     await writeFile(mainActivity, disableExpoAndroidSplashLock(contents))
+    const drawableDirectory = path.join(project.modRequest.platformProjectRoot, 'app/src/main/res/drawable-nodpi')
+    await mkdir(drawableDirectory, { recursive: true })
+    await copyFile(path.join(project.modRequest.projectRoot, 'assets/images/runwhale-splash.png'), path.join(drawableDirectory, 'runwhale_splash.png'))
     return project
   }])
   return withAppBuildGradle(config, (project) => {
