@@ -97,25 +97,7 @@ async function generatePoster(size) {
 }
 
 async function generateOgImage() {
-  const background = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
-    <defs>
-      <linearGradient id="paper" x2="1" y2="1"><stop stop-color="#f8faff"/><stop offset="1" stop-color="#e3edff"/></linearGradient>
-      <radialGradient id="glow"><stop stop-color="#93c5ff" stop-opacity=".5"/><stop offset="1" stop-color="#93c5ff" stop-opacity="0"/></radialGradient>
-    </defs>
-    <rect width="1200" height="630" fill="url(#paper)"/>
-    <circle cx="990" cy="340" r="360" fill="url(#glow)"/>
-    <g font-family="Arial, sans-serif">
-      <text x="64" y="275" font-size="82" font-weight="700" letter-spacing="-3" fill="#09152d">RunWhale</text>
-      <text x="68" y="342" font-size="35" fill="#2855ee">Dive deep. Get it done.</text>
-      <text x="68" y="553" font-size="24" fill="#526480">runwhale.dev</text>
-    </g>
-  </svg>`);
-  const mascot = await loadImage(iconSource).resize(560, 560).toBuffer();
-  await sharp(background)
-    .composite([{ input: mascot, left: 625, top: 46 }])
-    .png({ compressionLevel: 9, adaptiveFiltering: true })
-    .toFile(ogSource);
-  await copyFile(ogSource, outputPath("runwhale-og-1200x630.png"));
+  await copyFile(ogSource, outputPath("runwhale-og-1774x887.png"));
 }
 
 await mkdir(outputDirectory, { recursive: true });

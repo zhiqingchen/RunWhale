@@ -25,7 +25,7 @@ export function pageMetadata(locale: WebsiteLocale, page: SitePageName): Metadat
     description = content.metadataDescription;
   }
   const url = `${siteUrl}${localizedPath(locale, page)}`;
-  const image = { url: `${siteUrl}/media/optimized/v1/runwhale-og-1200x630.png`, width: 1200, height: 630, alt: copy.home.metadataTitle };
+  const image = { url: `${siteUrl}/media/optimized/v1/runwhale-og-1774x887.png`, width: 1774, height: 887, alt: copy.home.metadataTitle };
   return {
     metadataBase: new URL(siteUrl),
     title,
