@@ -2,60 +2,37 @@
 
 English | [简体中文](README.zh-CN.md)
 
-RunWhale is a coding Agent that brings the development loop to your phone. Project files, tools, sessions, Git, Metro, and Preview run on the device. AI requests use the provider you configure; remote Git operations, dependency downloads, and online services used by project code also require network access.
+RunWhale is an AI coding agent for your phone. Create, edit, and preview Web and React Native projects with local tools and Git.
 
-## Community Edition
-
-This repository contains the free, open-source RunWhale Community Edition. It does not require a RunWhale account or subscription. AI features require your own supported provider credentials and an internet connection; provider usage charges may apply.
+**Community Edition:** Free and open source, with no RunWhale account or subscription. AI features require your own supported provider credentials and internet access; provider charges may apply.
 
 ## Demo
 
 https://github.com/user-attachments/assets/b8b7d184-8d6b-4fc0-b954-c159c02aa1b4
 
-## Build from Anywhere
+## Features
 
-- Start a new project or import an existing repository.
-- Ask the Agent to inspect, edit, test, and repair code.
-- Edit files, run bounded Node.js and TypeScript tasks, and install supported pure-JavaScript dependencies.
-- Review Git changes and continue work in durable sessions.
-- Preview the same Expo project on Web, iOS, and Android.
-- Ask the Agent to inspect Preview logs and nodes, exercise supported controls, and check screenshots with a vision-capable model.
+- Create projects, import Git repositories, and review changes.
+- Ask the Agent to write, test, and fix code, then resume work in saved sessions.
+- Run bounded Node.js and TypeScript tasks and install supported pure-JavaScript packages.
+- Preview on Web, iOS, and Android. The Agent can inspect logs, interact with supported controls, and check screenshots with a vision-capable model.
 
-User projects never invoke Xcode, Gradle, EAS, or IPA/APK builds. RunWhale bundles and previews them locally on the phone.
+## Get Started
 
-For apps you use often, choose **Workspace → project more actions → Add to Home Screen**. Set a name and icon, then confirm the Android launcher prompt or follow the iPhone Shortcuts steps. The shortcut opens the project's latest successful Preview directly; keep RunWhale and the project installed. The setup page also lets you try the launch and export the icon.
+Configure your AI provider, create or import a project, then ask the Agent to write code and open Preview.
 
-## What Runs Where
-
-| On the phone | Remote |
-| --- | --- |
-| Projects, Agent sessions, Node.js, TypeScript, tasks, Git, Metro, and Preview | Model inference through the selected provider |
-| Credentials in Android Keystore or iOS Keychain | Git hosting during an explicit network Git operation |
-| Bundled development tools and cached dependencies | Package registries for uncached dependencies and online services requested by project code |
-
-Credentials pass only through the trusted in-memory seam. They are never written to projects, environment variables, Git configuration, sessions, logs, or Preview bundles. Local runtime RPC is token-protected and bound to localhost.
-
-Private Git remotes use an Ed25519 key stored in device secure storage. Generating a key exposes its private half once for backup; imported keys are also supported. The key is not supplied to project code or Preview.
-
-On iOS, Agent work receives a limited background grace period, then saves its session and pauses. Returning to the app automatically continues work paused by the current process. After restarting the app, use Continue on the paused session. Explicitly stopped tasks remain stopped.
+Use **Workspace → project more actions → Add to Home Screen** to launch the latest successful Preview directly. Keep RunWhale and the project installed.
 
 ## Scope
 
-RunWhale targets Web and React Native projects with Expo SDK 57. Studio manages projects, files, Agent sessions, and settings; a separate Native Preview container runs user-project bundles.
+Project files, sessions, tools, Git, and Preview run on-device. AI requests, remote Git operations, uncached dependencies, and online project services require network access.
 
-The MVP intentionally does not provide:
+Supports Expo SDK 57 projects. No general Linux shell/PTY, native npm addons, custom native SDKs, dynamic Expo config plugins, or unrestricted iOS background execution. User projects are previewed locally, not built into IPA/APK files.
 
-- A general Linux environment, shell, or PTY.
-- Native npm addons, arbitrary native binaries, dynamic Expo config plugins, or project-specific native SDKs.
-- Unrestricted iOS background execution or background Metro.
-- A cloud runner, marketplace, payments, or leaderboards.
+## Development
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance and [DEVELOPMENT.md](DEVELOPMENT.md) for build and development workflows.
+[Build and development](DEVELOPMENT.md) · [Contributing](CONTRIBUTING.md)
 
 ## License and Trademarks
 
-RunWhale's original software code is licensed under the [Apache License 2.0](LICENSE). Third-party code and assets remain subject to their original licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The Apache License does not apply to third-party trademarks or to RunWhale brand assets that are identified as separately licensed or reserved.
-
-The `RunWhale` name is not licensed for use as a trade name, trademark, service mark, or product name. See [TRADEMARKS.md](TRADEMARKS.md) for the permitted descriptive uses and reserved brand rights.
+Original code is licensed under [Apache License 2.0](LICENSE). Third-party code and assets retain their original licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The code license does not cover trademarks or separately licensed or reserved RunWhale brand assets; see [TRADEMARKS.md](TRADEMARKS.md).
