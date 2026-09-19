@@ -4,8 +4,6 @@ English | [简体中文](README.zh-CN.md)
 
 RunWhale is an AI coding agent for your phone. Create, edit, and preview Web and React Native projects with local tools and Git.
 
-**Community Edition:** Free and open source, with no RunWhale account or subscription. AI features require your own supported provider credentials and internet access; provider charges may apply.
-
 ## Demo
 
 https://github.com/user-attachments/assets/b8b7d184-8d6b-4fc0-b954-c159c02aa1b4
@@ -20,8 +18,6 @@ https://github.com/user-attachments/assets/b8b7d184-8d6b-4fc0-b954-c159c02aa1b4
 ## Get Started
 
 Configure your AI provider, create or import a project, then ask the Agent to write code and open Preview.
-
-Use **Workspace → project more actions → Add to Home Screen** to launch the latest successful Preview directly. Keep RunWhale and the project installed.
 
 ## Scope
 

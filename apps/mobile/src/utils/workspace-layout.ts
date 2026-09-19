@@ -53,8 +53,12 @@ export function workspaceEditorContentState(fileSelected: boolean): WorkspaceEdi
   return fileSelected ? 'file' : 'empty'
 }
 
-export function workspaceSupportsEmbeddedPreview(platform: string, isPad: boolean): boolean {
-  return platform === 'ios' && isPad
+export function workspaceSupportsEmbeddedPreview(platform: string): boolean {
+  return platform === 'ios'
+}
+
+export function workspacePreviewPresentationForWidth(preferred: WorkspacePreviewPresentation, width: number): WorkspacePreviewPresentation {
+  return preferred === 'split' && width < 760 ? 'full' : preferred
 }
 
 export function workspaceProjectOpenActionState(sessionLoadStatus: 'loading' | 'loaded' | 'failed'): { busy: boolean; disabled: boolean } {

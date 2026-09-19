@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Button } from 'heroui-native/button'
 import { Spinner } from 'heroui-native/spinner'
-import { ChevronDown, FolderTree, RefreshCw, Smartphone } from '@/components/icons'
+import { ChevronDown, FolderTree, Maximize2, RefreshCw, Smartphone } from '@/components/icons'
 import { AppIcon } from '@/components/AppIcon'
 import { PageBackButton } from '@/components/PageBackButton'
 import { PendingButton } from '@/components/PendingButton'
@@ -25,11 +25,13 @@ export function ProjectSessionNavigation({
   activeSurface = 'agent',
   onSurfaceChange,
   onPreviewRun,
+  onPreviewExpand,
   previewAvailable = false,
   onBack,
   backLabel,
   previewBusy = false,
   onOpenDetails,
+  expanded = false,
 }: {
   title: string
   status?: string
@@ -38,11 +40,13 @@ export function ProjectSessionNavigation({
   activeSurface?: ProjectSessionSurface
   onSurfaceChange?(surface: ProjectSessionSurface): void
   onPreviewRun?(): void
+  onPreviewExpand?(): void
   previewAvailable?: boolean
   onBack?(): void
   backLabel?: string
   previewBusy?: boolean
   onOpenDetails?(): void
+  expanded?: boolean
 }) {
   const { t } = useI18n()
   const colors = useAppColors()
@@ -50,7 +54,7 @@ export function ProjectSessionNavigation({
   const surfaceLabel = (surface: 'files' | 'preview') => surface === 'files' ? t('files') : t('preview')
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, expanded && styles.headerExpanded]}>
       {onBack ? <PageBackButton label={backLabel} onPress={onBack} /> : null}
       <Pressable accessibilityRole={onOpenDetails ? 'button' : 'header'} accessibilityLabel={onOpenDetails ? `${title} · ${t('sessionDetails')}` : title} onPress={onOpenDetails} disabled={!onOpenDetails} testID="session-details-action" style={({ pressed }) => [styles.identity, pressed && styles.identityPressed]}>
         <View style={styles.titleRow}><Text numberOfLines={1} style={styles.title}>{title}</Text>{onOpenDetails ? <AppIcon icon={ChevronDown} color={colors.muted} size={13} /> : null}</View>
@@ -62,18 +66,27 @@ export function ProjectSessionNavigation({
           const selected = actionState.selected
           return <PendingButton
             key={surface}
-            isIconOnly
+            isIconOnly={!expanded}
             size="sm"
             variant="ghost"
             accessibilityLabel={surfaceLabel(surface)}
             accessibilityState={{ selected }}
             isPending={actionState.busy}
             onPress={() => onSurfaceChange(selected ? 'agent' : surface)}
-            style={styles.surfaceAction}
+            style={[styles.surfaceAction, expanded && styles.surfaceActionExpanded]}
           >{({ isPending }) => isPending
             ? <View style={[styles.surfaceActionSurface, selected && styles.surfaceActionActive]}><Spinner color={colors.accent} size="sm" /></View>
-            : <View style={[styles.surfaceActionSurface, selected && styles.surfaceActionActive]}><AppIcon icon={surfaceIcons[surface]} color={selected ? colors.accent : colors.muted} size={17} /></View>}</PendingButton>
+            : <View style={[styles.surfaceActionSurface, expanded && styles.surfaceActionSurfaceExpanded, selected && styles.surfaceActionActive]}><AppIcon icon={surfaceIcons[surface]} color={selected ? colors.accent : colors.muted} size={17} />{expanded ? <Text style={[styles.surfaceLabel, selected && styles.surfaceLabelActive]}>{surfaceLabel(surface)}</Text> : null}</View>}</PendingButton>
         })}
+        {onPreviewExpand ? <Button
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          testID="preview-size-toggle"
+          accessibilityLabel={t('expandPreview')}
+          onPress={onPreviewExpand}
+          style={styles.surfaceAction}
+        ><View style={styles.surfaceActionSurface}><AppIcon icon={Maximize2} color={colors.muted} size={17} /></View></Button> : null}
         {onPreviewRun ? <PendingButton
           isIconOnly
           size="sm"
@@ -102,6 +115,7 @@ export function localizedSessionState(state: string, t: ReturnType<typeof useI18
 
 function createStyles(colors: ThemeColors) { return StyleSheet.create({
   header: { minHeight: projectSessionNavigationContract.headerMinHeight, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.panel },
+  headerExpanded: { minHeight: 52, paddingHorizontal: 12, gap: 8 },
   identity: { flex: 1, minWidth: 0, height: 44, paddingHorizontal: 2, alignItems: 'flex-start', justifyContent: 'center', gap: 3 },
   identityPressed: { opacity: 0.65 },
   titleRow: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -113,6 +127,10 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   statusMeta: { minWidth: 0, flexShrink: 1, color: colors.muted, fontSize: 9 },
   surfaceActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   surfaceAction: { width: projectSessionNavigationContract.surfaceActionSize, height: projectSessionNavigationContract.surfaceActionSize, paddingHorizontal: 0, alignItems: 'center', justifyContent: 'center' },
+  surfaceActionExpanded: { width: 'auto', minWidth: 88 },
+  surfaceActionSurfaceExpanded: { width: 'auto', minWidth: 82, paddingHorizontal: 12, flexDirection: 'row', gap: 7 },
+  surfaceLabel: { color: colors.muted, fontSize: 12, fontWeight: '700' },
+  surfaceLabelActive: { color: colors.accent },
   surfaceActionSurface: { width: projectSessionNavigationContract.actionVisualSize, height: projectSessionNavigationContract.actionVisualSize, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   surfaceActionActive: { backgroundColor: colors.accentDeep },
 }) }

@@ -25,7 +25,7 @@ vi.mock('heroui-native/button', async () => {
 })
 vi.mock('heroui-native/alert', () => ({ Alert: Object.assign('Alert', { Content: 'Content', Description: 'Description', Indicator: 'Indicator' }) }))
 vi.mock('heroui-native/spinner', () => ({ Spinner: 'Spinner' }))
-vi.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }))
+vi.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView', useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }))
 vi.mock('@/components/AppIcon', () => ({ AppIcon: 'AppIcon' }))
 vi.mock('@/components/icons', () => ({ ChevronDown: '', ChevronRight: '', CircleEllipsis: '', Code2: '', FolderGit2: '', FolderInput: '', Pencil: '', Play: '', Plus: '', Share2: '', Smartphone: '', Trash2: '', History: '' }))
 vi.mock('@/components/AppDialog', () => ({ AppDialog: () => null }))

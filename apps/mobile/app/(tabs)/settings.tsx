@@ -7,7 +7,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { Bot, ChevronRight, Cpu, Database, Info, KeyRound, PlugZap, SlidersHorizontal, type LucideIcon } from '@/components/icons'
 import { Button } from 'heroui-native/button'
 import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { topLevelPageTitleStyle, topLevelScreenLayout, typeScale, type ThemeColors, useAppColors } from '@/theme/tokens'
 import { settingsControlColorsFor } from '@/theme/settings-control-colors'
 import { useRuntime } from '@/state/runtime'
@@ -27,6 +27,9 @@ export default function SettingsScreen() {
   const runtime = useRuntime()
   const { t, language } = useI18n()
   const colors = useAppColors()
+  const { width } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
+  const wide = width - insets.left - insets.right >= 760
   const styles = useMemo(() => createStyles(colors), [colors])
   const { modelProvider, agentPreset } = usePreferences()
   const [sshStorage, setSshStorage] = useState<{ metadata: SshPublicMetadataState; secureStorage: SshSecureStorageState }>({
@@ -50,10 +53,12 @@ export default function SettingsScreen() {
   const sshStatus = localizedSshStorageState(sshStorage, t)
   const sshStatusFailed = sshSettingsSummaryState(sshStorage) === 'failed'
 
-  return <SafeAreaView style={styles.safe} edges={['top']}>
-    <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+  return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <ScrollView contentContainerStyle={[styles.content, wide && styles.contentWide]} showsVerticalScrollIndicator={false}>
       <View style={styles.pageHeader}><Text accessibilityRole="header" style={styles.pageTitle}>{t('settings')}</Text>{renderSlot('settings.header')}</View>
       {renderSlot('settings.promotion', { language })}
+      <View style={[styles.sections, wide && styles.sectionsWide]}>
+      <View style={styles.sectionColumn}>
       <SectionTitle>{t('agentSettings')}</SectionTitle>
       <View style={styles.settingsGroup}>
         <SettingsLink icon={SlidersHorizontal} label={t('general')} description={t('generalSettingsSummary')} onPress={() => router.push(settingsDetailRoutes.general)} />
@@ -61,11 +66,15 @@ export default function SettingsScreen() {
         <SettingsLink icon={Bot} label={t('agentPresets')} description={t('agentPresetsSettingsSummary')} value={agentPreset === 'standard' ? t('standardPreset') : t('minimalPreset')} onPress={() => router.push(settingsDetailRoutes.presets)} />
         <SettingsLink icon={PlugZap} label={t('plugins')} description={t('pluginsSettingsSummary')} value={t('mobileProfile')} onPress={() => router.push(settingsDetailRoutes.plugins)} last />
       </View>
+      </View>
+      <View style={styles.sectionColumn}>
       <SectionTitle>{t('runWhale')}</SectionTitle>
       <View style={styles.settingsGroup}>
         <SettingsLink icon={Cpu} label={t('runtime')} description={t('runtimeSettingsSummary')} value={localizedRuntimeState(runtimeSettingsSummaryState(runtime.snapshot.state, Boolean(runtime.info), Boolean(runtime.lastError)), t)} onPress={() => router.push(settingsDetailRoutes.runtime)} />
         <SettingsLink icon={KeyRound} label={t('githubSshKey')} description={t('sshSettingsSummary')} value={sshStatus.value} valueDanger={sshStatusFailed} accessibilityHint={sshStatus.hint} onPress={() => router.push(settingsDetailRoutes.ssh)} />
         <SettingsLink icon={Info} label={t('about')} description={t('aboutSettingsSummary')} onPress={() => router.push(settingsDetailRoutes.about)} last />
+      </View>
+      </View>
       </View>
     </ScrollView>
   </SafeAreaView>
@@ -134,6 +143,10 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
   safe: { flex: 1, ...tabScreenBackground(colors, 'rose') },
   content: { width: '100%', maxWidth: deviceLayout.readableContentMaximumWidth, alignSelf: 'center', paddingHorizontal: 18, paddingTop: topLevelScreenLayout.topPadding, paddingBottom: 34, gap: 9 },
+  contentWide: { maxWidth: 1120, paddingHorizontal: 28, paddingTop: 20 },
+  sections: { gap: 16 },
+  sectionsWide: { flexDirection: 'row', alignItems: 'flex-start', gap: 20 },
+  sectionColumn: { flex: 1, minWidth: 0, gap: 10 },
   pageHeader: { minHeight: topLevelScreenLayout.headerMinHeight, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pageTitle: { color: colors.text, ...topLevelPageTitleStyle },
   section: { color: controlColors.choiceForeground, fontSize: typeScale.micro, letterSpacing: 1, fontWeight: '900', marginTop: 9, marginBottom: 2 },

@@ -1,5 +1,6 @@
 import { ProjectLoadFailure } from '@/components/ProjectLoadFailure'
 import { useLocalSearchParams, router } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
 import { ArrowLeft, FileCode2, History } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BackHandler, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
@@ -20,7 +21,7 @@ import { AppIcon } from '@/components/AppIcon'
 import { createMobileSessionId } from '@/utils/session-id'
 import { firstPromptSessionTitle, loadSessionSummariesOnce, sessionRefreshPresentationStatus, shouldInitializeSessionTitle } from '@/utils/session-actions'
 import { actionErrorPresentation, runExclusiveAction } from '@/utils/action-progress'
-import { workspaceAndroidBackAction, workspaceEditorContentState, workspaceFilePaneVisibility, workspacePreferredFilePath, workspacePreviewAutoOpenRequested, workspaceProjectRouteState, workspaceSupportsEmbeddedPreview, type WorkspaceFilePane, type WorkspacePreviewPresentation } from '@/utils/workspace-layout'
+import { workspaceAndroidBackAction, workspaceEditorContentState, workspaceFilePaneVisibility, workspacePreferredFilePath, workspacePreviewAutoOpenRequested, workspacePreviewPresentationForWidth, workspaceProjectRouteState, workspaceSupportsEmbeddedPreview, type WorkspaceFilePane, type WorkspacePreviewPresentation } from '@/utils/workspace-layout'
 import { latestAgentLifecycleState } from '@/utils/agent-lifecycle'
 import { returnFromSecondaryPage } from '@/utils/secondary-page-navigation'
 
@@ -34,22 +35,26 @@ export default function WorkspaceScreen() {
   const colors = useAppColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const safeAreaInsets = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
+  const contentWidth = width - safeAreaInsets.left - safeAreaInsets.right
+  const wide = contentWidth >= 760
   const project = projects.find((item) => item.id === id)
   const projectRouteState = workspaceProjectRouteState(projectLoadStatus, Boolean(project))
   const [retryingProjectLoad, setRetryingProjectLoad] = useState(false)
   const projectLoadRetryInFlight = useRef(false)
   const [surface, setSurface] = useState<ProjectSessionSurface>('agent')
   const [autoOpenPreview] = useState(() => workspacePreviewAutoOpenRequested(preview))
-  const supportsEmbeddedPreview = workspaceSupportsEmbeddedPreview(Platform.OS, Platform.OS === 'ios' && Platform.isPad)
-  const [previewPresentation, setPreviewPresentation] = useState<WorkspacePreviewPresentation>(() => autoOpenPreview && supportsEmbeddedPreview ? 'split' : 'hidden')
+  const supportsEmbeddedPreview = workspaceSupportsEmbeddedPreview(Platform.OS)
+  const [preferredPreviewPresentation, setPreviewPresentation] = useState<WorkspacePreviewPresentation>(() => autoOpenPreview && supportsEmbeddedPreview ? 'split' : 'hidden')
+  const previewPresentation = workspacePreviewPresentationForWidth(preferredPreviewPresentation, contentWidth)
   const [previewBusy, setPreviewBusy] = useState(false)
   const previewRef = useRef<PreviewPanelHandle>(null)
   const requestPreviewPresentation = useCallback((nextPresentation: PreviewPanelPresentation | 'hidden') => {
     if (!supportsEmbeddedPreview) return
     const resolved = nextPresentation === 'overlay' ? 'split' : nextPresentation
-    setPreviewPresentation(resolved)
+    setPreviewPresentation((current) => !wide && resolved === 'full' ? current === 'hidden' ? 'split' : current : resolved)
     if (resolved !== 'hidden') setSurface('agent')
-  }, [supportsEmbeddedPreview])
+  }, [supportsEmbeddedPreview, wide])
   const closePreview = useCallback(() => {
     previewRef.current?.minimize()
     setPreviewPresentation('hidden')
@@ -74,8 +79,7 @@ export default function WorkspaceScreen() {
   const [fileSearch, setFileSearch] = useState('')
   const [filesMounted, setFilesMounted] = useState(false)
   const [compactFilePane, setCompactFilePane] = useState<WorkspaceFilePane>('browser')
-  const { width } = useWindowDimensions()
-  const filePaneVisibility = workspaceFilePaneVisibility(width, compactFilePane)
+  const filePaneVisibility = workspaceFilePaneVisibility(contentWidth, compactFilePane)
   const filePaneSplit = filePaneVisibility.split
   const filePaths = project ? projectFilePaths(project) : []
   const [fileError, setFileError] = useState<string>()
@@ -102,7 +106,7 @@ export default function WorkspaceScreen() {
     if (requestedSessionId) setSessionId(requestedSessionId)
   }, [requestedSessionId])
   useEffect(() => {
-    if (!filePaneSplit) setCompactFilePane('browser')
+    if (filePaneSplit) setCompactFilePane('editor')
   }, [filePaneSplit])
   useEffect(() => {
     if (Platform.OS !== 'android') return
@@ -249,51 +253,60 @@ export default function WorkspaceScreen() {
   const turnCount = selectedSession?.turnCount ?? 0
   const statusMeta = sessionSummaryStatus === 'ready' ? t(turnCount === 1 ? 'turnCountSingular' : 'turnCount', { count: turnCount }) : ''
   const previewVisible = previewPresentation !== 'hidden'
+  const edgeToEdgePreview = previewPresentation === 'full'
   const navigationSurface: ProjectSessionSurface = previewVisible ? 'preview' : surface
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={[styles.safe, styles.navigationSafe]}>
-      {previewPresentation !== 'full' ? <ProjectSessionNavigation
-        title={selectedSession?.title ?? projectName}
-        onOpenDetails={() => { Keyboard.dismiss(); setSessionDetailsOpen(true) }}
-        status={status}
-        statusMeta={statusMeta}
-        statusActive={sessionRunning || (sessionSummaryStatus === 'ready' && selectedSession?.state === 'completed')}
-        activeSurface={navigationSurface}
-        onSurfaceChange={(nextSurface) => {
-          if (nextSurface === 'preview') {
-            if (supportsEmbeddedPreview) {
-              setSurface('agent')
-              setPreviewPresentation('split')
-            }
-            void previewRef.current?.open()
-            return
-          }
-          if (previewVisible) closePreview()
-          if (nextSurface === 'files') {
-            setFilesMounted(true)
-            if (!filePaneSplit) setCompactFilePane('browser')
-          }
-          setSurface(nextSurface)
-        }}
-        onPreviewRun={() => { void previewRef.current?.run() }}
-        previewAvailable={Boolean(runtime.info)}
-        previewBusy={previewBusy}
-        backLabel={surface === 'agent' && !previewVisible ? t('back') : `${t('back')}: ${t('agent')}`}
-        onBack={() => { if (previewVisible) closePreview(); else if (surface === 'agent') leaveProject(); else setSurface('agent') }}
-      /> : null}
-      {previewPresentation !== 'full' && sessionSummaryStatus === 'failed' ? <View style={styles.sessionSummaryFailure}>
-        <Alert {...actionErrorPresentation}>
-          <Alert.Indicator iconProps={{ size: 17 }} />
-          <Alert.Content><Alert.Description style={styles.sessionSummaryError}>{t('sessionsLoadFailed')}</Alert.Description></Alert.Content>
-        </Alert>
-        <Button size="sm" variant="secondary" accessibilityLabel={t('retry')} accessibilityState={{ disabled: !runtime.info }} isDisabled={!runtime.info} onPress={() => { void refreshSessions() }} style={styles.sessionSummaryRetry}><Button.Label>{t('retry')}</Button.Label></Button>
-      </View> : null}
-      <View style={[styles.body, (surface !== 'agent' || previewVisible) && { paddingBottom: safeAreaInsets.bottom }]}>
-        <View style={[styles.active, previewPresentation === 'full' && styles.activeHidden]}>
-          <View style={[styles.surfacePanel, surface !== 'agent' && styles.activeHidden]}>{agentPanel}</View>
-          {filesMounted ? <View style={[styles.surfacePanel, surface !== 'files' && styles.activeHidden]}>{filesPanel}</View> : null}
-        </View>
+    <SafeAreaView edges={previewVisible ? [] : ['top', 'left', 'right']} style={[styles.safe, styles.navigationSafe]}>
+      {edgeToEdgePreview ? <StatusBar hidden /> : null}
+      <View style={[styles.body, previewPresentation === 'split' && styles.bodySplit]}>
+        <SafeAreaView
+          edges={previewPresentation === 'split' ? ['top', 'right'] : []}
+          style={[styles.active, previewPresentation === 'split' && styles.activeSplit, previewPresentation === 'full' && styles.activeHidden]}
+        >
+          {previewPresentation !== 'full' ? <ProjectSessionNavigation
+            expanded={wide && (previewPresentation !== 'split' || width / 2 - safeAreaInsets.right >= 600)}
+            title={selectedSession?.title ?? projectName}
+            onOpenDetails={() => { Keyboard.dismiss(); setSessionDetailsOpen(true) }}
+            status={status}
+            statusMeta={statusMeta}
+            statusActive={sessionRunning || (sessionSummaryStatus === 'ready' && selectedSession?.state === 'completed')}
+            activeSurface={navigationSurface}
+            onSurfaceChange={(nextSurface) => {
+              if (nextSurface === 'preview') {
+                if (supportsEmbeddedPreview) {
+                  setSurface('agent')
+                  setPreviewPresentation('split')
+                }
+                void previewRef.current?.open()
+                return
+              }
+              if (previewVisible) closePreview()
+              if (nextSurface === 'files') {
+                setFilesMounted(true)
+                if (!filePaneSplit) setCompactFilePane('browser')
+              }
+              setSurface(nextSurface)
+            }}
+            onPreviewExpand={previewPresentation === 'split' ? () => requestPreviewPresentation('full') : undefined}
+            onPreviewRun={() => { void previewRef.current?.run() }}
+            previewAvailable={Boolean(runtime.info)}
+            previewBusy={previewBusy}
+            backLabel={surface === 'agent' && !previewVisible ? t('back') : `${t('back')}: ${t('agent')}`}
+            onBack={() => { if (previewVisible) closePreview(); else if (surface === 'agent') leaveProject(); else setSurface('agent') }}
+          /> : null}
+          {previewPresentation !== 'full' && sessionSummaryStatus === 'failed' ? <View style={styles.sessionSummaryFailure}>
+            <Alert {...actionErrorPresentation}>
+              <Alert.Indicator iconProps={{ size: 17 }} />
+              <Alert.Content><Alert.Description style={styles.sessionSummaryError}>{t('sessionsLoadFailed')}</Alert.Description></Alert.Content>
+            </Alert>
+            <Button size="sm" variant="secondary" accessibilityLabel={t('retry')} accessibilityState={{ disabled: !runtime.info }} isDisabled={!runtime.info} onPress={() => { void refreshSessions() }} style={styles.sessionSummaryRetry}><Button.Label>{t('retry')}</Button.Label></Button>
+          </View> : null}
+          <View style={[styles.surfacePanel, surface !== 'agent' && { paddingBottom: safeAreaInsets.bottom }]}>
+            <View style={[styles.surfacePanel, surface !== 'agent' && styles.activeHidden]}>{agentPanel}</View>
+            {filesMounted ? <View style={[styles.surfacePanel, surface !== 'files' && styles.activeHidden]}>{filesPanel}</View> : null}
+          </View>
+        </SafeAreaView>
         <PreviewPanel
           ref={previewRef}
           key={project.id}
@@ -303,6 +316,7 @@ export default function WorkspaceScreen() {
           agentRunning={sessionRunning}
           onBusyChange={setPreviewBusy}
           presentation={previewPresentation === 'hidden' ? 'overlay' : previewPresentation}
+          canSplit={wide}
           onPresentationRequested={requestPreviewPresentation}
           onFixWithAgent={(text) => {
             closePreview()
@@ -344,21 +358,23 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   sessionSummaryError: { color: colors.danger, fontSize: 11, lineHeight: 17 },
   sessionSummaryRetry: { height: 'auto', alignSelf: 'flex-start', minHeight: controlSize.regular },
   body: { flex: 1, flexDirection: 'row', backgroundColor: colors.canvas },
-  active: { flex: 1 },
+  bodySplit: { flexDirection: 'row-reverse' },
+  active: { flex: 1, minWidth: 0 },
+  activeSplit: { flex: 0, width: '50%', overflow: 'hidden', borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.border },
   surfacePanel: { flex: 1 },
   activeHidden: { display: 'none' },
   editorPane: { flex: 1, flexDirection: 'row', backgroundColor: colors.panel },
   fileBrowser: { backgroundColor: colors.canvas, borderRightColor: colors.border, borderRightWidth: 1 },
-  fileBrowserWide: { width: 190 },
+  fileBrowserWide: { width: '29%', minWidth: 220, maxWidth: 300, padding: 6 },
   fileBrowserCompact: { flex: 1, borderRightWidth: 0 },
-  fileSearch: { height: Platform.OS === 'ios' ? controlSize.regular + 2 : controlSize.regular, margin: 8, marginBottom: 4, paddingHorizontal: 9, borderWidth: 1, borderColor: colors.border, borderRadius: 6, color: colors.text, fontSize: 11 },
+  fileSearch: { height: Platform.OS === 'ios' ? controlSize.regular + 2 : controlSize.regular, margin: 8, marginBottom: 4, paddingHorizontal: 12, backgroundColor: colors.panel, borderWidth: 1, borderColor: colors.border, borderRadius: 12, color: colors.text, fontSize: 13 },
   fileListScroll: { flex: 1 },
   fileList: { paddingBottom: 12 },
   fileSection: { color: colors.muted, fontSize: 9, fontWeight: '900', letterSpacing: 1, paddingHorizontal: 10, paddingTop: 9, paddingBottom: 4 },
-  fileRow: { height: 'auto', minHeight: controlSize.prominent, borderRadius: 0, paddingHorizontal: 9, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', gap: 7, borderLeftWidth: 2, borderLeftColor: 'transparent' },
-  fileRowActive: { backgroundColor: colors.panel, borderLeftColor: colors.accent },
+  fileRow: { height: 'auto', minHeight: controlSize.prominent, borderRadius: 10, marginHorizontal: 6, marginVertical: 2, paddingHorizontal: 10, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  fileRowActive: { backgroundColor: colors.accentDeep },
   fileLabel: { flex: 1 },
-  fileName: { color: colors.muted, fontSize: 11, fontFamily: 'monospace' },
+  fileName: { color: colors.muted, fontSize: 12, fontFamily: 'monospace' },
   fileNameActive: { color: colors.text },
   fileFolder: { color: colors.muted, fontSize: 9, fontFamily: 'monospace', marginTop: 1 },
   noFiles: { gap: 3, padding: 10 },

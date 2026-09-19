@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { WORKSPACE_COLLAPSED_SESSION_COUNT, WORKSPACE_PREVIEW_OPEN_REQUEST, workspaceAndroidBackAction, workspacePreferredFilePath, workspacePreviewAutoOpenRequested, workspaceProjectOpenActionState, workspaceProjectRouteState, workspaceVisibleSessions } from '../src/utils/workspace-layout'
+import { WORKSPACE_COLLAPSED_SESSION_COUNT, WORKSPACE_PREVIEW_OPEN_REQUEST, workspaceAndroidBackAction, workspacePreferredFilePath, workspacePreviewAutoOpenRequested, workspacePreviewPresentationForWidth, workspaceProjectOpenActionState, workspaceProjectRouteState, workspaceSupportsEmbeddedPreview, workspaceVisibleSessions } from '../src/utils/workspace-layout'
 
 describe('Workspace navigation and project state', () => {
+  it('uses full preview on narrow screens and restores the split preference on wide screens', () => {
+    expect(workspaceSupportsEmbeddedPreview('ios')).toBe(true)
+    expect(workspaceSupportsEmbeddedPreview('android')).toBe(false)
+    const availableWidths = [900, 390, 900]
+    expect(availableWidths.map(width => workspacePreviewPresentationForWidth('split', width))).toEqual(['split', 'full', 'split'])
+    expect(workspacePreviewPresentationForWidth('full', 871)).toBe('full')
+    expect(workspacePreviewPresentationForWidth('hidden', 386)).toBe('hidden')
+  })
+
   it('recognizes cache-first auto-open requests for routed Preview entry points', () => {
     expect(WORKSPACE_PREVIEW_OPEN_REQUEST).toBe('open')
     expect(workspacePreviewAutoOpenRequested(WORKSPACE_PREVIEW_OPEN_REQUEST)).toBe(true)

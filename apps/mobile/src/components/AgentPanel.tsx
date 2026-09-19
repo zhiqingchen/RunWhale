@@ -53,6 +53,8 @@ export function AgentPanel(props: AgentPanelProps) {
   const { t } = useI18n()
   const colors = useAppColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const wide = windowWidth - safeAreaInsets.left - safeAreaInsets.right >= 760
+  const composerBottomInset = wide ? Math.min(safeAreaInsets.bottom, 8) : safeAreaInsets.bottom
   const systemPrompt = useMemo(() => latestSessionSystemPrompt(currentSessionEvents), [currentSessionEvents])
   return <View style={[styles.root, keyboardOverlap > 0 && { paddingBottom: keyboardOverlap }]}>
     {props.onSessionDetailsOpenChange ? <SessionDetailsSheet
@@ -189,7 +191,7 @@ export function AgentPanel(props: AgentPanelProps) {
         : error ? <InlineError message={error} /> : null}
     </>}
     />
-    <View style={[styles.composer, { paddingBottom: agentComposerBottomPadding(safeAreaInsets.bottom, keyboardVisible) }]}>
+    <View style={[styles.composer, { paddingBottom: agentComposerBottomPadding(composerBottomInset, keyboardVisible) }]}>
       {pendingAgentApproval ? <AgentToolApprovalPopover
         event={pendingAgentApproval}
         busy={approvalBusy}
@@ -475,7 +477,7 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   rejectText: { color: colors.muted, fontSize: 12, lineHeight: 18, fontWeight: '800' },
   approve: { height: agentPanelInteractionContract.minimumTouchTarget, minHeight: agentPanelInteractionContract.minimumTouchTarget, paddingHorizontal: 14, paddingVertical: 0, borderRadius: radius.small, backgroundColor: colors.accent, gap: 6 },
   approveText: { color: '#FFFFFF', fontSize: 12, lineHeight: 18, fontWeight: '900' },
-  composer: { paddingHorizontal: agentPanelInteractionContract.composerHorizontalPadding, paddingTop: agentPanelInteractionContract.composerTopPadding, gap: agentPanelInteractionContract.composerSectionGap, backgroundColor: colors.canvas },
+  composer: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: agentPanelInteractionContract.composerHorizontalPadding, paddingTop: agentPanelInteractionContract.composerTopPadding, gap: agentPanelInteractionContract.composerSectionGap, backgroundColor: colors.canvas },
   composerCard: { padding: agentPanelInteractionContract.composerCardPadding, gap: agentPanelInteractionContract.composerCardGap, borderWidth: agentPanelInteractionContract.composerCardBorderWidth, borderColor: colors.border, borderRadius: agentPanelInteractionContract.composerCardRadius, backgroundColor: colors.panel, shadowColor: '#15336A', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 4 },
   attachmentList: { gap: 8, paddingTop: 6, paddingRight: 6 },
   attachmentPreview: { width: 60, height: 60, borderRadius: 10, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.raised },

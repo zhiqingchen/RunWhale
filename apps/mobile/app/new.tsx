@@ -2,8 +2,9 @@ import { ProjectLoadFailure } from '@/components/ProjectLoadFailure'
 import { router } from 'expo-router'
 import { usePreventRemove } from 'expo-router/react-navigation'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { Bot, Code2, GitBranch, Smartphone } from '@/components/icons'
+import { Bot, Check, Code2, GitBranch, Smartphone } from '@/components/icons'
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { Alert } from 'heroui-native/alert'
 import { Button } from 'heroui-native/button'
 import { Spinner } from 'heroui-native/spinner'
@@ -20,7 +21,6 @@ import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll'
 import { completeNewProjectSubmission, idleNewProjectSubmissionUiState, newProjectAvailability, newProjectSubmissionKey, newProjectSubmissionUiReducer, prepareNewProjectSubmission, type PreparedNewProjectSubmission } from '@/utils/new-project-flow'
 import { cloneProgressMessageKey, cloneProgressPercent } from '@/utils/clone-progress'
 import type { ProjectCloneProgress } from '@runwhale/mobile-protocol'
-import { deviceLayout } from '@/utils/device-layout'
 import { beginStudioOperation } from '#extensions'
 
 export default function NewProjectScreen() {
@@ -118,6 +118,7 @@ export default function NewProjectScreen() {
     })
   }
   return <>
+    <SafeAreaView edges={['left', 'right']} style={styles.screen}>
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         ref={scrollRef}
@@ -146,15 +147,17 @@ export default function NewProjectScreen() {
           <View style={styles.templates}>
             <Button size="lg" variant={template === 'expo' ? 'primary' : 'secondary'} accessibilityRole="radio" accessibilityState={{ disabled: availability.controlsDisabled, checked: template === 'expo' }} isDisabled={availability.controlsDisabled} onPress={() => setTemplate('expo')} style={[styles.template, template === 'expo' && styles.templateActive]}>
               <View style={styles.templateHeader}>
-                <AppIcon icon={Smartphone} color={template === 'expo' ? '#FFFFFF' : colors.accent} size={20} />
+                <AppIcon icon={Smartphone} color={colors.accent} size={22} />
                 <Text style={[styles.templateTitle, template === 'expo' && styles.templateTitleActive]}>{t('expoTemplate')}</Text>
+                {template === 'expo' ? <AppIcon icon={Check} color={colors.accent} size={16} /> : null}
               </View>
               <Text style={[styles.templateDescription, template === 'expo' && styles.templateDescriptionActive]}>{t('expoTemplateDescription')}</Text>
             </Button>
             <Button size="lg" variant={template === 'web' ? 'primary' : 'secondary'} accessibilityRole="radio" accessibilityState={{ disabled: availability.controlsDisabled, checked: template === 'web' }} isDisabled={availability.controlsDisabled} onPress={() => setTemplate('web')} style={[styles.template, template === 'web' && styles.templateActive]}>
               <View style={styles.templateHeader}>
-                <AppIcon icon={Code2} color={template === 'web' ? '#FFFFFF' : colors.blue} size={20} />
+                <AppIcon icon={Code2} color={colors.blue} size={22} />
                 <Text style={[styles.templateTitle, template === 'web' && styles.templateTitleActive]}>{t('webTemplate')}</Text>
+                {template === 'web' ? <AppIcon icon={Check} color={colors.accent} size={16} /> : null}
               </View>
               <Text style={[styles.templateDescription, template === 'web' && styles.templateDescriptionActive]}>{t('webTemplateDescription')}</Text>
             </Button>
@@ -197,6 +200,7 @@ export default function NewProjectScreen() {
         </PendingButton>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
     <AppDialog
       open={submissionUi.dismissalNoticeOpen}
       onOpenChange={(open) => { if (!open) dispatchSubmissionUi({ type: 'dismiss-notice' }) }}
@@ -211,19 +215,19 @@ export default function NewProjectScreen() {
 
 function createStyles(colors: ThemeColors) { return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  form: { width: '100%', maxWidth: deviceLayout.readableContentMaximumWidth, alignSelf: 'center', padding: 18, paddingBottom: 96, gap: 9 },
+  form: { width: '100%', maxWidth: 660, alignSelf: 'center', padding: 22, paddingBottom: 96, gap: 12 },
   projectLoadState: { minHeight: 96, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, borderRadius: radius.large, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.panel },
   projectLoadText: { color: colors.muted, fontSize: typeScale.label, fontWeight: '700' },
   label: { color: colors.muted, fontSize: typeScale.micro, letterSpacing: 1.1, fontWeight: '800', marginTop: 9 },
   input: { minHeight: controlSize.prominent, color: colors.text, backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, borderRadius: radius.medium, paddingHorizontal: 13, paddingVertical: 10, fontSize: typeScale.body },
-  templates: { flexDirection: 'row', gap: 9 },
-  template: { flex: 1, height: 'auto', minHeight: 92, padding: 12, alignItems: 'flex-start', justifyContent: 'flex-start', flexDirection: 'column', gap: 9, borderWidth: 1, borderColor: colors.border, borderRadius: radius.medium, backgroundColor: colors.panel },
-  templateActive: { borderColor: colors.accent, backgroundColor: colors.accent },
-  templateHeader: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  templateTitle: { color: colors.text, fontSize: typeScale.body, fontWeight: '900' },
-  templateTitleActive: { color: '#FFFFFF' },
+  templates: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  template: { flex: 1, minWidth: 140, height: 'auto', minHeight: 112, padding: 14, alignItems: 'flex-start', justifyContent: 'flex-start', flexDirection: 'column', gap: 12, borderWidth: 1, borderColor: colors.border, borderRadius: radius.medium, backgroundColor: colors.panel },
+  templateActive: { borderColor: colors.accent, backgroundColor: colors.accentDeep },
+  templateHeader: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 8 },
+  templateTitle: { flex: 1, color: colors.text, fontSize: typeScale.body, fontWeight: '800' },
+  templateTitleActive: { color: colors.accent },
   templateDescription: { color: colors.muted, fontSize: typeScale.caption, lineHeight: 16 },
-  templateDescriptionActive: { color: '#E6FFF8' },
+  templateDescriptionActive: { color: colors.accent },
   note: { padding: 12, borderRadius: radius.small, backgroundColor: colors.accentDeep },
   noteText: { color: colors.accent, fontSize: typeScale.caption, lineHeight: 17 },
   cloneProgress: { padding: 12, gap: 8, borderWidth: 1, borderColor: colors.border, borderRadius: radius.medium, backgroundColor: colors.panel },

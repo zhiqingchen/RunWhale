@@ -4,8 +4,6 @@
 
 RunWhale（哪里跑）是一款手机端 AI 编程智能体，支持使用本地工具和 Git 创建、编辑并预览 Web 与 React Native 项目。
 
-**社区版：** 免费开源，无需 RunWhale 账号或订阅。AI 功能需要自行配置受支持的服务商凭据并联网使用，服务商可能收取费用。
-
 ## 演示
 
 https://github.com/user-attachments/assets/b8b7d184-8d6b-4fc0-b954-c159c02aa1b4
@@ -20,8 +18,6 @@ https://github.com/user-attachments/assets/b8b7d184-8d6b-4fc0-b954-c159c02aa1b4
 ## 开始使用
 
 配置 AI 服务商，创建或导入项目，再让智能体编写代码并打开预览。
-
-通过 **工作区 → 项目更多操作 → 添加到主屏幕**，可以直接打开项目最近一次成功的预览。请保留 RunWhale 应用和项目。
 
 ## 支持范围
 

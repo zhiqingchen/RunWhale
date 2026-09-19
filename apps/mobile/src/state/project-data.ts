@@ -398,7 +398,7 @@ function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0D131E' },
   title: { color: '#ffffff', fontSize: 32, fontWeight: '700' },
 })
 

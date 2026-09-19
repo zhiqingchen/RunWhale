@@ -682,7 +682,7 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
 function useTranscriptStyles() { const colors = useAppColors(); return useMemo(() => createStyles(colors), [colors]) }
 function createStyles(colors: ThemeColors) { return StyleSheet.create({
   virtualList: { flex: 1, backgroundColor: colors.canvas },
-  list: { padding: transcriptLayoutContract.listPadding, gap: transcriptLayoutContract.listGap },
+  list: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: transcriptLayoutContract.listPadding, gap: transcriptLayoutContract.listGap },
   loadEarlier: { minHeight: transcriptInteractionContract.loadEarlierMinimumHeight, maxWidth: '100%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8, paddingRight: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 22, backgroundColor: colors.panel, shadowColor: '#15336A', shadowOpacity: 0.05, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
   loadEarlierPressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
   loadEarlierIcon: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.accentDeep },

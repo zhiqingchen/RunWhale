@@ -9,7 +9,7 @@ import { Spinner } from 'heroui-native/spinner'
 import { ChevronDown, ChevronRight, CircleEllipsis, Code2, FolderGit2, FolderInput, Pencil, Play, Plus, Share2, Smartphone, Trash2 } from '@/components/icons'
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { isGitHubImportedProject, projectFilePaths, useProjects } from '@/state/projects'
 import { controlSize, topLevelPageTitleStyle, topLevelScreenLayout, typeScale, type ThemeColors, useAppColors } from '@/theme/tokens'
 import { useI18n } from '@/i18n'
@@ -35,7 +35,9 @@ export default function WorkspaceScreen() {
   const { t, language } = useI18n()
   const colors = useAppColors()
   const { width } = useWindowDimensions()
-  const styles = useMemo(() => createStyles(colors, workspaceProjectCardWidth(width)), [colors, width])
+  const safeAreaInsets = useSafeAreaInsets()
+  const contentWidth = width - safeAreaInsets.left - safeAreaInsets.right
+  const styles = useMemo(() => createStyles(colors, workspaceProjectCardWidth(contentWidth)), [colors, contentWidth])
   const runtime = useRuntime()
   const [sessionsByProject, setSessionsByProject] = useState<Record<string, AgentSessionSummary[]>>({})
   const [sessionLoadStatusByProject, setSessionLoadStatusByProject] = useState<Record<string, SessionSummaryLoadStatus>>({})
@@ -236,7 +238,7 @@ export default function WorkspaceScreen() {
     })
   }
 
-  return <SafeAreaView style={styles.safe} edges={['top']}>
+  return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <View>

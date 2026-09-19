@@ -200,7 +200,7 @@
   "appNamePlaceholder": "マイアプリ",
   "projectTemplate": "プロジェクトテンプレート",
   "webTemplate": "Web",
-  "webTemplateDescription": "全画面Web Previewを使うReactサイト。",
+  "webTemplateDescription": "Web Previewを使うReactサイト。",
   "expoTemplate": "Expo",
   "expoTemplateDescription": "Previewを使うExpoアプリ。",
   "githubRepositoryOptional": "Gitリポジトリ（任意）",

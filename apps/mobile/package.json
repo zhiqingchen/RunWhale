@@ -40,6 +40,7 @@
     "expo-audio": "57.0.5",
     "expo-battery": "57.0.3",
     "expo-blur": "57.0.3",
+    "expo-build-properties": "57.0.21",
     "expo-camera": "57.0.5",
     "expo-checkbox": "57.0.0",
     "expo-clipboard": "57.0.2",

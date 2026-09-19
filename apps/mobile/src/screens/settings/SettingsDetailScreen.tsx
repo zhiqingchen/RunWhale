@@ -48,7 +48,7 @@ export function SettingsDetailScreen({ detail }: { detail: SettingsDetail }) {
     return () => subscription.remove()
   }, [handleBack]))
 
-  return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+  return <SafeAreaView style={styles.safe}>
     <View style={styles.detailHeader}>
       <PageBackButton onPress={handleBack} />
       <Text accessibilityRole="header" numberOfLines={2} style={styles.detailTitle}>{detailTitle(detail, t)}</Text>

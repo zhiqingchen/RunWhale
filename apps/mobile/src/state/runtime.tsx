@@ -43,6 +43,7 @@ interface RuntimeContextValue {
 
 const RuntimeContext = createContext<RuntimeContextValue | null>(null)
 const NODE_RELAUNCH_REQUIRED = 'Embedded Node stopped and cannot restart inside the current app process. Fully close and reopen RunWhale.'
+const EVENT_PUBLICATION_INTERVAL_MS = 50
 
 export function RuntimeProvider({ children }: PropsWithChildren) {
   const { t, language, languageReady } = useI18n()
@@ -74,8 +75,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
   const [lastError, setLastError] = useState<string>()
   const [credentialSyncWarning, setCredentialSyncWarning] = useState<string>()
   const [nativePreviewDiagnostic, setNativePreviewDiagnostic] = useState<string>()
-  const [events, setEvents] = useState<HostEvent[]>([])
-  const [liveTranscriptEvents, setLiveTranscriptEvents] = useState<HostEvent[]>([])
+  const [{ events, liveTranscriptEvents }, setEventState] = useState<{ events: HostEvent[]; liveTranscriptEvents: HostEvent[] }>({ events: [], liveTranscriptEvents: [] })
   const lastEventSequence = useRef(0)
   const activeAgentRequest = useRef<{ requestId: string; projectId: string; sessionId?: string } | undefined>(undefined)
   const cloneProgressListeners = useRef(new Map<string, (progress: ProjectCloneProgress) => void>())
@@ -111,11 +111,27 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     let bootRevision = 0
     let hasActivatedHost = false
     let connectionController = new AbortController()
-    const appendEvent = (event: HostEvent) => setEvents((current) => {
-      if (current.some((item) => item.sequence === event.sequence)) return current
-      lastEventSequence.current = Math.max(lastEventSequence.current, event.sequence)
-      return [...current, event].sort((left, right) => left.sequence - right.sequence).slice(-500)
-    })
+    let pendingEvents: HostEvent[] = []
+    let eventPublicationTimer: ReturnType<typeof setTimeout> | undefined
+    const clearPendingEvents = () => {
+      if (eventPublicationTimer !== undefined) clearTimeout(eventPublicationTimer)
+      eventPublicationTimer = undefined
+      pendingEvents = []
+    }
+    const flushPendingEvents = () => {
+      const batch = pendingEvents
+      clearPendingEvents()
+      if (cancelled || batch.length === 0) return
+      setEventState((current) => {
+        const bySequence = new Map(current.events.map((event) => [event.sequence, event]))
+        let live = current.liveTranscriptEvents
+        for (const event of batch.sort((left, right) => left.sequence - right.sequence)) {
+          bySequence.set(event.sequence, event)
+          live = appendLiveTranscriptEvent(live, event)
+        }
+        return { events: [...bySequence.values()].sort((left, right) => left.sequence - right.sequence).slice(-500), liveTranscriptEvents: live }
+      })
+    }
     const dispatchCloneProgress = (event: HostEvent) => {
       const progress = projectCloneProgressFromEvent(event)
       if (!progress) return
@@ -125,8 +141,12 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
     }
     const publishEvent = (event: HostEvent) => {
       dispatchCloneProgress(event)
-      setLiveTranscriptEvents((current) => appendLiveTranscriptEvent(current, event))
-      appendEvent(event)
+      lastEventSequence.current = Math.max(lastEventSequence.current, event.sequence)
+      pendingEvents.push(event)
+      // Native socket callbacks can arrive while React flushes effects. Publish
+      // a burst together on a later JS turn instead of re-entering React for
+      // every token, and keep lifecycle and transcript snapshots in one commit.
+      if (eventPublicationTimer === undefined) eventPublicationTimer = setTimeout(flushPendingEvents, EVENT_PUBLICATION_INTERVAL_MS)
     }
     const closeEventSocket = () => {
       if (reconnectTimer) clearTimeout(reconnectTimer)
@@ -203,8 +223,8 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
             setLastError(undefined)
             setCredentialSyncWarning(credentialSyncFailures.length > 0 ? `credential sync failed: ${credentialSyncFailures.join(', ')}` : undefined)
             synchronized.events.forEach(dispatchCloneProgress)
-            setEvents(synchronized.events.slice(-500))
-            setLiveTranscriptEvents(compactLiveTranscriptEvents(synchronized.events))
+            clearPendingEvents()
+            setEventState({ events: synchronized.events.slice(-500), liveTranscriptEvents: compactLiveTranscriptEvents(synchronized.events) })
             lastEventSequence.current = synchronized.snapshot.lastEventSequence
             reconnectAttempts = 0
             connectEvents(hostInfo, synchronized.snapshot.lastEventSequence)
@@ -447,12 +467,14 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
       recoveryPromise = undefined
       connectionController.abort()
       closeEventSocket()
+      flushPendingEvents()
       // A foreground activation must verify the endpoint before imports can
       // use it again; native iOS recovery may replace the localhost listener.
       publishHost(undefined)
     })
     return () => {
       cancelled = true
+      clearPendingEvents()
       connectionController.abort()
       readyHostRef.current = async () => { throw new Error('Runtime connection is unavailable.') }
       retryBootRef.current = async () => undefined

@@ -200,7 +200,7 @@
   "appNamePlaceholder": "Mi app",
   "projectTemplate": "PLANTILLA",
   "webTemplate": "Web",
-  "webTemplateDescription": "Sitio React con Web Preview a pantalla completa.",
+  "webTemplateDescription": "Sitio React con Web Preview.",
   "expoTemplate": "Expo",
   "expoTemplateDescription": "App Expo con Preview.",
   "githubRepositoryOptional": "REPOSITORIO GIT (OPCIONAL)",

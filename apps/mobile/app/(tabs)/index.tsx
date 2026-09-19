@@ -6,9 +6,9 @@ import { router, useFocusEffect } from 'expo-router'
 import { Button } from 'heroui-native/button'
 import { Spinner } from 'heroui-native/spinner'
 import { ChevronRight, History, Play } from '@/components/icons'
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { AgentSessionSummary, HostSnapshot } from '@runwhale/mobile-protocol'
 import { controlSize, topLevelPageTitleStyle, topLevelScreenLayout, typeScale, type ThemeColors, useAppColors } from '@/theme/tokens'
 import { useI18n } from '@/i18n'
@@ -33,6 +33,9 @@ interface HomeContinueLoadState {
 export default function HomeScreen() {
   const { language, t } = useI18n()
   const colors = useAppColors()
+  const { width } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
+  const wide = width - insets.left - insets.right >= 760
   const styles = useMemo(() => createStyles(colors), [colors])
   const runtime = useRuntime()
   const { projects, loadStatus: projectLoadStatus, retryLoad: retryProjectLoad } = useProjects()
@@ -115,23 +118,27 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <ScrollView contentContainerStyle={[styles.content, wide && styles.contentWide]} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerCopy}><Text style={styles.brand}>RunWhale</Text></View>
           <View style={styles.runtimeBadge}><View style={[styles.runtimeDot, !runtimeReady && styles.runtimeDotIdle]} /><Text style={styles.runtimeText}>{runtimeReady ? t('ready') : t('starting')}</Text></View>
         </View>
 
-        <View style={styles.hero}>
+        <View style={[styles.dashboard, wide && continueModel && styles.dashboardWide]}>
+        <View style={[styles.launchSection, wide && continueModel && styles.launchSectionWide]}>
+        <View style={[styles.hero, wide && styles.heroWide]}>
           <View style={styles.heroCopy}>
             <Text style={styles.welcome}>{t('welcomeBack')}</Text>
-            <Text style={styles.heroTitle}>{t('heroTitle')}</Text>
+            <Text style={[styles.heroTitle, wide && styles.heroTitleWide]}>{t('heroTitle')}</Text>
           </View>
-          <Image source={require('../../assets/images/runwhale-icon.png')} style={styles.whale} resizeMode="contain" />
+          <Image source={require('../../assets/images/runwhale-icon.png')} style={[styles.whale, wide && styles.whaleWide]} resizeMode="contain" />
         </View>
 
-        <NewProjectButton />
+        <View style={styles.launchAction}><NewProjectButton /></View>
+        </View>
 
+        <View style={[styles.activitySection, wide && continueModel && styles.activitySectionWide]}>
         {renderSlot('home.apps')}
 
         {projectLoadStatus === 'failed' || retryingProjects ? <View style={styles.continueSection}>
@@ -143,7 +150,6 @@ export default function HomeScreen() {
             testID="home-project-load-error"
           />
         </View> : null}
-
         {continueModel ? <View style={styles.continueSection}>
           <Text accessibilityRole="header" style={styles.sectionTitle}>{t('continueWorking')}</Text>
           <View accessible={false} style={styles.continueCard}>
@@ -200,6 +206,8 @@ export default function HomeScreen() {
             </View> : null}
           </View>
         </View> : null}
+        </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   )
@@ -217,6 +225,14 @@ function formatHomeDate(timestamp: number, language: AppLanguage): string {
 function createStyles(colors: ThemeColors) { return StyleSheet.create({
   safe: { flex: 1, ...tabScreenBackground(colors, 'blue') },
   content: { width: '100%', maxWidth: deviceLayout.readableContentMaximumWidth, alignSelf: 'center', paddingHorizontal: 18, paddingTop: topLevelScreenLayout.topPadding, paddingBottom: 34, gap: 12 },
+  contentWide: { maxWidth: 1120, paddingHorizontal: 28, paddingTop: 20, gap: 20 },
+  dashboard: { gap: 20 },
+  dashboardWide: { flexDirection: 'row', alignItems: 'flex-start' },
+  launchSection: { overflow: 'hidden', borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.panel },
+  launchSectionWide: { flex: 1, minWidth: 0 },
+  launchAction: { padding: 14, paddingTop: 0 },
+  activitySection: { gap: 12 },
+  activitySectionWide: { flex: 1, minWidth: 0, paddingTop: 4 },
   header: { flexDirection: 'row', alignItems: 'flex-start', minHeight: topLevelScreenLayout.headerMinHeight },
   headerCopy: { flex: 1 },
   brand: { color: colors.text, ...topLevelPageTitleStyle },
@@ -224,7 +240,10 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   runtimeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#24B967' },
   runtimeDotIdle: { backgroundColor: colors.muted },
   runtimeText: { color: colors.muted, fontSize: typeScale.micro, fontWeight: '800' },
-  hero: { minHeight: 192, overflow: 'hidden', borderRadius: 22, backgroundColor: colors.raised, flexDirection: 'row', alignItems: 'center', padding: 18, shadowColor: '#526BFF', shadowOpacity: 0.1, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 2 },
+  hero: { minHeight: 192, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', padding: 22 },
+  heroWide: { minHeight: 264, padding: 28 },
+  heroTitleWide: { fontSize: 30, lineHeight: 36, letterSpacing: -1 },
+  whaleWide: { width: 236, height: 236, right: -36, bottom: -24 },
   heroCopy: { width: '57%', zIndex: 2 },
   welcome: { color: colors.muted, fontSize: typeScale.label, marginBottom: 7 },
   heroTitle: { color: colors.text, fontSize: typeScale.display, lineHeight: 27, fontWeight: '900', letterSpacing: -0.65 },

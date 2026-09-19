@@ -200,7 +200,7 @@
   "appNamePlaceholder": "My app",
   "projectTemplate": "PROJECT TEMPLATE",
   "webTemplate": "Web",
-  "webTemplateDescription": "React website with full-screen Web Preview.",
+  "webTemplateDescription": "React website with Web Preview.",
   "expoTemplate": "Expo",
   "expoTemplateDescription": "Expo app with Preview.",
   "githubRepositoryOptional": "GIT REPOSITORY (OPTIONAL)",

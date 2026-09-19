@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { act, create, type ReactTestRenderer } from 'react-test-renderer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RuntimeProvider, useRuntime } from '../src/state/runtime'
@@ -62,9 +63,15 @@ let reachable: boolean
 let hostState: string
 let suspendedSignals: AbortSignal[]
 let hang: boolean
+let eventCommits: number
+let onEventsCommitted: (() => void) | undefined
 
 function ObserveRuntime() {
   runtime = useRuntime()
+  useEffect(() => {
+    eventCommits++
+    onEventsCommitted?.()
+  }, [runtime.events, runtime.liveTranscriptEvents])
   return null
 }
 
@@ -97,6 +104,8 @@ beforeEach(async () => {
   hang = false
   hostState = 'running'
   suspendedSignals = []
+  eventCommits = 0
+  onEventsCommitted = undefined
   vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
     if (hang) {
       suspendedSignals.push(init.signal as AbortSignal)
@@ -129,6 +138,53 @@ async function loseConnection() {
   expect(runtime.info).toBeUndefined()
   expect(runtime.lastError).toContain('connection lost')
 }
+
+function receiveDelta(sequence: number) {
+  EventSocket.latest.onmessage?.({ data: JSON.stringify({
+    v: 1, type: 'event', sequence, timestamp: sequence, name: 'agent.delta',
+    data: { projectId: 'project', sessionId: 'session', taskId: 'task', kind: 'tool-call', tool: 'write_files', callId: 'write', characters: 3 },
+  }) })
+}
+
+it('defers socket callbacks delivered during effects and publishes streaming bursts atomically', async () => {
+  const before = eventCommits
+  let received = 0
+  onEventsCommitted = () => {
+    if (received >= 600) return
+    for (let index = 0; index < 6; index++) receiveDelta(++received)
+  }
+  await act(async () => { onEventsCommitted!() })
+  expect(eventCommits).toBe(before)
+  expect(runtime.events).toHaveLength(0)
+  for (let batch = 1; batch <= 100; batch++) {
+    await advance(50)
+    expect(eventCommits).toBe(before + batch)
+    expect(runtime.events.at(-1)?.sequence).toBe(batch * 6)
+    expect(runtime.liveTranscriptEvents).toHaveLength(1)
+    expect(runtime.liveTranscriptEvents[0]?.data).toMatchObject({ characters: batch * 18, endSequence: batch * 6 })
+  }
+  expect(runtime.events).toHaveLength(500)
+  await advance(100)
+  expect(eventCommits).toBe(before + 100)
+})
+
+it('keeps pending output and the terminal event when iOS backgrounds before publication', async () => {
+  await act(async () => {
+    receiveDelta(1)
+    receiveDelta(1)
+    EventSocket.latest.onmessage?.({ data: JSON.stringify({
+      v: 1, type: 'event', sequence: 2, timestamp: 2, name: 'agent.state',
+      data: { projectId: 'project', sessionId: 'session', taskId: 'task', state: 'completed' },
+    }) })
+  })
+  await changeAppState('inactive')
+  expect(runtime.events.map(event => event.sequence)).toEqual([1, 2])
+  expect(runtime.liveTranscriptEvents[0]?.data).toMatchObject({ characters: 3 })
+  expect(runtime.liveTranscriptEvents.at(-1)?.data).toMatchObject({ state: 'completed' })
+  const before = eventCommits
+  await advance(100)
+  expect(eventCommits).toBe(before)
+})
 
 describe('iOS runtime connection recovery', () => {
   it.each(['native', 'rpc'] as const)('reports an outdated %s language interface without retrying a reachable host', async (missing) => {

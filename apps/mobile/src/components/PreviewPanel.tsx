@@ -74,6 +74,10 @@ function DraggablePreviewClose({
   insets,
   label,
   onPress,
+  onToggleSize,
+  sizeLabel,
+  split = false,
+  bounds,
   styles,
   visible,
 }: {
@@ -81,11 +85,16 @@ function DraggablePreviewClose({
   insets: WebPreviewControlInsets
   label: string
   onPress(): void
+  onToggleSize?(): void
+  sizeLabel?: string
+  split?: boolean
+  bounds?: { width: number; height: number }
   styles: ReturnType<typeof createStyles>
   visible: boolean
 }) {
   const colors = useAppColors()
-  const viewport = useWindowDimensions()
+  const windowDimensions = useWindowDimensions()
+  const viewport = bounds ?? windowDimensions
   const [controlWidth, setControlWidth] = useState<number>(webPreviewOverlayControlContract.closeWidth)
   const initialPosition = webPreviewControlInitialPosition(viewport, insets, controlWidth)
   const position = useRef(new Animated.ValueXY(initialPosition)).current
@@ -133,6 +142,18 @@ function DraggablePreviewClose({
         <Text numberOfLines={1} style={styles.agentStatusText}>{agentLabel}</Text>
         <View style={styles.controlDivider} />
       </View> : null}
+      {onToggleSize ? <Button
+        isIconOnly
+        size="sm"
+        variant="secondary"
+        feedbackVariant={webPreviewOverlayControlContract.feedbackVariant}
+        testID="preview-size-toggle"
+        accessibilityLabel={sizeLabel}
+        onPress={onToggleSize}
+        style={styles.closeControl}
+      >
+        <AppIcon icon={split ? Maximize2 : Columns2} color="#262626" size={14} />
+      </Button> : null}
       <Button
         isIconOnly
         size="sm"
@@ -159,9 +180,10 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
   agentRunning?: boolean
   onBusyChange?(busy: boolean): void
   presentation?: PreviewPanelPresentation
+  canSplit?: boolean
   onPresentationRequested?(presentation: PreviewPanelPresentation | 'hidden'): void
   onFixWithAgent(prompt: string): void
-}>(function PreviewPanel({ project, sessionId, autoOpen = false, agentRunning = false, onBusyChange, presentation = 'overlay', onPresentationRequested, onFixWithAgent }, ref) {
+}>(function PreviewPanel({ project, sessionId, autoOpen = false, agentRunning = false, onBusyChange, presentation = 'overlay', canSplit = true, onPresentationRequested, onFixWithAgent }, ref) {
   const runtime = useRuntime()
   const { loadFile } = useProjects()
   const { t } = useI18n()
@@ -169,6 +191,7 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
   const colors = useAppColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const safeAreaInsets = useSafeAreaInsets()
+  const [embeddedBounds, setEmbeddedBounds] = useState<{ width: number; height: number }>()
   const runtimePlatform = Platform.OS === 'web' ? 'web' : Platform.OS === 'ios' ? 'ios' : 'android'
   const previewConfiguration = useMemo(() => projectPreviewConfiguration(project, runtimePlatform), [project, runtimePlatform])
   useEffect(() => { void loadFile(project.id, 'runwhale.json').catch(() => undefined) }, [loadFile, project.id, project.files])
@@ -444,40 +467,34 @@ export const PreviewPanel = forwardRef<PreviewPanelHandle, {
     </View>
   ) : null
 
-  const embeddedContent = presentation === 'overlay' ? null : <View style={[styles.embeddedPanel, presentation === 'split' && styles.embeddedPanelSplit]} testID="embedded-preview-panel">
-    <View style={styles.embeddedToolbar}>
-      <Text numberOfLines={1} style={styles.embeddedTitle}>{t('preview')}</Text>
-      <View style={styles.embeddedActions}>
-        {agentLabel ? <View style={styles.embeddedAgentStatus}><PreviewAgentDot active={focused} color={colors.accent} /><Text style={styles.agentStatusText}>{agentLabel}</Text></View> : null}
-        <Button
-          isIconOnly
-          size="sm"
-          variant="ghost"
-          testID="preview-size-toggle"
-          accessibilityLabel={presentation === 'split' ? t('expandPreview') : t('splitPreview')}
-          onPress={() => onPresentationRequested?.(presentation === 'split' ? 'full' : 'split')}
-          style={styles.embeddedAction}
-        >
-          <AppIcon icon={presentation === 'split' ? Maximize2 : Columns2} color={colors.accent} size={17} />
-        </Button>
-        <Button
-          isIconOnly
-          size="sm"
-          variant="ghost"
-          accessibilityLabel={t('minimizePreview')}
-          onPress={() => {
-            minimizeWeb()
-            onPresentationRequested?.('hidden')
-          }}
-          style={styles.embeddedAction}
-        >
-          <AppIcon icon={X} color={colors.accent} size={18} />
-        </Button>
-      </View>
-    </View>
+  const embeddedContent = presentation === 'overlay' ? null : <View
+    style={styles.embeddedPanel}
+    testID="embedded-preview-panel"
+    onLayout={({ nativeEvent: { layout } }) => setEmbeddedBounds((current) =>
+      current?.width === layout.width && current.height === layout.height ? current : { width: layout.width, height: layout.height })}
+  >
     <View style={styles.embeddedBody}>
       {configuredTarget === 'native' ? <NativePreviewHost style={styles.nativePreviewHost} /> : webViewContent}
+      {configuredTarget === 'native' && state.operation ? <View accessible accessibilityRole="progressbar" accessibilityLabel={t('openingPreview')} accessibilityLiveRegion="polite" style={styles.webLoading}>
+        <Spinner color={colors.accent} size="lg" />
+        <Text style={styles.loadingLabel}>{t('openingPreview')}</Text>
+      </View> : null}
     </View>
+    {embeddedBounds ? <DraggablePreviewClose
+      agentLabel={agentLabel}
+      bounds={embeddedBounds}
+      insets={presentation === 'full' ? safeAreaInsets : { ...safeAreaInsets, right: 0 }}
+      label={t('minimizePreview')}
+      onPress={() => {
+        minimizeWeb()
+        onPresentationRequested?.('hidden')
+      }}
+      onToggleSize={canSplit ? () => onPresentationRequested?.(presentation === 'split' ? 'full' : 'split') : undefined}
+      sizeLabel={t(presentation === 'split' ? 'expandPreview' : 'splitPreview')}
+      split={presentation === 'split'}
+      styles={styles}
+      visible={focused}
+    /> : null}
   </View>
 
   return <>
@@ -503,13 +520,9 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   webOverlay: { position: 'absolute', inset: 0, zIndex: 1_000, elevation: 1_000, backgroundColor: colors.canvas },
   webOverlayHidden: { opacity: 0 },
   webView: { flex: 1, backgroundColor: colors.canvas },
-  webLoading: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.canvas },
+  webLoading: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: colors.canvas },
+  loadingLabel: { color: colors.muted, fontSize: 12, fontWeight: '600' },
   embeddedPanel: { flex: 1, minWidth: 0, backgroundColor: colors.canvas },
-  embeddedPanelSplit: { borderLeftWidth: 1, borderLeftColor: colors.border },
-  embeddedToolbar: { height: 44, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.panel },
-  embeddedTitle: { flex: 1, minWidth: 0, paddingHorizontal: 4, color: colors.text, fontSize: 12, fontWeight: '900' },
-  embeddedActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  embeddedAction: { width: 38, height: 38, paddingHorizontal: 0, alignItems: 'center', justifyContent: 'center' },
   embeddedBody: { flex: 1, minHeight: 0, backgroundColor: colors.canvas },
   nativePreviewHost: { flex: 1, backgroundColor: colors.canvas },
   closeControlPosition: {
@@ -524,7 +537,6 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
     borderColor: '#d4d4d4',
   },
   agentStatus: { flexDirection: 'row', alignItems: 'center', paddingLeft: 10, gap: 6 },
-  embeddedAgentStatus: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, height: 30, borderRadius: 15, backgroundColor: '#fafafa' },
   agentStatusText: { maxWidth: 160, color: '#525252', fontSize: 11, fontWeight: '500' },
   controlDivider: { width: 0.5, height: 14, backgroundColor: '#d4d4d4', marginLeft: 4 },
   closeControl: {

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { type PropsWithChildren, useEffect, useMemo, useState } from 'react'
+import { type PropsWithChildren, useEffect, useMemo, useRef, useState } from 'react'
 import type { HostEvent } from '@runwhale/mobile-protocol'
 import { createChunkedProjectSnapshotStorage, type ProjectLoadStatus } from './project-data'
 import { ProjectContext, type ProjectStore } from './project-context'
@@ -46,13 +46,14 @@ export function NativeProjectProvider({ children, nativeFiles, runtimeReady, eve
   }, [runtimeReady, store])
   useEffect(() => { void actions.retryLoad() }, [actions.retryLoad])
 
-  const [observed, setObserved] = useState(0)
+  // Consuming an Agent delta must not schedule another project-context render.
+  const observed = useRef(0)
   useEffect(() => {
     if (!store || loadStatus !== 'ready') return
     const changed = new Map<string, string | undefined>()
-    let latest = observed
+    let latest = observed.current
     for (const event of events) {
-      if (event.sequence <= observed) continue
+      if (event.sequence <= observed.current) continue
       latest = Math.max(latest, event.sequence)
       const data = event.data as { projectId?: string; path?: string; state?: string }
       if (data && data.projectId && (event.name === 'project.changed' || (event.name === 'agent.state' && ['completed', 'failed', 'aborted'].includes(data.state ?? '')))) {
@@ -60,9 +61,10 @@ export function NativeProjectProvider({ children, nativeFiles, runtimeReady, eve
         changed.set(data.projectId, changed.has(data.projectId) ? undefined : data.path)
       }
     }
-    if (latest !== observed) setObserved(latest)
+    observed.current = latest
     for (const [id, path] of changed) void store.refresh(id, path).catch((error: unknown) => setLoadError(String(error)))
-  }, [events, loadStatus, observed, store])
+  }, [events, loadStatus, store])
 
-  return <ProjectContext.Provider value={{ ...actions, ready: loadStatus === 'ready', loadStatus, loadError, persistenceError: store?.persistenceError, projects: store?.projects ?? [] }}>{children}</ProjectContext.Provider>
+  const value = useMemo<ProjectStore>(() => ({ ...actions, ready: loadStatus === 'ready', loadStatus, loadError, persistenceError: store?.persistenceError, projects: store?.projects ?? [] }), [actions, loadStatus, loadError, store?.persistenceError, store?.projects])
+  return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>
 }

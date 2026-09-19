@@ -206,7 +206,7 @@
   "appNamePlaceholder": "我的应用",
   "projectTemplate": "项目模板",
   "webTemplate": "Web",
-  "webTemplateDescription": "React 网站，使用全屏 Web Preview。",
+  "webTemplateDescription": "React 网站，使用 Web Preview。",
   "expoTemplate": "Expo",
   "expoTemplateDescription": "Expo 应用，使用 Preview。",
   "githubRepositoryOptional": "GIT 仓库（可选）",

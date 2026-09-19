@@ -100,3 +100,4 @@ minimumReleaseAgeExclude:
   - 'vitest@5.0.1'
   - '@vitest/mocker@5.0.1'
   - '@vitest/spy@5.0.1'
+  - expo-build-properties@57.0.21
