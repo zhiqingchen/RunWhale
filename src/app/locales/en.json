@@ -36,33 +36,33 @@
       "Preview"
     ],
     "demo": {
-      "chip": "Real workflow",
-      "title": "One prompt. A game you can play.",
-      "description": "Start an Expo project called Baby game and ask: ‘Make a game for baby.’ Follow the Agent as it builds Animal Parade, then try the animal cards in Native Preview.",
-      "videoAria": "Silent RunWhale demo showing Baby game becoming Animal Parade in Native Preview",
+      "chip": "iPhone Duo quickstart",
+      "title": "From idea to app.",
+      "description": "Create a project, ask the Agent to build a cycling pelican, then preview and refine it side by side.",
+      "videoAria": "RunWhale quickstart on the iPhone Duo simulator: create, build, preview, and refine Pelican Ride, with English narration and Chinese and English subtitles",
       "videoFallback": "Your browser does not support the video tag.",
-      "videoCaption": "Animal Parade · Full demo · About 2 min 12 sec · No audio",
-      "kicker": "One project. One durable session.",
-      "spotlightTitle": "Make a game for baby.",
-      "spotlightBody": "A short request becomes six colorful animal cards. Approve the file edit, follow the Agent's checks, and open Animal Parade in Native Preview. Tapping the cards brings up friendly feedback and the next animal prompt.",
+      "videoCaption": "1:32 · English narration · 1.2× edition",
+      "kicker": "Preview on the left. Build on the right.",
+      "spotlightTitle": "A pelican on a bike.",
+      "spotlightBody": "Start with a simple request. See the app run, try Play and Pause, then ask for a nicer design and smoother animation.",
       "outline": [
         {
           "title": "Create",
-          "body": "Name the project Baby game, choose Expo, and open the Agent."
+          "body": "Choose Expo, name the project Pelican Ride, and open the Agent."
         },
         {
-          "title": "Build",
-          "body": "Send the prompt, approve the edit, and follow the checks."
+          "title": "Build and preview",
+          "body": "Describe a pelican cycling by the sea. Open Preview and try it."
         },
         {
-          "title": "Play",
-          "body": "Find the Dog, tap the animal cards, and see the game respond."
+          "title": "Refine",
+          "body": "Ask for a nicer look and smoother animation. Compare before and after."
         }
       ],
-      "galleryLabel": "From prompt to play",
-      "galleryTitle": "Six moments from the same demo.",
+      "galleryLabel": "Another example · Animal Parade",
+      "galleryTitle": "From a simple prompt to a playful game.",
       "galleryBody": "Create the project, send one prompt, approve the file write, follow the checks, open Native Preview, and try the game.",
-      "disclosure": "All six screenshots are frames from the demo above, with the original English interface. RunWhale Community Edition is free and open source. AI provider usage charges may apply."
+      "disclosure": "These six screenshots show the separate Animal Parade demo, with the original English interface. RunWhale Community Edition is free and open source. AI provider usage charges may apply."
     },
     "screenshots": [
       {

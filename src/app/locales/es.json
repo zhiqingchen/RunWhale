@@ -36,33 +36,33 @@
       "Vista previa"
     ],
     "demo": {
-      "chip": "Flujo de trabajo real",
-      "title": "Una petición. Un juego listo para jugar.",
-      "description": "Crea un proyecto Expo llamado Baby game y pide «Make a game for baby». Sigue al agente mientras construye Animal Parade y prueba las tarjetas de animales en la vista previa nativa.",
-      "videoAria": "Demostración sin sonido de RunWhale: de Baby game a Animal Parade en la vista previa nativa",
+      "chip": "Inicio rápido en iPhone Duo",
+      "title": "De la idea a la app.",
+      "description": "Crea un proyecto, pide al agente un pelícano en bicicleta y mejora la app con la vista previa al lado.",
+      "videoAria": "Inicio rápido de RunWhale en el simulador iPhone Duo: crear, desarrollar, probar y mejorar Pelican Ride, con narración en inglés y subtítulos en chino e inglés",
       "videoFallback": "Tu navegador no admite la reproducción de este vídeo.",
-      "videoCaption": "Animal Parade · Demostración completa · Unos 2 min 12 s · Sin sonido",
-      "kicker": "Un proyecto. Una sesión persistente.",
-      "spotlightTitle": "Crea un juego para un bebé.",
-      "spotlightBody": "Una petición breve se convierte en seis tarjetas de animales. Aprueba la edición, sigue las comprobaciones del agente y abre Animal Parade en la vista previa nativa. Al tocar las tarjetas aparecen mensajes de ánimo y la siguiente pregunta.",
+      "videoCaption": "1:32 · Narración en inglés · Versión a 1,2×",
+      "kicker": "Vista previa a la izquierda. Código a la derecha.",
+      "spotlightTitle": "Un pelícano en bicicleta.",
+      "spotlightBody": "Empieza con una petición sencilla. Prueba los botones de reproducción y pausa, y pide un diseño más bonito y una animación más fluida.",
       "outline": [
         {
-          "title": "Crear",
-          "body": "Llama al proyecto Baby game, elige Expo y abre el agente."
+          "title": "Crea",
+          "body": "Elige Expo, llama al proyecto Pelican Ride y abre el agente."
         },
         {
-          "title": "Construir",
-          "body": "Envía la petición, aprueba la edición y sigue las comprobaciones."
+          "title": "Desarrolla y prueba",
+          "body": "Describe un pelícano en bicicleta junto al mar. Abre la vista previa y pruébalo."
         },
         {
-          "title": "Jugar",
-          "body": "Busca el perro, toca las tarjetas y observa la respuesta del juego."
+          "title": "Mejora",
+          "body": "Pide un mejor diseño y una animación más fluida. Compara el antes y el después."
         }
       ],
-      "galleryLabel": "De la petición al juego",
-      "galleryTitle": "Seis momentos de la misma demostración.",
+      "galleryLabel": "Otro ejemplo · Animal Parade",
+      "galleryTitle": "De una petición sencilla a un juego divertido.",
       "galleryBody": "Crea el proyecto, envía una petición, aprueba la escritura del archivo, sigue las comprobaciones, abre la vista previa nativa y prueba el juego.",
-      "disclosure": "Las seis capturas proceden del vídeo anterior y conservan la interfaz original en inglés. RunWhale Community Edition es gratuita y de código abierto. El proveedor de IA puede cobrar por su uso."
+      "disclosure": "Estas seis capturas muestran otra demo, Animal Parade, con la interfaz original en inglés. RunWhale Community Edition es gratuita y de código abierto. El proveedor de IA puede cobrar por su uso."
     },
     "screenshots": [
       {

@@ -164,10 +164,12 @@ export function HomePage({ locale }: { locale: WebsiteLocale }) {
                   controls
                   playsInline
                   preload="none"
-                  poster={`${optimizedMediaRoot}/runwhale-animal-parade-poster-720.webp`}
+                  width={1920}
+                  height={1080}
+                  poster={sitePath("/media/demo/runwhale-duo-pelican-quickstart-poster.webp")}
                   aria-label={copy.demo.videoAria}
                 >
-                  <source src={sitePath("/media/demo/RunWhale-demo-readme.mp4")} type="video/mp4" />
+                  <source src={sitePath("/media/demo/runwhale-duo-pelican-quickstart-1.2x.mp4")} type="video/mp4" />
                   {copy.demo.videoFallback}
                 </video>
               </div>
@@ -177,9 +179,11 @@ export function HomePage({ locale }: { locale: WebsiteLocale }) {
 
           <ParallaxLayer className="demo-copy-parallax" amount={12} direction="background">
             <div className="demo-copy">
-              <span className="demo-kicker"><Play size={15} fill="currentColor" /> {copy.demo.kicker}</span>
-              <h3>{copy.demo.spotlightTitle}</h3>
-              <p>{copy.demo.spotlightBody}</p>
+              <div className="demo-copy-intro">
+                <span className="demo-kicker"><Play size={15} fill="currentColor" /> {copy.demo.kicker}</span>
+                <h3>{copy.demo.spotlightTitle}</h3>
+                <p>{copy.demo.spotlightBody}</p>
+              </div>
               <ol className="demo-outline">
                 {copy.demo.outline.map(({ title, body }, index) => (
                   <li key={title}>

@@ -36,33 +36,33 @@
       "预览"
     ],
     "demo": {
-      "chip": "真实工作流程",
-      "title": "一句需求，做出可以试玩的游戏。",
-      "description": "创建名为 Baby game 的 Expo 项目，输入“Make a game for baby”。跟随智能体完成 Animal Parade，再到原生预览中点击动物卡片，体验游戏。",
-      "videoAria": "哪里跑无声演示：从 Baby game 项目到原生预览中的 Animal Parade 游戏",
+      "chip": "iPhone Duo 快速入门",
+      "title": "从想法到应用。",
+      "description": "新建项目，让智能体实现一只沿海骑车的鹈鹕，再一边预览，一边优化。",
+      "videoAria": "哪里跑 iPhone Duo 模拟器快速入门：创建、实现、预览和优化 Pelican Ride，配有英文旁白及中英文字幕",
       "videoFallback": "你的浏览器不支持视频播放。",
-      "videoCaption": "Animal Parade · 完整演示 · 约 2 分 12 秒 · 无声",
-      "kicker": "一个项目，一个持久化会话。",
-      "spotlightTitle": "给宝宝做一个游戏。",
-      "spotlightBody": "一句简单需求，变成六张彩色动物卡片。批准文件修改，跟进智能体的检查，再到原生预览中打开 Animal Parade。点击卡片，就能看到鼓励反馈和下一个寻找动物的提示。",
+      "videoCaption": "1 分 32 秒 · 英文配音 · 1.2× 版本",
+      "kicker": "左边预览，右边编程",
+      "spotlightTitle": "做一个骑车的鹈鹕。",
+      "spotlightBody": "从一句简单需求开始。打开应用，试试播放和暂停，再让画面更漂亮、动画更流畅。",
       "outline": [
         {
           "title": "创建",
-          "body": "将项目命名为 Baby game，选择 Expo，打开智能体。"
+          "body": "选择 Expo，命名 Pelican Ride，打开智能体。"
         },
         {
-          "title": "构建",
-          "body": "发送需求，批准文件修改，再跟进检查结果。"
+          "title": "实现与预览",
+          "body": "描述一只沿海骑车的鹈鹕，打开预览，亲手试试。"
         },
         {
-          "title": "试玩",
-          "body": "根据提示寻找小狗，点击动物卡片，查看游戏反馈。"
+          "title": "优化",
+          "body": "让画面更漂亮、动画更流畅，对比优化前后的效果。"
         }
       ],
-      "galleryLabel": "从提示到试玩",
-      "galleryTitle": "同一段演示中的六个时刻。",
+      "galleryLabel": "另一个示例 · Animal Parade",
+      "galleryTitle": "一句简单需求，变成有趣的游戏。",
       "galleryBody": "创建项目、发送需求、批准文件写入、跟进检查、打开原生预览，再亲手试玩游戏。",
-      "disclosure": "六张截图均取自上方演示视频，保留原始英文界面。哪里跑社区版免费开源，AI 服务商可能收取模型用量费用。"
+      "disclosure": "这六张截图展示的是另一个 Animal Parade 演示，保留原始英文界面。哪里跑社区版免费开源，AI 服务商可能收取模型用量费用。"
     },
     "screenshots": [
       {

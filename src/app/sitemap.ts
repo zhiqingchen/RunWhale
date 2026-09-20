@@ -13,9 +13,11 @@ export const dynamic = "force-static";
 export default function sitemap(): MetadataRoute.Sitemap {
   return pages.flatMap((page) => locales.map((locale) => ({
     url: `${siteUrl}${localizedPath(locale, page)}`,
-    lastModified: "2026-09-15",
+    lastModified: page === "" ? "2026-09-20" : "2026-09-15",
     alternates: { languages: languageAlternates(page) },
-    images: page === "" || page === "guide" ? workflowImages : page === "examples"
+    images: page === ""
+      ? [`${siteUrl}/media/demo/runwhale-duo-pelican-quickstart-poster.webp`, ...workflowImages]
+      : page === "guide" ? workflowImages : page === "examples"
       ? [workflowImages[4], `${siteUrl}/media/optimized/v1/05-see-features-come-to-life-framed-720.webp`]
       : undefined,
   })));
