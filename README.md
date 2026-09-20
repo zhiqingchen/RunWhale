@@ -6,7 +6,7 @@ RunWhale is an AI coding agent for your phone. Create, edit, and preview Web and
 
 ## Demo
 
-https://github.com/user-attachments/assets/b8b7d184-8d6b-4fc0-b954-c159c02aa1b4
+https://github.com/user-attachments/assets/c7c81375-46f7-4fc4-acf0-84eb8e2d486b
 
 ## Features
 

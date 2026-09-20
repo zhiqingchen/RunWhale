@@ -6,7 +6,7 @@ RunWhale（哪里跑）是一款手机端 AI 编程智能体，支持使用本�
 
 ## 演示
 
-https://github.com/user-attachments/assets/b8b7d184-8d6b-4fc0-b954-c159c02aa1b4
+https://github.com/user-attachments/assets/c7c81375-46f7-4fc4-acf0-84eb8e2d486b
 
 ## 主要功能
 
