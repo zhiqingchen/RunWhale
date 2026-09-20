@@ -20,7 +20,7 @@
     "@runwhale/dsh-mobile": "workspace:*",
     "@runwhale/mobile-protocol": "workspace:*",
     "@runwhale/mobile-runtime": "workspace:*",
-    "@expo/metro": "56.0.2",
+    "@expo/metro": "56.1.0",
     "@expo/metro-config": "57.0.12",
     "fflate": "0.8.3",
     "node-fetch": "3.3.2",

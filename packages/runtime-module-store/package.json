@@ -7,7 +7,7 @@
     "@babel/runtime": "7.29.7",
     "@expo/dom-webview": "57.0.1",
     "@expo/log-box": "57.0.4",
-    "@expo/metro": "56.0.2",
+    "@expo/metro": "56.1.0",
     "@expo/metro-config": "57.0.12",
     "@expo/ui": "57.0.18",
     "@expo/vector-icons": "15.1.1",
