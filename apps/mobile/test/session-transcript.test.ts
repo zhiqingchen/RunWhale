@@ -9,9 +9,34 @@ const message = (text: string, kind = 'user') => ({ content: [{ type: 'text', te
 function live(e: Event, afterSequence?: number): HostEvent {
   return { v: 1, type: 'event', name: 'session.event', sequence: e.seq! + 100, timestamp: e.time!, data: { ...scope, event: e, afterSequence, sessionSequence: e.seq } }
 }
-const delta = (seq: number, text: string): HostEvent => ({ ...live(event('', seq)), name: 'agent.delta', data: { ...scope, sessionSequence: seq, turn: 1, step: 1, kind: 'text', text } })
+const delta = (seq: number, text: string, kind = 'text'): HostEvent => ({ ...live(event('', seq)), name: 'agent.delta', data: { ...scope, sessionSequence: seq, turn: 1, step: 1, kind, text } })
 
 describe('one Session transcript', () => {
+  it.each(['', ' \n\t '])('hides empty reasoning blocks (%j) in history and live delivery without changing the log', (text) => {
+    const log = [event('assistant/message', 1, { turn: 1, step: 1, message: { content: [
+      { type: 'reasoning', text },
+      { type: 'text', text: 'Answer' },
+    ] } })]
+    const original = structuredClone(log)
+    const expected = [{ kind: 'text', text: 'Answer' }]
+    expect(projectSessionTranscript(log)).toMatchObject([{ kind: 'assistant', blocks: expected }])
+    expect(projectSessionTranscript(mergeSessionTranscript([], log.map(e => live(e)), scope).events))
+      .toMatchObject([{ kind: 'assistant', blocks: expected }])
+    expect(log).toEqual(original)
+  })
+
+  it('hides blank streamed reasoning until text arrives and preserves whitespace through final handoff', () => {
+    const tail = [delta(1, 'Answer'), delta(2, '', 'reasoning'), delta(3, ' \n', 'reasoning')]
+    const projected = () => projectSessionTranscript(mergeSessionTranscript([], tail, scope).events, true)
+    expect(projected()).toMatchObject([{ status: 'streaming', blocks: [{ kind: 'text', text: 'Answer' }] }])
+    tail.push(delta(4, 'Inspecting', 'reasoning'), delta(5, ' ', 'reasoning'), delta(6, 'files.\n', 'reasoning'))
+    const blocks = [{ kind: 'text', text: 'Answer' }, { kind: 'reasoning', text: ' \nInspecting files.\n' }]
+    expect(projected()).toMatchObject([{ status: 'streaming', blocks }])
+    tail.push(live(event('assistant/message', 7, { turn: 1, step: 1, content: blocks.map(block => ({ type: block.kind, text: block.text })) })))
+    expect(projected()).toMatchObject([{ status: 'settled', blocks }])
+    expect(projectSessionTranscript(mergeSessionTranscript([], tail.slice(1, 3), scope).events, true)).toEqual([])
+  })
+
   it('renders system messages as context with full prompt text in history and live delivery', () => {
     const text = 'You are an AI agent.\n\nFollow the project instructions.'
     const log = [

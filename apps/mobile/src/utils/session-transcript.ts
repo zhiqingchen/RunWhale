@@ -188,6 +188,11 @@ export function projectSessionTranscript(events: readonly Event[], running = fal
       if (row.activity.state === 'running') row.activity.state = 'stopped'
     }
   }
+  // Providers can retain reasoning blocks without displayable text. Filter only
+  // after assembling deltas so whitespace between streamed words is preserved.
+  for (const row of assistants.values()) {
+    row.blocks = row.blocks.filter(block => block.kind !== 'reasoning' || block.text.trim())
+  }
   return rows.filter(row => row.kind !== 'assistant' || row.blocks.some(block => block.text.trim()))
 }
 
