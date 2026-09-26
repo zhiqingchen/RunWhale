@@ -21,12 +21,12 @@
     "@runwhale/node-mobile-runtime": "24.19.0-runwhale.2"
   },
   "peerDependencies": {
-    "expo": "57.0.23",
+    "expo": "57.0.24",
     "react-native": "0.86.3"
   },
   "devDependencies": {
     "@react-native/metro-config": "0.86.3",
-    "expo": "57.0.23",
+    "expo": "57.0.24",
     "react-native": "0.86.3",
     "react-native-worklets": "0.10.1",
     "typescript": "6.0.3"
